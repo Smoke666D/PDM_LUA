@@ -1,0 +1,3 @@
+../elua/lzio.c:23:5:luaZ_fill	32	static
+../elua/lzio.c:38:6:luaZ_init	24	static
+../elua/lzio.c:48:8:luaZ_read	32	static

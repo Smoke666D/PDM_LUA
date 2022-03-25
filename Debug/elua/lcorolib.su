@@ -1,0 +1,13 @@
+../elua/lcorolib.c:21:19:getco	24	static
+../elua/lcorolib.c:32:12:auxresume	32	static
+../elua/lcorolib.c:56:12:luaB_coresume	24	static
+../elua/lcorolib.c:73:12:luaB_auxwrap	32	static
+../elua/lcorolib.c:95:12:luaB_cocreate	24	static
+../elua/lcorolib.c:105:12:luaB_cowrap	16	static
+../elua/lcorolib.c:112:12:luaB_yield	16	static
+../elua/lcorolib.c:127:12:auxstatus	128	static
+../elua/lcorolib.c:149:12:luaB_costatus	24	static
+../elua/lcorolib.c:156:12:luaB_yieldable	24	static
+../elua/lcorolib.c:163:12:luaB_corunning	24	static
+../elua/lcorolib.c:170:12:luaB_close	24	static
+../elua/lcorolib.c:206:16:luaopen_coroutine	16	static
