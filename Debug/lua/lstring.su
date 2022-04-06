@@ -1,0 +1,15 @@
+../LUA/lstring.c:34:5:luaS_eqlngstr	24	static
+../LUA/lstring.c:43:14:luaS_hash	32	static
+../LUA/lstring.c:51:14:luaS_hashlongstr	24	static
+../LUA/lstring.c:62:13:tablerehash	40	static
+../LUA/lstring.c:85:6:luaS_resize	32	static
+../LUA/lstring.c:110:6:luaS_clearcache	24	static
+../LUA/lstring.c:123:6:luaS_init	32	static
+../LUA/lstring.c:143:17:createstrobj	40	static
+../LUA/lstring.c:157:10:luaS_createlngstrobj	24	static
+../LUA/lstring.c:164:6:luaS_remove	24	static
+../LUA/lstring.c:174:13:growstrtab	16	static
+../LUA/lstring.c:188:17:internshrstr	48	static
+../LUA/lstring.c:221:10:luaS_newlstr	32	static
+../LUA/lstring.c:241:10:luaS_new	32	static
+../LUA/lstring.c:258:8:luaS_newudata	40	static

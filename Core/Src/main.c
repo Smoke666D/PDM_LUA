@@ -67,6 +67,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for luaTask */
+osThreadId_t luaTaskHandle;
+const osThreadAttr_t luaTask_attributes = {
+  .name = "luaTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow1,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -89,6 +96,7 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
+extern void vLuaTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -167,6 +175,9 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* creation of luaTask */
+  luaTaskHandle = osThreadNew(vLuaTask, NULL, &luaTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

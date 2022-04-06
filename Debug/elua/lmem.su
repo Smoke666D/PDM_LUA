@@ -1,8 +1,0 @@
-../elua/lmem.c:79:7:luaM_growaux_	32	static
-../elua/lmem.c:110:7:luaM_shrinkvector_	40	static
-../elua/lmem.c:124:9:luaM_toobig	16	static
-../elua/lmem.c:132:6:luaM_free_	40	static
-../elua/lmem.c:148:14:tryagain	40	static
-../elua/lmem.c:162:7:luaM_realloc_	40	static
-../elua/lmem.c:178:7:luaM_saferealloc_	32	static
-../elua/lmem.c:187:7:luaM_malloc_	40	static

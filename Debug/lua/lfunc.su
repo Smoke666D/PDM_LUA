@@ -1,0 +1,16 @@
+../LUA/lfunc.c:27:11:luaF_newCclosure	24	static
+../LUA/lfunc.c:35:11:luaF_newLclosure	24	static
+../LUA/lfunc.c:48:6:luaF_initupvals	32	static
+../LUA/lfunc.c:65:15:newupval	40	static
+../LUA/lfunc.c:88:8:luaF_findupval	24	static
+../LUA/lfunc.c:108:13:callclosemethod	56	static
+../LUA/lfunc.c:126:13:checkclosemth	32	static
+../LUA/lfunc.c:144:13:prepcallclosemth	32	static
+../LUA/lfunc.c:169:6:luaF_newtbcupval	16	static
+../LUA/lfunc.c:183:6:luaF_unlinkupval	16	static
+../LUA/lfunc.c:194:6:luaF_closeupval	40	static
+../LUA/lfunc.c:214:13:poptbclist	24	static
+../LUA/lfunc.c:228:6:luaF_close	32	static
+../LUA/lfunc.c:240:8:luaF_newproto	24	static
+../LUA/lfunc.c:267:6:luaF_freeproto	16	static
+../LUA/lfunc.c:283:13:luaF_getlocalname	32	static
