@@ -14,6 +14,7 @@ void vLuaTask(void *argument)
 
 	 lua_State *L = luaL_newstate();
 
+	 //luaL_dostring
 	 while(1)
 	 {
 

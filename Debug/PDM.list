@@ -58283,6 +58283,7 @@ void vLuaTask(void *argument)
  801a3b4:	f7ec f838 	bl	8006428 <luaL_newstate>
  801a3b8:	60f8      	str	r0, [r7, #12]
 
+	 //luaL_dostring
 	 while(1)
  801a3ba:	e7fe      	b.n	801a3ba <vLuaTask+0xe>
 
