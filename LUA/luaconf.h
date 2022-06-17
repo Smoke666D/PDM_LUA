@@ -12,6 +12,38 @@
 #include <stddef.h>
 
 
+#include "luaProjectConfig.h"
+
+#ifndef DONT_USE_LUA_HEAP_MANAGEMENT_FUNCTIONS
+/*The lua heap (luaHeap.c) functions shall be used.*/
+
+#include "luaeHeap.h"
+
+#define luaMallocFunction(xWantedSize) luaMalloc(xWantedSize)
+#define luaFreeFunction(pv) luaFree(pv)
+
+#ifndef LUA_MEM_ENTER_CRITICAL_SECTION
+#define LUA_MEM_ENTER_CRITICAL_SECTION()
+#endif
+
+#ifndef LUA_MEM_LEAVE_CRITICAL_SECTION
+#define LUA_MEM_LEAVE_CRITICAL_SECTION()
+#endif
+
+#endif
+
+extern void luaAbort(void);
+
+
+
+#ifndef luaPointerSize_t
+#define luaPointerSize_t size_t
+#endif
+
+
+
+#define LUAI_MAXSTACK		15000
+
 /*
 ** ===================================================================
 ** General Configuration File for Lua
@@ -27,6 +59,9 @@
 ** Search for "@@" to find all configurable definitions.
 ** ===================================================================
 */
+
+
+
 
 
 /*
@@ -116,7 +151,7 @@
 /*
 @@ LUA_32BITS enables Lua with 32-bit integers and 32-bit floats.
 */
-#define LUA_32BITS	1
+#define LUA_32BITS 1
 
 
 /*
@@ -730,12 +765,12 @@
 ** space (and to reserve some numbers for pseudo-indices).
 ** (It must fit into max(size_t)/32.)
 */
-#if LUAI_IS32INT
+/*#if LUAI_IS32INT
 #define LUAI_MAXSTACK		1000000
 #else
 #define LUAI_MAXSTACK		15000
 #endif
-
+*/
 
 /*
 @@ LUA_EXTRASPACE defines the size of a raw memory area associated with

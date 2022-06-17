@@ -33,6 +33,7 @@ C_SRCS += \
 ../LUA/ltable.c \
 ../LUA/ltablib.c \
 ../LUA/ltm.c \
+../LUA/luaeheap.c \
 ../LUA/lundump.c \
 ../LUA/lutf8lib.c \
 ../LUA/lvm.c \
@@ -67,6 +68,7 @@ C_DEPS += \
 ./LUA/ltable.d \
 ./LUA/ltablib.d \
 ./LUA/ltm.d \
+./LUA/luaeheap.d \
 ./LUA/lundump.d \
 ./LUA/lutf8lib.d \
 ./LUA/lvm.d \
@@ -101,6 +103,7 @@ OBJS += \
 ./LUA/ltable.o \
 ./LUA/ltablib.o \
 ./LUA/ltm.o \
+./LUA/luaeheap.o \
 ./LUA/lundump.o \
 ./LUA/lutf8lib.o \
 ./LUA/lvm.o \
@@ -109,12 +112,12 @@ OBJS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 LUA/%.o LUA/%.su: ../LUA/%.c LUA/subdir.mk
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -I../LUA -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F405xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -I../LUA -I../Shell -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
 
 clean: clean-LUA
 
 clean-LUA:
-	-$(RM) ./LUA/lapi.d ./LUA/lapi.o ./LUA/lapi.su ./LUA/lauxlib.d ./LUA/lauxlib.o ./LUA/lauxlib.su ./LUA/lbaselib.d ./LUA/lbaselib.o ./LUA/lbaselib.su ./LUA/lcode.d ./LUA/lcode.o ./LUA/lcode.su ./LUA/lcorolib.d ./LUA/lcorolib.o ./LUA/lcorolib.su ./LUA/lctype.d ./LUA/lctype.o ./LUA/lctype.su ./LUA/ldblib.d ./LUA/ldblib.o ./LUA/ldblib.su ./LUA/ldebug.d ./LUA/ldebug.o ./LUA/ldebug.su ./LUA/ldo.d ./LUA/ldo.o ./LUA/ldo.su ./LUA/ldump.d ./LUA/ldump.o ./LUA/ldump.su ./LUA/lfunc.d ./LUA/lfunc.o ./LUA/lfunc.su ./LUA/lgc.d ./LUA/lgc.o ./LUA/lgc.su ./LUA/linit.d ./LUA/linit.o ./LUA/linit.su ./LUA/liolib.d ./LUA/liolib.o ./LUA/liolib.su ./LUA/llex.d ./LUA/llex.o ./LUA/llex.su ./LUA/lmathlib.d ./LUA/lmathlib.o ./LUA/lmathlib.su ./LUA/lmem.d ./LUA/lmem.o ./LUA/lmem.su ./LUA/loadlib.d ./LUA/loadlib.o ./LUA/loadlib.su ./LUA/lobject.d ./LUA/lobject.o ./LUA/lobject.su ./LUA/lopcodes.d ./LUA/lopcodes.o ./LUA/lopcodes.su ./LUA/loslib.d ./LUA/loslib.o ./LUA/loslib.su ./LUA/lparser.d ./LUA/lparser.o ./LUA/lparser.su ./LUA/lstate.d ./LUA/lstate.o ./LUA/lstate.su ./LUA/lstring.d ./LUA/lstring.o ./LUA/lstring.su ./LUA/lstrlib.d ./LUA/lstrlib.o ./LUA/lstrlib.su ./LUA/ltable.d ./LUA/ltable.o ./LUA/ltable.su ./LUA/ltablib.d ./LUA/ltablib.o ./LUA/ltablib.su ./LUA/ltm.d ./LUA/ltm.o ./LUA/ltm.su ./LUA/lundump.d ./LUA/lundump.o ./LUA/lundump.su ./LUA/lutf8lib.d ./LUA/lutf8lib.o ./LUA/lutf8lib.su ./LUA/lvm.d ./LUA/lvm.o ./LUA/lvm.su ./LUA/lzio.d ./LUA/lzio.o ./LUA/lzio.su
+	-$(RM) ./LUA/lapi.d ./LUA/lapi.o ./LUA/lapi.su ./LUA/lauxlib.d ./LUA/lauxlib.o ./LUA/lauxlib.su ./LUA/lbaselib.d ./LUA/lbaselib.o ./LUA/lbaselib.su ./LUA/lcode.d ./LUA/lcode.o ./LUA/lcode.su ./LUA/lcorolib.d ./LUA/lcorolib.o ./LUA/lcorolib.su ./LUA/lctype.d ./LUA/lctype.o ./LUA/lctype.su ./LUA/ldblib.d ./LUA/ldblib.o ./LUA/ldblib.su ./LUA/ldebug.d ./LUA/ldebug.o ./LUA/ldebug.su ./LUA/ldo.d ./LUA/ldo.o ./LUA/ldo.su ./LUA/ldump.d ./LUA/ldump.o ./LUA/ldump.su ./LUA/lfunc.d ./LUA/lfunc.o ./LUA/lfunc.su ./LUA/lgc.d ./LUA/lgc.o ./LUA/lgc.su ./LUA/linit.d ./LUA/linit.o ./LUA/linit.su ./LUA/liolib.d ./LUA/liolib.o ./LUA/liolib.su ./LUA/llex.d ./LUA/llex.o ./LUA/llex.su ./LUA/lmathlib.d ./LUA/lmathlib.o ./LUA/lmathlib.su ./LUA/lmem.d ./LUA/lmem.o ./LUA/lmem.su ./LUA/loadlib.d ./LUA/loadlib.o ./LUA/loadlib.su ./LUA/lobject.d ./LUA/lobject.o ./LUA/lobject.su ./LUA/lopcodes.d ./LUA/lopcodes.o ./LUA/lopcodes.su ./LUA/loslib.d ./LUA/loslib.o ./LUA/loslib.su ./LUA/lparser.d ./LUA/lparser.o ./LUA/lparser.su ./LUA/lstate.d ./LUA/lstate.o ./LUA/lstate.su ./LUA/lstring.d ./LUA/lstring.o ./LUA/lstring.su ./LUA/lstrlib.d ./LUA/lstrlib.o ./LUA/lstrlib.su ./LUA/ltable.d ./LUA/ltable.o ./LUA/ltable.su ./LUA/ltablib.d ./LUA/ltablib.o ./LUA/ltablib.su ./LUA/ltm.d ./LUA/ltm.o ./LUA/ltm.su ./LUA/luaeheap.d ./LUA/luaeheap.o ./LUA/luaeheap.su ./LUA/lundump.d ./LUA/lundump.o ./LUA/lundump.su ./LUA/lutf8lib.d ./LUA/lutf8lib.o ./LUA/lutf8lib.su ./LUA/lvm.d ./LUA/lvm.o ./LUA/lvm.su ./LUA/lzio.d ./LUA/lzio.o ./LUA/lzio.su
 
 .PHONY: clean-LUA
 

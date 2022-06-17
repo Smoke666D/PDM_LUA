@@ -30,4 +30,10 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<variableList>
+		<variable>
+			<name>copy_PARENT</name>
+			<value>$%7BPARENT-1-PROJECT_LOC%7D/%D0%A1%D0%B0%D0%B9%D0%B4%D0%B5%D1%80/PDM/embLua-master</value>
+		</variable>
+	</variableList>
 </projectDescription>
