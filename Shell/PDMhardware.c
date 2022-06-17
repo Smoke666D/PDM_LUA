@@ -17,6 +17,10 @@ volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U 
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 static float CurLimits[20] ={};
 static float Power[20] ={100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100};
+static CUR_SENS_COOF CurSensCoof[20]={{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},
+									  {3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},
+									  {3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850}};
+
 static   EventGroupHandle_t xADCEvent;
 static   StaticEventGroup_t xADCCreatedEventGroup;
 
@@ -65,12 +69,11 @@ void vHWOutSetState( OUT_NAME_TYPE out_name,  OUT_STATE_TYPE out_state)
 
 void vHWOutInit()
 {
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_19_20_Pin,    GPIO_PIN_SET   );
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_17_18_Pin,    GPIO_PIN_SET   );
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_15_16_Pin,    GPIO_PIN_SET   );
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_13_14_Pin,    GPIO_PIN_SET   );
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_11_12_Pin,    GPIO_PIN_SET   );
-	HAL_GPIO_WritePin( GPIOG,    Cs_Dis8_11_12_Pin,    GPIO_PIN_SET   );
+	//Инициализация портов упраления ключами
+	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
+	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_SET);
 	vHWOutConfig(OUT_1, 100, 20.0);
 	vHWOutConfig(OUT_2, 100, 20.0);
 	vHWOutConfig(OUT_3, 100, 20.0);
@@ -145,11 +148,16 @@ void vADCTask(void * argument)
   /* Infinite loop */
   for(;;)
   {
-	  vTaskDelay(1 );
-//	xEventGroupWaitBits( xADCEvent, ( ADC3_READY | ADC2_READY | ADC1_READY ), pdTRUE, pdTRUE, portMAX_DELAY );
-//	StartADCDMA( &hadc2, ( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ) );
-	//StartADCDMA( &hadc1, ( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ) );
-//	StartADCDMA( &hadc3, ( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ) );
+
+	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+	HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	xEventGroupWaitBits( xADCEvent, ( ADC3_READY | ADC2_READY | ADC1_READY ), pdTRUE, pdTRUE, portMAX_DELAY );
+	HAL_ADC_Stop_DMA(&hadc1);
+	HAL_ADC_Stop_DMA(&hadc2);
+	HAL_ADC_Stop_DMA(&hadc3);
+
+
 
   }
   /* USER CODE END vADCTask */
@@ -170,10 +178,10 @@ void vADC_Init()
    {
      case ADC3_READY:
      //  __HAL_TIM_DISABLE(&htim3);
-   //    xEventGroupSetBitsFromISR( xADCEvent, ADC3_READY, &xHigherPriorityTaskWoken );
+       xEventGroupSetBitsFromISR( xADCEvent, ADC3_READY, &xHigherPriorityTaskWoken );
        break;
      case ADC2_READY:
-//       xEventGroupSetBitsFromISR( xADCEvent, ADC2_READY, &xHigherPriorityTaskWoken );
+       xEventGroupSetBitsFromISR( xADCEvent, ADC2_READY, &xHigherPriorityTaskWoken );
        break;
      case ADC1_READY:
        xEventGroupSetBitsFromISR( xADCEvent, ADC1_READY, &xHigherPriorityTaskWoken );

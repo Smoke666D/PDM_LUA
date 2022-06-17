@@ -21,6 +21,13 @@
 #define ADC3_CHANNELS      8U
 #define ADC_FRAME_SIZE     3U
 
+typedef struct
+{
+	uint16_t C0_5A;
+	uint16_t C1A;
+	uint16_t C2A;
+	uint16_t C8A;
+} CUR_SENS_COOF;
 
 typedef enum {
 	OUT_ON,
