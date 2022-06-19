@@ -16,15 +16,64 @@ volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U 
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 static float CurLimits[20] ={};
-static float Power[20] ={100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100};
-static CUR_SENS_COOF CurSensCoof[20]={{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},
-									  {3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},
-									  {3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850},{3350,3100,3000,2850}};
+static uint16_t muRawCurData[20];
+static uint16_t muRawVData[4];
+static float mfCurData[20] ={};
+static float mfVData[4] ={};
+static float Power[20] ={20,20,20,20,20,20,20,20,8,8,8,8,8,8,8,8,8,8,8,8};
+static KAL_DATA CurSensData[20][5]={
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
+};
+static LIN_COOF CSC[20][4] = {
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
+};
+
+
+
 
 static   EventGroupHandle_t xADCEvent;
 static   StaticEventGroup_t xADCCreatedEventGroup;
-
+void vDataConvertToFloat(void);
 void vHWGetTimer(OUT_NAME_TYPE out_name, uint32_t * channel,  TIM_HandleTypeDef *ptim);
+void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
 void vHWOutInit();
 
 
@@ -65,6 +114,8 @@ void vHWOutSetState( OUT_NAME_TYPE out_name,  OUT_STATE_TYPE out_state)
    	   	  break;
    }
 }
+
+
 
 
 void vHWOutInit()
@@ -143,12 +194,11 @@ void vADCTask(void * argument)
 {
   /* USER CODE BEGIN vADCTask */
   xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+  vSetCalibrateData();
   vHWOutInit();
-
   /* Infinite loop */
   for(;;)
   {
-
 	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
@@ -156,12 +206,105 @@ void vADCTask(void * argument)
 	HAL_ADC_Stop_DMA(&hadc1);
 	HAL_ADC_Stop_DMA(&hadc2);
 	HAL_ADC_Stop_DMA(&hadc3);
-
-
-
+	vDataConvertToFloat();
   }
   /* USER CODE END vADCTask */
 }
+
+/*
+ * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
+ * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
+ */
+void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize)
+{
+	uint32_t temp;
+	for (uint8_t i=0;i<Size;i++)
+	{
+		for (uint8_t j=0;j<FrameSize;j++)
+		{
+		  temp = temp + InData[InIndex+i+j*BufferSize];
+		}
+		OutData[OutIndex+i] = temp / FrameSize;
+	}
+}
+/*
+ * Функция расчитывет коофиценты функции исходя их калибровочных данных
+ */
+void vSetCalibrateData(void )
+{
+	uint8_t i,j;
+	for (i=0;i < 20U; i++)
+	{
+		for (j=0; j< 4U; j++)
+		{
+			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
+			if ((CurSensData[i][j].Data !=0) || (CurSensData[i][j+1].Data !=0 ))
+			{
+				CSC[i][j].k = ( CurSensData[i][j].KOOF -  CurSensData[i][j+1].KOOF) / ( CurSensData[i][j].Data- CurSensData[i][j+1].Data);
+				CSC[i][j].b = ( CurSensData[i][j].Data * CurSensData[i][j+1].KOOF - CurSensData[i][j+1].Data * CurSensData[i][j].KOOF)/(CurSensData[i][j].Data + CurSensData[i][j+1].Data);
+			}
+		}
+	}
+
+}
+
+
+/*
+ *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
+ */
+void vDataConvertToFloat( void)
+{
+	uint8_t i;
+	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U ,ADC_FRAME_SIZE,ADC1_CHANNELS);
+	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U ,ADC_FRAME_SIZE,ADC1_CHANNELS);
+	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 4U ,ADC_FRAME_SIZE,ADC1_CHANNELS);
+	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
+	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U ,ADC_FRAME_SIZE,ADC2_CHANNELS);
+	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
+	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U ,ADC_FRAME_SIZE,ADC2_CHANNELS);
+	 // Полчени из буфера ADC 1 данныех каналов каналов тока 1-3
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U ,ADC_FRAME_SIZE,ADC3_CHANNELS);
+	 // Полчени из буфера ADC 1 данныех каналов каналов тока 13-18
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 5U ,ADC_FRAME_SIZE,ADC1_CHANNELS);
+	 //Преобразование во флоат данных AIN
+	 for ( i = 0; i < 4U; i++ )
+	 {
+		 mfCurData[ i ] = muRawVData[ i ] * COOF;
+	 }
+	 //Преобразвоание во float данных тока каналов 1-20
+	 for ( i =0; i < 20U ; i++)
+	{
+
+		 for (uint8_t r = 0; r < 5U; r++)
+		 {
+			 if ( muRawCurData[ i ] < CSC[i][r].data )
+			 {
+				 mfCurData[ i ] = ( (float) muRawCurData [ i ] * CSC[i][r].k  + CSC[i][r].b ) *K /RR;
+				 break;
+			 }
+		 }
+	}
+}
+/*
+ * Функция анализирует преобразованные значекни
+ *
+ */
+void vDataAnalize( void )
+{
+	uint8_t i;
+	for ( i = 0; i < 20U ; i ++)
+	{
+		if ()
+
+		mfCurData[ i ]
+
+	}
+
+}
+
 
 void vADC_Init()
 {

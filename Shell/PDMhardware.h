@@ -16,18 +16,35 @@
 #define ADC1_READY         0x01U
 #define ADC2_READY         0x02U
 #define ADC3_READY         0x04U
-#define ADC1_CHANNELS      4U
-#define ADC2_CHANNELS      12U
-#define ADC3_CHANNELS      8U
+#define ADC1_CHANNELS      8U
+#define ADC2_CHANNELS      7U
+#define ADC3_CHANNELS      9U
 #define ADC_FRAME_SIZE     3U
+
+#define R2  10000
+#define R1  140000
+#define RR  1000
+#define K   ( 3.3 / 0xFFF )
+#define COOF  R1 / ( R1 + R2 ) * K
 
 typedef struct
 {
-	uint16_t C0_5A;
-	uint16_t C1A;
-	uint16_t C2A;
-	uint16_t C8A;
-} CUR_SENS_COOF;
+	uint16_t KOOF;
+	uint16_t Data;
+
+} KAL_DATA;
+
+
+
+typedef struct
+{
+	uint16_t data;
+	float k;
+	float b;
+}   LIN_COOF;
+
+
+
 
 typedef enum {
 	OUT_ON,

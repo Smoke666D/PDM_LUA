@@ -17,15 +17,15 @@
 void vLuaTask(void *argument)
 {
 
-	 lua_State *L = luaL_newstate(); //Create new LUA state
-     if (L == NULL)
-     {
+	// lua_State *L = luaL_newstate(); //Create new LUA state
+   //  if (L == NULL)
+   //  {
 
-     }
+  //   }
   //   vTaskDleay(10);
-     luaL_openlibs(L); // open standard libraries
-     luaL_loadstring(L, lib );
-     luaL_loadstring(L, mainscript);
+ //    luaL_openlibs(L); // open standard libraries
+ //    luaL_loadstring(L, lib );
+ //    luaL_loadstring(L, mainscript);
 	 while(1)
 	 {
 		  vTaskDelay(1 );
