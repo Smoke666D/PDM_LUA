@@ -15,11 +15,17 @@ extern TIM_HandleTypeDef htim12;
 volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U };   //ADC1 input data buffer
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
+
+static OUT_STATE OutLogicState[OUT_COUNT];
 static float CurLimits[20] ={};
 static uint16_t muRawCurData[20];
 static uint16_t muRawVData[4];
 static float mfCurData[20] ={};
 static float mfVData[4] ={};
+static FLAGS fErrorFlag[20];
+static OUT_STATE OutStateData[OUT_COUNT];
+static OUT_CONFIG ConfigOutData[20];
+static OUT_CONFIG RepeatOutData[20];
 static float Power[20] ={20,20,20,20,20,20,20,20,8,8,8,8,8,8,8,8,8,8,8,8};
 static KAL_DATA CurSensData[20][5]={
 										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
@@ -107,10 +113,22 @@ void vHWOutSetState( OUT_NAME_TYPE out_name,  OUT_STATE_TYPE out_state)
    switch (out_state)
    {
    	   case OUT_ON:
-   		  HAL_TIM_PWM_Start(ptim,channel);
+   		  if (OutStateData[out_name] != OUT_ERROR)
+   		  {
+   			  HAL_TIM_PWM_Start(ptim,channel);
+   			  OutStateData[out_name] = OUT_ON;
+   		  }
 	   	  break;
    	   case OUT_OFF:
    		  HAL_TIM_PWM_Stop(ptim,channel);
+   		  if (fErrorFlag[out_name] ==FLAG_OFF)
+   		  {
+   			  OutStateData[out_name] = OUT_OFF;
+   		  }
+   		  else
+   		  {
+   			OutStateData[out_name] = OUT_TO_RESTART;
+   		  }
    	   	  break;
    }
 }
@@ -278,12 +296,20 @@ void vDataConvertToFloat( void)
 	 for ( i =0; i < 20U ; i++)
 	{
 
-		 for (uint8_t r = 0; r < 5U; r++)
+		 if  (muRawCurData[ i ] == 0xFFF)
 		 {
-			 if ( muRawCurData[ i ] < CSC[i][r].data )
+			 fErrorFlag[i] = FLAG_ON;
+		 }
+		 else
+		 {
+			 fErrorFlag[i] = FLAG_OFF;
+			 for (uint8_t r = 0; r < 5U; r++)
 			 {
-				 mfCurData[ i ] = ( (float) muRawCurData [ i ] * CSC[i][r].k  + CSC[i][r].b ) *K /RR;
-				 break;
+				 if ( muRawCurData[ i ] < CSC[i][r].data )
+				 {
+					 mfCurData[ i ] = ( (float) muRawCurData [ i ] * CSC[i][r].k  + CSC[i][r].b ) *K /RR;
+					 break;
+				 }
 			 }
 		 }
 	}
@@ -297,11 +323,56 @@ void vDataAnalize( void )
 	uint8_t i;
 	for ( i = 0; i < 20U ; i ++)
 	{
-		if ()
-
-		mfCurData[ i ]
+		if  (fErrorFlag[i] == FLAG_ON)
+		{
+			vHWOutSetState(i,OUT_OFF);
+		}
+		else
+		{
+			if mfCurData[ i ]
+		}
 
 	}
+
+}
+
+
+
+
+void vOutContolProcess()
+{
+	for (uint8_t i=0; i<OUT_COUNT;i++)
+	{
+		switch (OutStateData[i])
+		{
+		   case OUT_TO_OFF:
+			   vHWOutSetState(i,OUT_OFF);
+			   break;
+		   case OUT_TO_ON:
+		       vHWOutSetState(i,OUT_ON);
+		   	   break;
+		       case OUT_TO_RESTART:
+			   if (RepeatOutData[i].Repeats == 1)
+			   {
+				   OutStateData[i] = OUT_ERROR;
+			   }
+			   else
+			   {
+				   OutStateData[i] = OUT_RESTART;
+				   RepeatOutData[i].Delays = 0;
+			   }
+			   break;
+		       case OUT_RESTART:
+		    	 RepeatOutData[i].Delays++;
+		    	 if ( RepeatOutData[i].Delays >= ConfigOutData[i].Delays )
+		    	 {
+		    		  OutStateData[i] = OUT_TO_ON;
+		    		  RepeatOutData[i].Repeats = RepeatOutData[i].Repeats -1;
+		    	 }
+		    	 break;
+		}
+	}
+
 
 }
 

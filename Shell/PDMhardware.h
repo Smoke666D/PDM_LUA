@@ -13,6 +13,8 @@
 #include "cmsis_os.h"
 #include "event_groups.h"
 
+
+#define OUT_COUNT         20U
 #define ADC1_READY         0x01U
 #define ADC2_READY         0x02U
 #define ADC3_READY         0x04U
@@ -20,12 +22,30 @@
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
 #define ADC_FRAME_SIZE     3U
-
 #define R2  10000
 #define R1  140000
 #define RR  1000
 #define K   ( 3.3 / 0xFFF )
 #define COOF  R1 / ( R1 + R2 ) * K
+
+typedef struct
+{
+	uint8_t Repeats;
+	uint16_t Delays;
+} OUT_CONFIG;
+
+
+typedef enum
+{
+	OUT_TO_OFF,
+	OUT_OFF,
+	OUT_TO_ON,
+	OUT_ON,
+	OUT_ERROR,
+	OUT_TO_RESTART,
+	OUT_RESTART,
+} OUT_STATE;
+
 
 typedef struct
 {
@@ -43,7 +63,10 @@ typedef struct
 	float b;
 }   LIN_COOF;
 
-
+typedef enum {
+	FLAG_ON,
+	FLAG_OFF,
+} FLAGS;
 
 
 typedef enum {
