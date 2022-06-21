@@ -16,17 +16,14 @@ volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U 
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 
-static OUT_STATE OutLogicState[OUT_COUNT];
-static float CurLimits[20] ={};
+PDM_OUTPUT_TYPE out[OUT_COUNT];
+
 static uint16_t muRawCurData[20];
 static uint16_t muRawVData[4];
-static float mfCurData[20] ={};
 static float mfVData[4] ={};
-static FLAGS fErrorFlag[20];
-static OUT_STATE OutStateData[OUT_COUNT];
-static OUT_CONFIG ConfigOutData[20];
-static OUT_CONFIG RepeatOutData[20];
-static float Power[20] ={20,20,20,20,20,20,20,20,8,8,8,8,8,8,8,8,8,8,8,8};
+
+static uint32_t out_register;
+
 static KAL_DATA CurSensData[20][5]={
 										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
 										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
@@ -49,140 +46,175 @@ static KAL_DATA CurSensData[20][5]={
 										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
 										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
 };
-static LIN_COOF CSC[20][4] = {
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-		{{41U,0U,0U},{1104U,0U,0U},{1888U,0U,0U},{3865U,0U}},
-};
-
-
 
 
 static   EventGroupHandle_t xADCEvent;
 static   StaticEventGroup_t xADCCreatedEventGroup;
+static   EventGroupHandle_t xOutEvent;
+static   StaticEventGroup_t xOutCreatedEventGroup;
 void vDataConvertToFloat(void);
-void vHWGetTimer(OUT_NAME_TYPE out_name, uint32_t * channel,  TIM_HandleTypeDef *ptim);
 void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
-void vHWOutInit();
 
 
-void vHWOutConfig(OUT_NAME_TYPE out_name, uint16_t power, float max_cur)
+
+void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  float power, uint16_t overload_timer, float overload_power, uint8_t PWM)
 {
-	uint32_t channel = 0;
-	TIM_HandleTypeDef *ptim = NULL;
+	out[out_name].ptim = ptim;
+	out[out_name].channel = channel;
+	out[out_name].power = power;
+	out[out_name].overload_power = overload_power;
+	out[out_name].overload_config_timer = overload_timer;
+	out[out_name].overload_timer = 0;
+	out[out_name].out_logic_state =OUT_OFF;
+	out[out_name].out_state =STATE_OUT_OFF;
+	out[out_name].error_flag = ERROR_OFF;
+	out[out_name].error_count = 0;
+	out[out_name].restart_timer =0;
+	out[out_name].restart_config_timer =1000;
+	out[out_name].PWM = PWM;
+	for (uint8_t j=0; j< 4U; j++)
+	{
+		//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
+		if ((CurSensData[out_name][j].Data !=0) || (CurSensData[out_name][j+1].Data !=0 ))
+		{
+			out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
+			out[out_name].CSC[j].k = ( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) / ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
+			out[out_name].CSC[j].b = ( CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF - CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF)/(CurSensData[out_name][j].Data + CurSensData[out_name][j+1].Data);
+		}
+	}
+
     TIM_OC_InitTypeDef sConfigOC = {0};
-	CurLimits[out_name] = max_cur;
-	Power[out_name] =  power;
-	vHWGetTimer(out_name, &channel,ptim);
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (uint32_t)((float)(power/100) * ptim->Init.Period);
+	sConfigOC.Pulse = (uint32_t)((float)(out[out_name].power/100) * out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/100);
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
 	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	if (HAL_TIM_PWM_ConfigChannel(ptim, &sConfigOC, channel) != HAL_OK)
+	if (HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) != HAL_OK)
 	{
 	    Error_Handler();
 	}
 }
 
-void vHWOutSetState( OUT_NAME_TYPE out_name,  OUT_STATE_TYPE out_state)
+void vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power)
 {
-   uint32_t channel = 0;
-   TIM_HandleTypeDef *ptim = NULL;
+    xEventGroupSetBits (xOutEvent, ( 0x1 < out_name) );
+    out[out_name].overload_config_timer = overload_timer;
+	out[out_name].power = power;
+	out[out_name].overload_power = overload_power;
+	xEventGroupClearBits (xOutEvent, ( 0x1 <out_name) );
+}
+void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer)
+{
+	xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
+	out[out_name].error_count = restart_count;
+	out[out_name].restart_timer =0;
+	out[out_name].restart_config_timer =timer;
+	xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
+}
+
+
+void vHWOutResete( OUT_NAME_TYPE out_name)
+{
+	 HAL_TIM_PWM_Stop(out[out_name].ptim,  out[out_name].channel);
+	 out_register &= ~(0x1<< out_name);
+
+}
+
+void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
+{
+   TIM_OC_InitTypeDef sConfigOC = {0};
    //В зависимости от номера выхода выибраетм таймер и канал таймера PWM
-   vHWGetTimer(out_name, &channel,ptim);
-   switch (out_state)
+   if ( power != out[out_name].PWM )
    {
-   	   case OUT_ON:
-   		  if (OutStateData[out_name] != OUT_ERROR)
-   		  {
-   			  HAL_TIM_PWM_Start(ptim,channel);
-   			  OutStateData[out_name] = OUT_ON;
-   		  }
-	   	  break;
-   	   case OUT_OFF:
-   		  HAL_TIM_PWM_Stop(ptim,channel);
-   		  if (fErrorFlag[out_name] ==FLAG_OFF)
-   		  {
-   			  OutStateData[out_name] = OUT_OFF;
-   		  }
-   		  else
-   		  {
-   			OutStateData[out_name] = OUT_TO_RESTART;
-   		  }
-   	   	  break;
+   	  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   	  sConfigOC.Pulse = (uint32_t )((float)power/100 * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100 ));
+   	  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   	  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   	  HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
+
    }
+   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+   out_register |= 0x1<< out_name;
+}
+
+
+void vOutSet(OUT_NAME_TYPE out_name)
+{
+	out[out_name].out_logic_state = OUT_ON;
+}
+void vOutReset(OUT_NAME_TYPE out_name)
+{
+	out[out_name].out_logic_state = OUT_OFF;
+}
+
+void vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
+{
+	out[out_name].PWM = PWM;
+	if (out[out_name].out_logic_state == OUT_ON)
+	{
+	   if (out[out_name].out_state == STATE_OUT_ON)
+	   {
+		  vHWOutSet( out_name, 100);
+	   }
+	}
+	else
+	{
+		out[out_name].out_state = STATE_OUT_OFF;
+	}
 }
 
 
 
-
-void vHWOutInit()
+void vOutInit()
 {
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_SET);
-	vHWOutConfig(OUT_1, 100, 20.0);
-	vHWOutConfig(OUT_2, 100, 20.0);
-	vHWOutConfig(OUT_3, 100, 20.0);
-	vHWOutConfig(OUT_4, 100, 20.0);
-	vHWOutConfig(OUT_5, 100, 20.0);
-	vHWOutConfig(OUT_6, 100, 20.0);
-	vHWOutConfig(OUT_7, 100, 20.0);
-	vHWOutConfig(OUT_8, 100, 20.0);
-	vHWOutConfig(OUT_9, 100, 8.0);
-	vHWOutConfig(OUT_10, 100, 8.0);
-	vHWOutConfig(OUT_11, 100, 8.0);
-	vHWOutConfig(OUT_12, 100, 8.0);
-	vHWOutConfig(OUT_13, 100, 8.0);
-	vHWOutConfig(OUT_14, 100, 8.0);
-	vHWOutConfig(OUT_15, 100, 8.0);
-	vHWOutConfig(OUT_16, 100, 8.0);
-	vHWOutConfig(OUT_17, 100, 8.0);
-	vHWOutConfig(OUT_18, 100, 8.0);
-	vHWOutConfig(OUT_19, 100, 8.0);
-	vHWOutConfig(OUT_20, 100, 8.0);
-	vHWOutSetState(OUT_1,OUT_ON);
-	vHWOutSetState(OUT_2,OUT_ON);
-	vHWOutSetState(OUT_3,OUT_ON);
-	vHWOutSetState(OUT_4,OUT_ON);
-	vHWOutSetState(OUT_5,OUT_ON);
-	vHWOutSetState(OUT_6,OUT_ON);
-	vHWOutSetState(OUT_7,OUT_ON);
-	vHWOutSetState(OUT_8,OUT_ON);
-	vHWOutSetState(OUT_9,OUT_ON);
-	vHWOutSetState(OUT_10,OUT_ON);
-	vHWOutSetState(OUT_11,OUT_ON);
-	vHWOutSetState(OUT_12,OUT_ON);
-	vHWOutSetState(OUT_13,OUT_ON);
-	vHWOutSetState(OUT_14,OUT_ON);
-	vHWOutSetState(OUT_15,OUT_ON);
-	vHWOutSetState(OUT_16,OUT_ON);
-	vHWOutSetState(OUT_17,OUT_ON);
-	vHWOutSetState(OUT_18,OUT_ON);
-	vHWOutSetState(OUT_19,OUT_ON);
-	vHWOutSetState(OUT_20,OUT_ON);
+
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1,20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, 20.0, 1000, 60, 100 );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
+	vHWOutSet(OUT_1,100);
+	vHWOutSet(OUT_2,100);
+	vHWOutSet(OUT_3,100);
+	vHWOutSet(OUT_4,100);
+	vHWOutSet(OUT_5,100);
+	vHWOutSet(OUT_6,100);
+	vHWOutSet(OUT_7,100);
+	vHWOutSet(OUT_8,100);
+	vHWOutSet(OUT_9,100);
+	vHWOutSet(OUT_10,100);
+	vHWOutSet(OUT_11,100);
+	vHWOutSet(OUT_12,00);
+	vHWOutSet(OUT_13,100);
+	vHWOutSet(OUT_14,100);
+	vHWOutSet(OUT_15,100);
+	vHWOutSet(OUT_16,100);
+	vHWOutSet(OUT_17,100);
+	vHWOutSet(OUT_18,100);
+	vHWOutSet(OUT_19,100);
+	vHWOutSet(OUT_20,100);
 
 }
 
@@ -212,8 +244,7 @@ void vADCTask(void * argument)
 {
   /* USER CODE BEGIN vADCTask */
   xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
-  vSetCalibrateData();
-  vHWOutInit();
+
   /* Infinite loop */
   for(;;)
   {
@@ -245,26 +276,6 @@ void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex,
 		OutData[OutIndex+i] = temp / FrameSize;
 	}
 }
-/*
- * Функция расчитывет коофиценты функции исходя их калибровочных данных
- */
-void vSetCalibrateData(void )
-{
-	uint8_t i,j;
-	for (i=0;i < 20U; i++)
-	{
-		for (j=0; j< 4U; j++)
-		{
-			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
-			if ((CurSensData[i][j].Data !=0) || (CurSensData[i][j+1].Data !=0 ))
-			{
-				CSC[i][j].k = ( CurSensData[i][j].KOOF -  CurSensData[i][j+1].KOOF) / ( CurSensData[i][j].Data- CurSensData[i][j+1].Data);
-				CSC[i][j].b = ( CurSensData[i][j].Data * CurSensData[i][j+1].KOOF - CurSensData[i][j+1].Data * CurSensData[i][j].KOOF)/(CurSensData[i][j].Data + CurSensData[i][j+1].Data);
-			}
-		}
-	}
-
-}
 
 
 /*
@@ -290,87 +301,122 @@ void vDataConvertToFloat( void)
 	 //Преобразование во флоат данных AIN
 	 for ( i = 0; i < 4U; i++ )
 	 {
-		 mfCurData[ i ] = muRawVData[ i ] * COOF;
+		 mfVData[ i ] = muRawVData[ i ] * COOF;
 	 }
 	 //Преобразвоание во float данных тока каналов 1-20
 	 for ( i =0; i < 20U ; i++)
 	{
-
 		 if  (muRawCurData[ i ] == 0xFFF)
 		 {
-			 fErrorFlag[i] = FLAG_ON;
+			 out[i].error_flag  = ERROR_ON;
 		 }
 		 else
 		 {
-			 fErrorFlag[i] = FLAG_OFF;
-			 for (uint8_t r = 0; r < 5U; r++)
+			 out[i].error_flag  = ERROR_OFF;
+			 for (uint8_t r = 0; r < 4U; r++)
 			 {
-				 if ( muRawCurData[ i ] < CSC[i][r].data )
+				 if ( muRawCurData[ i ] < out[i].CSC[r].data )
 				 {
-					 mfCurData[ i ] = ( (float) muRawCurData [ i ] * CSC[i][r].k  + CSC[i][r].b ) *K /RR;
+					 out[i].current = ( (float) muRawCurData [ i ] * out[i].CSC[r].k  + out[i].CSC[r].b ) *K /RR;
+					 if (out[i].current > out[i].power )
+					 {
+						 out[i].error_flag = ERROR_OVERLOAD;
+					 }
 					 break;
 				 }
 			 }
 		 }
 	}
 }
-/*
- * Функция анализирует преобразованные значекни
- *
- */
-void vDataAnalize( void )
+
+
+void vOutContolTask(void * argument)
 {
-	uint8_t i;
-	for ( i = 0; i < 20U ; i ++)
+	uint8_t temp_power,cur_power;
+	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+	EventBits_t config_state;
+	vOutInit();
+	for(;;)
 	{
-		if  (fErrorFlag[i] == FLAG_ON)
-		{
-			vHWOutSetState(i,OUT_OFF);
-		}
-		else
-		{
-			if mfCurData[ i ]
-		}
-
-	}
-
-}
-
-
-
-
-void vOutContolProcess()
-{
-	for (uint8_t i=0; i<OUT_COUNT;i++)
-	{
-		switch (OutStateData[i])
-		{
-		   case OUT_TO_OFF:
-			   vHWOutSetState(i,OUT_OFF);
-			   break;
-		   case OUT_TO_ON:
-		       vHWOutSetState(i,OUT_ON);
-		   	   break;
-		       case OUT_TO_RESTART:
-			   if (RepeatOutData[i].Repeats == 1)
-			   {
-				   OutStateData[i] = OUT_ERROR;
-			   }
-			   else
-			   {
-				   OutStateData[i] = OUT_RESTART;
-				   RepeatOutData[i].Delays = 0;
-			   }
-			   break;
-		       case OUT_RESTART:
-		    	 RepeatOutData[i].Delays++;
-		    	 if ( RepeatOutData[i].Delays >= ConfigOutData[i].Delays )
-		    	 {
-		    		  OutStateData[i] = OUT_TO_ON;
-		    		  RepeatOutData[i].Repeats = RepeatOutData[i].Repeats -1;
-		    	 }
-		    	 break;
-		}
+		   vTaskDelay(1);
+		   config_state = xEventGroupGetBits (xOutEvent); //Получаем состоние конфигурационных флагов
+			for (uint8_t i=0; i<OUT_COUNT;i++)
+			{
+				if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
+				{
+					switch (out[i].out_state)
+					{
+					case STATE_OUT_OFF: //Состония входа - выключен
+							if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
+							{
+								out[i].out_state = STATE_OUT_ON_PROCESS;
+								out[i].overload_timer = 0U;
+								cur_power = START_POWER;
+							}
+							break;
+					case STATE_OUT_ON_PROCESS: //Состояния влючения
+							out[i].overload_timer++;
+							if ( (out[i].error_flag == ERROR_ON) || (out[i].error_flag == ERROR_OVERLOAD) ) //Если обнаружена перегрузка
+							{
+								vHWOutResete(i);  //Выключаем выход
+								out[i].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
+								break;
+							}
+							if  ( out[i].overload_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
+							{
+									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+									cur_power = 100;
+							}
+							else
+							{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
+								temp_power =(uint8_t) (float)out[i].overload_timer/out[i].overload_config_timer*100;
+								if (temp_power > START_POWER)
+								{
+									cur_power = temp_power;
+								}
+							}
+							vHWOutSet(i,cur_power);
+							break;
+						case STATE_OUT_ON:  // Состояние входа - включен
+								//Если система обнаружила ошибку ключа или ток больше номинального
+								if ( (out[i].error_flag == ERROR_ON) || (out[i].error_flag == ERROR_OVERLOAD) )
+								{
+									vHWOutResete(i);
+									out[i].out_state = STATE_OUT_ERROR_PROCESS;
+									break;
+								}
+								if  (out[i].out_logic_state == OUT_OFF)
+								{
+									vHWOutResete(i);
+									out[i].out_state = STATE_OUT_OFF;
+								}
+								break;
+						case STATE_OUT_ERROR_PROCESS:
+							   if (out[i].error_count == 1)
+							   {
+								   out[i].out_state = STATE_OUT_ERROR;
+								   break;
+							   }
+							   out[i].restart_timer = 0U;
+							   out[i].out_state = STATE_OUT_RESTART_PROCESS;
+							   break;
+						case STATE_OUT_ERROR:
+							 break;
+						case STATE_OUT_RESTART_PROCESS:
+							out[i].restart_timer++;
+							if  ( out[i].restart_timer >= out[i].restart_config_timer )
+							{
+								if (out[i].error_count > 1)
+								{
+									out[i].out_state = STATE_OUT_OFF;
+									out[i].error_count--;
+									break;
+								}
+							}
+							break;
+					}
+				}
+			}
 	}
 
 
@@ -412,92 +458,5 @@ void vADC_Init()
   * Функция возращает номер канала и управлюящий таймер для выбранного выхода
   */
 
- void vHWGetTimer(OUT_NAME_TYPE out_name, uint32_t * channel,  TIM_HandleTypeDef *ptim)
- {
- 	switch (out_name)
- 	   {
- 	       case OUT_1:
- 	    	    ptim = &htim4;
- 	    	    *channel = TIM_CHANNEL_3;
- 	    	    break;
- 	       case OUT_2:
- 	    	    ptim = &htim4;
- 	    	    *channel = TIM_CHANNEL_4;
- 	            break;
- 	       case OUT_3:
- 	    	    ptim = &htim2;
- 	    	    *channel = TIM_CHANNEL_1;
- 	            break;
- 	       case OUT_4:
- 	    	    ptim = &htim3;
- 	    	    *channel = TIM_CHANNEL_2;
- 	            break;
- 	       case OUT_5:
- 	    	    ptim = &htim1;
- 	    	    *channel = TIM_CHANNEL_3;
- 	           	break;
- 	       case OUT_6:
- 	    	    ptim = &htim1;
- 	    	    *channel = TIM_CHANNEL_4;
- 	            break;
- 	       case OUT_7:
- 	    	    ptim = &htim12;
- 	    	    *channel = TIM_CHANNEL_1;
- 	            break;
- 	       case OUT_8:
- 	    	    ptim = &htim4;
- 	    	    *channel = TIM_CHANNEL_2;
- 	            break;
- 	       case OUT_9:
- 	     	    ptim = &htim1;
- 	     	    *channel = TIM_CHANNEL_1;
- 	     	    break;
- 	       case OUT_10:
- 	    	    ptim = &htim1;
- 	    	    *channel = TIM_CHANNEL_1;
- 	       	    break;
- 	       case OUT_11:
- 		        ptim = &htim1;
- 		       	*channel = TIM_CHANNEL_2;
- 	            break;
- 	       case OUT_12:
- 	    	    ptim = &htim2;
- 	    	   	*channel = TIM_CHANNEL_3;
- 	            break;
- 	       case OUT_13:
- 	    	    ptim = &htim8;
- 	    	    *channel = TIM_CHANNEL_1;
- 	            break;
- 	       case OUT_14:
- 	    	     ptim = &htim8;
- 	    	     *channel = TIM_CHANNEL_2;
- 	    	     break;
- 	       case OUT_15:
- 	    	     ptim = &htim3;
- 	    	     *channel = TIM_CHANNEL_1;
- 	    	     break;
- 	       case OUT_16:
- 	    	     ptim = &htim2;
- 	    	     *channel = TIM_CHANNEL_2;
- 	    	     break;
- 	       case OUT_17:
- 	    	     ptim = &htim8;
- 	    	     *channel = TIM_CHANNEL_4;
- 	             break;
- 	       case OUT_18:
- 	    	     ptim = &htim8;
- 	    	     *channel = TIM_CHANNEL_4;
- 	             break;
- 	       case OUT_19:
- 	    	     ptim = &htim12;
- 	    	     *channel = TIM_CHANNEL_2;
- 	             break;
- 	       case OUT_20:
- 	    	     ptim = &htim4;
- 	    	     *channel = TIM_CHANNEL_1;
- 	             break;
- 	   }
 
-
- }
 

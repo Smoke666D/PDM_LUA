@@ -90,6 +90,18 @@ const osThreadAttr_t ADCTask_attributes = {
   .stack_size = sizeof(ADCTaskBuffer),
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for OutContolTask */
+osThreadId_t OutContolTaskHandle;
+uint32_t OutContolTaskBuffer[ 128 ];
+osStaticThreadDef_t OutContolTaskControlBlock;
+const osThreadAttr_t OutContolTask_attributes = {
+  .name = "OutContolTask",
+  .cb_mem = &OutContolTaskControlBlock,
+  .cb_size = sizeof(OutContolTaskControlBlock),
+  .stack_mem = &OutContolTaskBuffer[0],
+  .stack_size = sizeof(OutContolTaskBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -115,6 +127,7 @@ static void MX_I2C2_Init(void);
 void StartDefaultTask(void *argument);
 extern void vLuaTask(void *argument);
 extern void vADCTask(void *argument);
+extern void vOutContolTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -200,6 +213,9 @@ int main(void)
 
   /* creation of ADCTask */
   ADCTaskHandle = osThreadNew(vADCTask, NULL, &ADCTask_attributes);
+
+  /* creation of OutContolTask */
+  OutContolTaskHandle = osThreadNew(vOutContolTask, NULL, &OutContolTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
