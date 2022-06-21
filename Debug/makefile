@@ -18,6 +18,14 @@ RM := rm -rf
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include CanOpenNode/extra/subdir.mk
+-include CanOpenNode/PDM/subdir.mk
+-include CanOpenNode/309/subdir.mk
+-include CanOpenNode/305/subdir.mk
+-include CanOpenNode/304/subdir.mk
+-include CanOpenNode/303/subdir.mk
+-include CanOpenNode/301/subdir.mk
+-include CanOpenNode/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -81,8 +89,8 @@ all: main-build
 main-build: PDM.elf secondary-outputs
 
 # Tool invocations
-PDM.elf PDM.map: $(OBJS) $(USER_OBJS) E:\PDMwork\STM32F405ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "PDM.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\PDMwork\STM32F405ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="PDM.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+PDM.elf PDM.map: $(OBJS) $(USER_OBJS) D:\PDM_elua\STM32F405ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "PDM.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\PDM_elua\STM32F405ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="PDM.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
