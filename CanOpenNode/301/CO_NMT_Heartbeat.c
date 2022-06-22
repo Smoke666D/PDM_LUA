@@ -24,7 +24,7 @@
  */
 
 #include "301/CO_NMT_Heartbeat.h"
-#include "flash_data.h"
+//#include "flash_data.h"
 
 /*
  * Read received message from CAN module.

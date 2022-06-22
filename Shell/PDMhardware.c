@@ -8,6 +8,7 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim12;
@@ -85,7 +86,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  chan
 
     TIM_OC_InitTypeDef sConfigOC = {0};
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (uint32_t)((float)(out[out_name].power/100) * out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/100);
+	sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/100);
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -126,7 +127,7 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
    //В зависимости от номера выхода выибраетм таймер и канал таймера PWM
-   if ( power != out[out_name].PWM )
+   if ( power != 100 )
    {
    	  sConfigOC.OCMode = TIM_OCMODE_PWM1;
    	  sConfigOC.Pulse = (uint32_t )((float)power/100 * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100 ));
@@ -138,6 +139,8 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
    HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
    out_register |= 0x1<< out_name;
 }
+
+
 
 
 void vOutSet(OUT_NAME_TYPE out_name)
@@ -185,12 +188,12 @@ void vOutInit()
 	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, 20.0, 1000, 60, 100 );
 	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,8.0, 0, 8.0, 100 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
+	//vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
+//	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
+//	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
@@ -205,12 +208,12 @@ void vOutInit()
 	vHWOutSet(OUT_8,100);
 	vHWOutSet(OUT_9,100);
 	vHWOutSet(OUT_10,100);
-	vHWOutSet(OUT_11,100);
-	vHWOutSet(OUT_12,00);
+	//vHWOutSet(OUT_11,100);
+	//vHWOutSet(OUT_12,00);
 	vHWOutSet(OUT_13,100);
 	vHWOutSet(OUT_14,100);
 	vHWOutSet(OUT_15,100);
-	vHWOutSet(OUT_16,100);
+	//vHWOutSet(OUT_16,100);
 	vHWOutSet(OUT_17,100);
 	vHWOutSet(OUT_18,100);
 	vHWOutSet(OUT_19,100);
@@ -245,16 +248,29 @@ void vADCTask(void * argument)
   /* USER CODE BEGIN vADCTask */
   xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
 
+//  HAL_TIM_Base_Start_IT( &htim3 );
+  HAL_TIM_Base_Start( &htim2 );
+
+  //HAL_TIM_Base_Start_IT( &htim8 );
   /* Infinite loop */
   for(;;)
   {
-	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
-	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
-	HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-	xEventGroupWaitBits( xADCEvent, ( ADC3_READY | ADC2_READY | ADC1_READY ), pdTRUE, pdTRUE, portMAX_DELAY );
-	HAL_ADC_Stop_DMA(&hadc1);
+	  osDelay(1);
+	//HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+//	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+	  HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	  __HAL_TIM_ENABLE(&htim2);
+//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_3);
+//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_2);
+//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_1);
+	xEventGroupWaitBits( xADCEvent, ( ADC3_READY  ), pdTRUE, pdTRUE, portMAX_DELAY );
+//	HAL_ADC_Stop_DMA(&hadc1);
 	HAL_ADC_Stop_DMA(&hadc2);
-	HAL_ADC_Stop_DMA(&hadc3);
+	__HAL_TIM_DISABLE(&htim2);
+//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_3);
+//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_2);
+//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_1);
+//	HAL_ADC_Stop_DMA(&hadc3);
 	vDataConvertToFloat();
   }
   /* USER CODE END vADCTask */
@@ -423,11 +439,6 @@ void vOutContolTask(void * argument)
 }
 
 
-void vADC_Init()
-{
-
-
-}
 
  void vADC_Ready ( uint8_t adc_number )
  {
