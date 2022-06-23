@@ -88,7 +88,7 @@ typedef struct
 typedef struct
 {
 	uint16_t KOOF;
-	uint16_t Data;
+	float Data;
 } KAL_DATA;
 
 

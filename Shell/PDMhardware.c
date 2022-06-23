@@ -25,28 +25,27 @@ static float mfVData[4] ={};
 
 static uint32_t out_register;
 
-static KAL_DATA CurSensData[20][5]={
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{0U,0U},{7410U,41U},{6749U,1104U},{6570U,1888U},{6420U,3865U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-										{{3350U,18U},{3150U,196U},{3100U,800U},{3000U,1240U},{2850U,4344U}},
-};
+static KAL_DATA CurSensData[20][5]={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+										};
 
 
 static   EventGroupHandle_t xADCEvent;
@@ -78,9 +77,13 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  chan
 		//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 		if ((CurSensData[out_name][j].Data !=0) || (CurSensData[out_name][j+1].Data !=0 ))
 		{
+			float temp,temp1,temp2;
 			out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
 			out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-			out[out_name].CSC[j].b = (-1)* ((double) CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF + (double) CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF)/(CurSensData[out_name][j].Data - CurSensData[out_name][j+1].Data);
+			temp =CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF;
+			temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
+			temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
+			out[out_name].CSC[j].b = (temp1 - temp)/temp2;
 		}
 	}
 
@@ -205,19 +208,19 @@ void vOutInit()
 	//vHWOutSet(OUT_5,100);
 	//vHWOutSet(OUT_6,100);
 	//vHWOutSet(OUT_7,100);
-	//vHWOutSet(OUT_8,100);
-	//vHWOutSet(OUT_9,100);
-	//vHWOutSet(OUT_10,100);
-	//vHWOutSet(OUT_11,100);
-	//vHWOutSet(OUT_12,00);
+//	vHWOutSet(OUT_8,100);
+	vHWOutSet(OUT_9,100);
+	vHWOutSet(OUT_10,100);
+	vHWOutSet(OUT_11,100);
+	vHWOutSet(OUT_12,00);
 	vHWOutSet(OUT_13,100);
-//	vHWOutSet(OUT_14,100);
-//	vHWOutSet(OUT_15,100);
-//	vHWOutSet(OUT_16,100);
-//	vHWOutSet(OUT_17,100);
-//	vHWOutSet(OUT_18,100);
-//	vHWOutSet(OUT_19,100);
-//	vHWOutSet(OUT_20,100);
+	vHWOutSet(OUT_14,100);
+	vHWOutSet(OUT_15,100);
+	vHWOutSet(OUT_16,100);
+vHWOutSet(OUT_17,100);
+	vHWOutSet(OUT_18,100);
+	vHWOutSet(OUT_19,100);
+	vHWOutSet(OUT_20,100);
 //
 }
 
@@ -319,14 +322,13 @@ void vDataConvertToFloat( void)
 			 out[i].error_flag  = ERROR_OFF;
 			 for (uint8_t r = 0; r < 4U; r++)
 			 {
-				 float temp;
-				 if ( muRawCurData[ i ] < out[i].CSC[r].data )
+				 float temp = (float) muRawCurData [ i ]*K;
+				 if ( temp < out[i].CSC[r].data )
 				 {
-					 out[i].current =   (float) muRawCurData [ i ];
-					 out[i].current =  out[i].current * out[i].CSC[r].k;
+
+					 out[i].current =  temp * out[i].CSC[r].k;
 					 out[i].current =  out[i].current + out[i].CSC[r].b ;
-					 temp =(float) muRawCurData [ i ] *K/RR;
-					 out[i].current =  out[i].current * temp;
+					 out[i].current =  out[i].current* temp/RR;
 					 if (out[i].current > out[i].power )
 					 {
 						 out[i].error_flag = ERROR_OVERLOAD;
