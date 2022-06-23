@@ -79,8 +79,8 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  chan
 		if ((CurSensData[out_name][j].Data !=0) || (CurSensData[out_name][j+1].Data !=0 ))
 		{
 			out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-			out[out_name].CSC[j].k = ( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) / ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-			out[out_name].CSC[j].b = ( CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF - CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF)/(CurSensData[out_name][j].Data + CurSensData[out_name][j+1].Data);
+			out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
+			out[out_name].CSC[j].b = (-1)* ((double) CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF + (double) CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF)/(CurSensData[out_name][j].Data - CurSensData[out_name][j+1].Data);
 		}
 	}
 
@@ -174,9 +174,9 @@ void vOutInit()
 {
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_SET);
+	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_RESET);
 
 	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, 20.0, 1000, 60, 100 );
 	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, 20.0, 1000, 60, 100 );
@@ -188,37 +188,37 @@ void vOutInit()
 	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, 20.0, 1000, 60, 100 );
 	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,8.0, 0, 8.0, 100 );
-	//vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
-//	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
-//	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, 8.0, 0, 8.0, 100 );
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, 8.0, 0, 8.0, 100 );
-	vHWOutSet(OUT_1,100);
-	vHWOutSet(OUT_2,100);
-	vHWOutSet(OUT_3,100);
-	vHWOutSet(OUT_4,100);
-	vHWOutSet(OUT_5,100);
-	vHWOutSet(OUT_6,100);
-	vHWOutSet(OUT_7,100);
-	vHWOutSet(OUT_8,100);
-	vHWOutSet(OUT_9,100);
-	vHWOutSet(OUT_10,100);
+	//vHWOutSet(OUT_1,100);
+	//vHWOutSet(OUT_2,100);
+	//vHWOutSet(OUT_3,100);
+	//vHWOutSet(OUT_4,100);
+	//vHWOutSet(OUT_5,100);
+	//vHWOutSet(OUT_6,100);
+	//vHWOutSet(OUT_7,100);
+	//vHWOutSet(OUT_8,100);
+	//vHWOutSet(OUT_9,100);
+	//vHWOutSet(OUT_10,100);
 	//vHWOutSet(OUT_11,100);
 	//vHWOutSet(OUT_12,00);
 	vHWOutSet(OUT_13,100);
-	vHWOutSet(OUT_14,100);
-	vHWOutSet(OUT_15,100);
-	//vHWOutSet(OUT_16,100);
-	vHWOutSet(OUT_17,100);
-	vHWOutSet(OUT_18,100);
-	vHWOutSet(OUT_19,100);
-	vHWOutSet(OUT_20,100);
-
+//	vHWOutSet(OUT_14,100);
+//	vHWOutSet(OUT_15,100);
+//	vHWOutSet(OUT_16,100);
+//	vHWOutSet(OUT_17,100);
+//	vHWOutSet(OUT_18,100);
+//	vHWOutSet(OUT_19,100);
+//	vHWOutSet(OUT_20,100);
+//
 }
 
 
@@ -247,30 +247,17 @@ void vADCTask(void * argument)
 {
   /* USER CODE BEGIN vADCTask */
   xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
-
-//  HAL_TIM_Base_Start_IT( &htim3 );
-  HAL_TIM_Base_Start( &htim2 );
-
-  //HAL_TIM_Base_Start_IT( &htim8 );
   /* Infinite loop */
   for(;;)
   {
 	  osDelay(1);
-	//HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
-//	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
-	  HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-	  __HAL_TIM_ENABLE(&htim2);
-//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_3);
-//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_2);
-//	HAL_TIM_OC_Start_IT( &htim5, TIM_CHANNEL_1);
-	xEventGroupWaitBits( xADCEvent, ( ADC3_READY  ), pdTRUE, pdTRUE, portMAX_DELAY );
-//	HAL_ADC_Stop_DMA(&hadc1);
+	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+    HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	xEventGroupWaitBits( xADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, portMAX_DELAY );
+	HAL_ADC_Stop_DMA(&hadc1);
 	HAL_ADC_Stop_DMA(&hadc2);
-	__HAL_TIM_DISABLE(&htim2);
-//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_3);
-//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_2);
-//	HAL_TIM_OC_Stop_IT( &htim5, TIM_CHANNEL_1);
-//	HAL_ADC_Stop_DMA(&hadc3);
+	HAL_ADC_Stop_DMA(&hadc3);
 	vDataConvertToFloat();
   }
   /* USER CODE END vADCTask */
@@ -285,6 +272,7 @@ void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex,
 	uint32_t temp;
 	for (uint8_t i=0;i<Size;i++)
 	{
+		temp = 0;
 		for (uint8_t j=0;j<FrameSize;j++)
 		{
 		  temp = temp + InData[InIndex+i+j*BufferSize];
@@ -313,7 +301,7 @@ void vDataConvertToFloat( void)
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 1-3
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U ,ADC_FRAME_SIZE,ADC3_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 13-18
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 5U ,ADC_FRAME_SIZE,ADC1_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 5U ,ADC_FRAME_SIZE,ADC3_CHANNELS);
 	 //Преобразование во флоат данных AIN
 	 for ( i = 0; i < 4U; i++ )
 	 {
@@ -331,9 +319,14 @@ void vDataConvertToFloat( void)
 			 out[i].error_flag  = ERROR_OFF;
 			 for (uint8_t r = 0; r < 4U; r++)
 			 {
+				 float temp;
 				 if ( muRawCurData[ i ] < out[i].CSC[r].data )
 				 {
-					 out[i].current = ( (float) muRawCurData [ i ] * out[i].CSC[r].k  + out[i].CSC[r].b ) *K /RR;
+					 out[i].current =   (float) muRawCurData [ i ];
+					 out[i].current =  out[i].current * out[i].CSC[r].k;
+					 out[i].current =  out[i].current + out[i].CSC[r].b ;
+					 temp =(float) muRawCurData [ i ] *K/RR;
+					 out[i].current =  out[i].current * temp;
 					 if (out[i].current > out[i].power )
 					 {
 						 out[i].error_flag = ERROR_OVERLOAD;

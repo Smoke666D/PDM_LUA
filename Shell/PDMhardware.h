@@ -25,7 +25,7 @@
 #define ADC_FRAME_SIZE     3U
 #define R2  10000
 #define R1  140000
-#define RR  1000
+#define RR  1000.0
 #define K   ( 3.3 / 0xFFF )
 #define COOF  R1 / ( R1 + R2 ) * K
 

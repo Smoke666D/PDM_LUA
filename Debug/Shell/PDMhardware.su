@@ -1,4 +1,4 @@
-../Shell/PDMhardware.c:61:6:vHWOutInit	72	static
+../Shell/PDMhardware.c:61:6:vHWOutInit	96	static
 ../Shell/PDMhardware.c:101:6:vHWOutOverloadConfig	24	static
 ../Shell/PDMhardware.c:109:6:vHWOutResetConfig	16	static
 ../Shell/PDMhardware.c:119:6:vHWOutResete	16	static
@@ -9,7 +9,7 @@
 ../Shell/PDMhardware.c:173:6:vOutInit	16	static
 ../Shell/PDMhardware.c:225:6:vADCInit	4	static
 ../Shell/PDMhardware.c:246:6:vADCTask	24	static
-../Shell/PDMhardware.c:283:6:vGetAverDataFromRAW	32	static
-../Shell/PDMhardware.c:300:6:vDataConvertToFloat	40	static
-../Shell/PDMhardware.c:349:6:vOutContolTask	32	static
-../Shell/PDMhardware.c:443:7:vADC_Ready	16	static,ignoring_inline_asm
+../Shell/PDMhardware.c:270:6:vGetAverDataFromRAW	32	static
+../Shell/PDMhardware.c:288:6:vDataConvertToFloat	40	static
+../Shell/PDMhardware.c:342:6:vOutContolTask	32	static
+../Shell/PDMhardware.c:436:7:vADC_Ready	16	static,ignoring_inline_asm
