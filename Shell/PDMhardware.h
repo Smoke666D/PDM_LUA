@@ -9,12 +9,19 @@
 #define PDMHARDWARE_H_
 
 #include "main.h"
-#include "FreeRTOS.h"
-#include "cmsis_os.h"
-#include "event_groups.h"
 
 
-#define OUT_COUNT         20U
+
+#define OUT_COUNT           20U    //Колчество каналов
+#define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
+#define DEFAULT_HPOWER      20.0  // Номинальный ток для мощных каналов
+#define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
+#define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
+#define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
+#define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
+#define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
+#define DEFAULT_PWM				100U
+
 #define ADC1_READY         0x01
 #define ADC2_READY         0x02
 #define ADC3_READY         0x04
@@ -119,7 +126,7 @@ typedef enum {
 
 } OUT_NAME_TYPE;
 
-
+void vOutState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 void vOutContolTask(void * argument);
@@ -128,5 +135,7 @@ void vHWOutResete( OUT_NAME_TYPE out_name);
 void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
 void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  float power, uint16_t overload_timer, float overload_power, uint8_t PWM);
 void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
-
+void vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
+void vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
+void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 #endif /* PDMHARDWARE_H_ */

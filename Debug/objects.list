@@ -98,4 +98,5 @@
 "./Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.o"
 "./Shell/PDMhardware.o"
 "./Shell/luatask.o"
+"./Shell/pdm_lua_lib.o"
 "./Shell/script.o"

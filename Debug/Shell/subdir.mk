@@ -7,16 +7,19 @@
 C_SRCS += \
 ../Shell/PDMhardware.c \
 ../Shell/luatask.c \
+../Shell/pdm_lua_lib.c \
 ../Shell/script.c 
 
 C_DEPS += \
 ./Shell/PDMhardware.d \
 ./Shell/luatask.d \
+./Shell/pdm_lua_lib.d \
 ./Shell/script.d 
 
 OBJS += \
 ./Shell/PDMhardware.o \
 ./Shell/luatask.o \
+./Shell/pdm_lua_lib.o \
 ./Shell/script.o 
 
 
@@ -27,7 +30,7 @@ Shell/%.o Shell/%.su: ../Shell/%.c Shell/subdir.mk
 clean: clean-Shell
 
 clean-Shell:
-	-$(RM) ./Shell/PDMhardware.d ./Shell/PDMhardware.o ./Shell/PDMhardware.su ./Shell/luatask.d ./Shell/luatask.o ./Shell/luatask.su ./Shell/script.d ./Shell/script.o ./Shell/script.su
+	-$(RM) ./Shell/PDMhardware.d ./Shell/PDMhardware.o ./Shell/PDMhardware.su ./Shell/luatask.d ./Shell/luatask.o ./Shell/luatask.su ./Shell/pdm_lua_lib.d ./Shell/pdm_lua_lib.o ./Shell/pdm_lua_lib.su ./Shell/script.d ./Shell/script.o ./Shell/script.su
 
 .PHONY: clean-Shell
 

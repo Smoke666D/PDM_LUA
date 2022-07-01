@@ -1,5 +1,5 @@
-Shell/luatask.o: ../Shell/luatask.c ../Shell/luatask.h ../Core/Inc/main.h \
- ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
+ ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -37,7 +37,7 @@ Shell/luatask.o: ../Shell/luatask.c ../Shell/luatask.h ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h ../LUA/lua.h \
  ../LUA/luaconf.h ../LUA/luaProjectConfig.h ../LUA/luaeHeap.h \
- ../LUA/lauxlib.h ../LUA/lua.h ../LUA/lualib.h \
+ ../LUA/lauxlib.h ../LUA/lua.h ../LUA/lualib.h ../Shell/PDMhardware.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
@@ -46,6 +46,7 @@ Shell/luatask.o: ../Shell/luatask.c ../Shell/luatask.h ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
  ../Shell/script.c ../Shell/script.h
+../LUA/lprefix.h:
 ../Shell/luatask.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -92,6 +93,7 @@ Shell/luatask.o: ../Shell/luatask.c ../Shell/luatask.h ../Core/Inc/main.h \
 ../LUA/lauxlib.h:
 ../LUA/lua.h:
 ../LUA/lualib.h:
+../Shell/PDMhardware.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 ../Core/Inc/FreeRTOSConfig.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:

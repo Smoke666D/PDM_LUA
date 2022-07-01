@@ -75,7 +75,7 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t luaTaskHandle;
 const osThreadAttr_t luaTask_attributes = {
   .name = "luaTask",
-  .stack_size = 128 * 4,
+  .stack_size = 2000 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for ADCTask */
