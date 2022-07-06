@@ -45,7 +45,7 @@ Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
- ../Shell/script.c ../Shell/script.h
+ ../Shell/cantask.h ../Shell/script.c ../Shell/script.h
 ../LUA/lprefix.h:
 ../Shell/luatask.h:
 ../Core/Inc/main.h:
@@ -101,5 +101,6 @@ Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+../Shell/cantask.h:
 ../Shell/script.c:
 ../Shell/script.h:

@@ -31,14 +31,6 @@ CPP_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-CanOpenNode/301 \
-CanOpenNode/303 \
-CanOpenNode/304 \
-CanOpenNode/305 \
-CanOpenNode/309 \
-CanOpenNode \
-CanOpenNode/PDM \
-CanOpenNode/extra \
 Core/Src \
 Core/Startup \
 Drivers/STM32F4xx_HAL_Driver/Src \

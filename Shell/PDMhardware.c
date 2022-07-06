@@ -58,70 +58,155 @@ static   StaticEventGroup_t xOutCreatedEventGroup;
 void vDataConvertToFloat(void);
 void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
 
-
-
-
-
-void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  float power, uint16_t overload_timer, float overload_power, uint8_t PWM)
+uint16_t system_timer = 0;
+uint16_t timer = 0;
+uint8_t overload =0;
+void SystemTimer(void)
 {
-	out[out_name].ptim = ptim;
-	out[out_name].channel = channel;
-	out[out_name].power = power;
-	out[out_name].overload_power = overload_power;
-	out[out_name].overload_config_timer = overload_timer;
-	out[out_name].overload_timer = 0;
-	out[out_name].out_logic_state =OUT_OFF;
-	out[out_name].out_state =STATE_OUT_OFF;
-	out[out_name].error_flag = ERROR_OFF;
-	out[out_name].error_count = 0;
-	out[out_name].restart_timer =0;
-	out[out_name].restart_config_timer =1000;
-	out[out_name].PWM = PWM;
-	for (uint8_t j=0; j< 4U; j++)
+	system_timer ++;
+	if (system_timer  >= 65000)
 	{
-		//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
-		if ((CurSensData[out_name][j].Data !=0) || (CurSensData[out_name][j+1].Data !=0 ))
+	 system_timer = 0;
+	 overload = 1;
+	}
+}
+uint16_t GetTimer(void)
+{
+ uint16_t delay;
+ if (overload)
+ {
+	 overload = 0;
+	 delay = 65000- timer + system_timer;
+ }
+ else
+ {
+	 delay = system_timer-timer;
+ }
+ timer = system_timer;
+ return delay;
+}
+
+
+void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM)
+{
+	if ( (out_name) < OUT_COUNT )
+	{
+		out[out_name].ptim = ptim;
+		out[out_name].channel = channel;
+		out[out_name].out_logic_state =OUT_OFF;
+		out[out_name].out_state		 =	STATE_OUT_OFF;
+		if (out_name < OUT_HPOWER_COUNT)
 		{
-			float temp,temp1,temp2;
-			out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-			out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-			temp =CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF;
-			temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
-			temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
-			out[out_name].CSC[j].b = (temp1 - temp)/temp2;
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
+		}
+		else
+		{
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX);
+		}
+		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
+		vOutSetPWM(out_name, DEFAULT_PWM);
+
+		out[out_name].error_flag = ERROR_OFF;
+		for (uint8_t j=0; j< 4U; j++)
+		{
+			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
+			if ((CurSensData[out_name][j].Data !=0) || (CurSensData[out_name][j+1].Data !=0 ))
+			{
+				float temp,temp1,temp2;
+				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
+				out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
+				temp =CurSensData[out_name][j].Data * CurSensData[out_name][j+1].KOOF;
+				temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
+				temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
+				out[out_name].CSC[j].b = (temp1 - temp)/temp2;
+			}
+		}
+		TIM_OC_InitTypeDef sConfigOC = {0};
+		sConfigOC.OCMode = TIM_OCMODE_PWM1;
+		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/100);
+		sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+		sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+		sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+		sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+		sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+		if (HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) != HAL_OK)
+		{
+			Error_Handler();
 		}
 	}
+}
+/*
+ * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
+ */
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power)
+{
+   ERROR_CODE res = INVALID_ARG;
 
-    TIM_OC_InitTypeDef sConfigOC = {0};
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/100);
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	if (HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) != HAL_OK)
+	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
 	{
-	    Error_Handler();
+		xEventGroupSetBits (xOutEvent, ( 0x1 < out_name) );
+		if ( (overload_timer <= MAX_OVERLOAD_TIMER) && (
+					((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
+					((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ) )
+			   )
+			{
+			    out[out_name].overload_timer = 0;
+				out[out_name].power = power;
+				out[out_name].overload_config_timer = overload_timer;
+				out[out_name].overload_power = overload_power;
+				res = ERROR_OK;
+			}
+		xEventGroupClearBits (xOutEvent, ( 0x1 <out_name) );
 	}
+	return res;
 }
 
-void vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power)
+/*
+ * Функция конфигурации режима рестарта
+ */
+ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer)
 {
-    xEventGroupSetBits (xOutEvent, ( 0x1 < out_name) );
-    out[out_name].overload_config_timer = overload_timer;
-	out[out_name].power = power;
-	out[out_name].overload_power = overload_power;
-	xEventGroupClearBits (xOutEvent, ( 0x1 <out_name) );
+	ERROR_CODE res = INVALID_ARG;
+
+	if ((out_name < OUT_COUNT) && (timer<= MAX_RESET_TIMER ))     //Проверяем корекность номера канала
+	{
+		xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
+		out[out_name].error_count = restart_count;
+		out[out_name].restart_timer =0;
+		out[out_name].restart_config_timer =timer;
+		res = ERROR_OK;
+		xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
+	}
+	return res;
 }
-void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer)
+
+/*
+ * Функция конфигурации режима PWM
+ */
+ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 {
-	xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
-	out[out_name].error_count = restart_count;
-	out[out_name].restart_timer =0;
-	out[out_name].restart_config_timer =timer;
-	xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
+	ERROR_CODE res = INVALID_ARG;
+	if ((out_name <  OUT_COUNT ) && (PWM <=MAX_PWM)) //Проверяем коректность агрументов
+	{
+		xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
+		out[out_name].PWM = PWM;
+		if (out[out_name].out_logic_state == OUT_ON)   //Если выход в логическом включенном режиме
+		{
+			if (out[out_name].out_state == STATE_OUT_ON) //Если выход вклчюен и не находится в каком-то переходном процессе
+			{
+				vHWOutSet( out_name, 100);
+			}
+		}
+		else
+		{
+			out[out_name].out_state = STATE_OUT_OFF;
+		}
+		res = ERROR_OK;
+		xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
+	}
+	return res;
 }
+
 
 
 void vHWOutResete( OUT_NAME_TYPE out_name)
@@ -134,16 +219,12 @@ void vHWOutResete( OUT_NAME_TYPE out_name)
 void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
-   //В зависимости от номера выхода выибраетм таймер и канал таймера PWM
-   if ( power != 100 )
-   {
-   	  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   	  sConfigOC.Pulse = (uint32_t )((float)power/100 * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100 ));
-   	  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-   	  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-   	  HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
-
-   }
+   sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   sConfigOC.Pulse = (uint32_t )((float)power/100 * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100 ));
+   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
+   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
    HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
    out_register |= 0x1<< out_name;
 }
@@ -167,22 +248,6 @@ void vOutReset(OUT_NAME_TYPE out_name)
 	out[out_name].out_logic_state = OUT_OFF;
 }
 
-void vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
-{
-	out[out_name].PWM = PWM;
-	if (out[out_name].out_logic_state == OUT_ON)
-	{
-	   if (out[out_name].out_state == STATE_OUT_ON)
-	   {
-		  vHWOutSet( out_name, 100);
-	   }
-	}
-	else
-	{
-		out[out_name].out_state = STATE_OUT_OFF;
-	}
-}
-
 
 
 void vOutInit()
@@ -193,45 +258,27 @@ void vOutInit()
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_RESET);
 
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, DEFAULT_HPOWER, DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, DEFAULT_HPOWER, DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, DEFAULT_HPOWER , DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, DEFAULT_LPOWER, DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX ,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX,  DEFAULT_PWM  );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX,  DEFAULT_PWM  );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, DEFAULT_LPOWER , DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX,  DEFAULT_PWM	 );
-	//vHWOutSet(OUT_1,100);
-	//vHWOutSet(OUT_2,100);
-	//vHWOutSet(OUT_3,100);
-	//vHWOutSet(OUT_4,100);
-	//vHWOutSet(OUT_5,100);
-	//vHWOutSet(OUT_6,100);
-	//vHWOutSet(OUT_7,100);
-    vOutState(OUT_9,100);
-	vHWOutSet(OUT_10,100);
-	vHWOutSet(OUT_11,100);
-	vHWOutSet(OUT_12,00);
-	vHWOutSet(OUT_13,100);
-	vHWOutSet(OUT_14,100);
-	vHWOutSet(OUT_15,100);
-	vHWOutSet(OUT_16,100);
-vHWOutSet(OUT_17,100);
-	vHWOutSet(OUT_18,100);
-	vHWOutSet(OUT_19,100);
-	vHWOutSet(OUT_20,100);
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3,  DEFAULT_PWM	);
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, DEFAULT_PWM	 );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4,  DEFAULT_PWM  );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,  DEFAULT_PWM  );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1,   DEFAULT_PWM	 );
+	 HAL_TIM_Base_Start_IT(&htim2);
 //
 }
 

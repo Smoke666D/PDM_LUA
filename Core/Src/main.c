@@ -23,10 +23,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "PDMhardware.h"
+#include "cantask.h"
+#include "CO_driver_ST32F4xx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -41,7 +44,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
 DMA_HandleTypeDef hdma_adc1;
@@ -102,6 +105,40 @@ const osThreadAttr_t OutContolTask_attributes = {
   .stack_size = sizeof(OutContolTaskBuffer),
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for CanTask */
+osThreadId_t CanTaskHandle;
+uint32_t CanTaskBuffer[ 128 ];
+osStaticThreadDef_t CanTaskControlBlock;
+const osThreadAttr_t CanTask_attributes = {
+  .name = "CanTask",
+  .cb_mem = &CanTaskControlBlock,
+  .cb_size = sizeof(CanTaskControlBlock),
+  .stack_mem = &CanTaskBuffer[0],
+  .stack_size = sizeof(CanTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for CanTX */
+osMessageQueueId_t CanTXHandle;
+uint8_t CanTXBuffer[ 16 * sizeof( CO_CANtx_t ) ];
+osStaticMessageQDef_t CanTXControlBlock;
+const osMessageQueueAttr_t CanTX_attributes = {
+  .name = "CanTX",
+  .cb_mem = &CanTXControlBlock,
+  .cb_size = sizeof(CanTXControlBlock),
+  .mq_mem = &CanTXBuffer,
+  .mq_size = sizeof(CanTXBuffer)
+};
+/* Definitions for CanRX */
+osMessageQueueId_t CanRXHandle;
+uint8_t CanRXBuffer[ 16 * sizeof( CAN_FRAME_TYPE ) ];
+osStaticMessageQDef_t CanRXControlBlock;
+const osMessageQueueAttr_t CanRX_attributes = {
+  .name = "CanRX",
+  .cb_mem = &CanRXControlBlock,
+  .cb_size = sizeof(CanRXControlBlock),
+  .mq_mem = &CanRXBuffer,
+  .mq_size = sizeof(CanRXBuffer)
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -128,6 +165,7 @@ void StartDefaultTask(void *argument);
 extern void vLuaTask(void *argument);
 extern void vADCTask(void *argument);
 extern void vOutContolTask(void *argument);
+extern void vCanTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -200,6 +238,13 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of CanTX */
+  CanTXHandle = osMessageQueueNew (16, sizeof(CO_CANtx_t), &CanTX_attributes);
+
+  /* creation of CanRX */
+  CanRXHandle = osMessageQueueNew (16, sizeof(CAN_FRAME_TYPE), &CanRX_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -216,6 +261,9 @@ int main(void)
 
   /* creation of OutContolTask */
   OutContolTaskHandle = osThreadNew(vOutContolTask, NULL, &OutContolTask_attributes);
+
+  /* creation of CanTask */
+  CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -646,11 +694,11 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_15TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_5TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
@@ -808,10 +856,10 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 42;
+  htim2.Init.Prescaler = 84;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10000;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+  htim2.Init.Period = 1000;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {

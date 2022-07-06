@@ -14,13 +14,22 @@
 
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
-#define DEFAULT_HPOWER      20.0  // Номинальный ток для мощных каналов
+#define DEFAULT_HPOWER      20.0  // Номинальный ток по умолчания для мощных каналов
+#define MAX_HPOWER			20.0  // Максимальный номинальый ток для мощных каналов
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
+#define MAX_LPOWER			8.0  //Максимальный номинальый ток для маломощных каналов
 #define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
+#define MAX_OVERLOAD_TIMER             32767U //Максимальное время плавного пуска для мощных каналов
 #define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
 #define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
+#define MAX_OVERLOAD_HPOWER             60.0 // Максиальный пусковой ток мощных каналов
 #define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
+#define MAX_OVERLOAD_LPOWER             10.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
+#define MAX_PWM				100U
+#define DEFAULT_RESET_TIMER		1000U
+#define DEFAULT_RESET_COUNTER	0U
+#define MAX_RESET_TIMER         32767U
 
 #define ADC1_READY         0x01
 #define ADC2_READY         0x02
@@ -46,6 +55,12 @@
 #define		STATE_OUT_CONFIG		  0x20
 
 #define START_POWER	30U //Мощность при начала плавного пуска
+
+//Результаты выполнения функций
+typedef enum {
+  ERROR_OK = 0,
+  INVALID_ARG = 1,
+} ERROR_CODE;
 
 //Ошибки состония выхода
 typedef enum {
@@ -133,9 +148,10 @@ void vOutContolTask(void * argument);
 void vOutContolTask(void * argument);
 void vHWOutResete( OUT_NAME_TYPE out_name);
 void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
-void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  float power, uint16_t overload_timer, float overload_power, uint8_t PWM);
-void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
-void vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
-void vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
-void vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
+void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM);
+ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
+ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
+void SystemTimer(void);
+uint16_t GetTimer(void);
 #endif /* PDMHARDWARE_H_ */
