@@ -1,8 +1,0 @@
-../Shell/cantask.c:31:6:InitMailBoxBuffer	16	static
-../Shell/cantask.c:40:6:SetWaitFilter	16	static
-../Shell/cantask.c:45:6:SetMailboxFilter	24	static
-../Shell/cantask.c:57:6:ResetMailboxFilter	24	static
-../Shell/cantask.c:71:6:vCanInsertRXData	40	static
-../Shell/cantask.c:98:6:vCanReciveData	16	static
-../Shell/cantask.c:105:6:vCanInsertTXData	56	static
-../Shell/cantask.c:121:6:vCanTask	64	static

@@ -1,6 +1,0 @@
-../Shell/luatask.c:28:5:CanSendRequest	48	static
-../Shell/luatask.c:54:5:CanSendPDM	40	static
-../Shell/luatask.c:76:6:OutConfig	40	static
-../Shell/luatask.c:92:6:OutResetConfig	32	static
-../Shell/luatask.c:108:6:OutSetPWM	32	static
-../Shell/luatask.c:147:6:vLuaTask	72	static
