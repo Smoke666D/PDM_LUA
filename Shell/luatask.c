@@ -9,6 +9,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
+#include "lapi.h"
 #include "PDMhardware.h"
 #include "FreeRTOS.h"
 #include "cantask.h"

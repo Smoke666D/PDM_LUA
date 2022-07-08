@@ -1,5 +1,4 @@
 DOC/dm00031020.pdf
-DOC/~$Электронная таблица OpenDocument.ods
 
 Debug/
 Release/
@@ -10,6 +9,7 @@ reports/
 # Tempory
 *.pyc
 *.ods
+~$*
 # Archives
 *.rar
 *.tar

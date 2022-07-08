@@ -37,7 +37,9 @@ Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h ../LUA/lua.h \
  ../LUA/luaconf.h ../LUA/luaProjectConfig.h ../LUA/luaeHeap.h \
- ../LUA/lauxlib.h ../LUA/lua.h ../LUA/lualib.h ../Shell/PDMhardware.h \
+ ../LUA/lauxlib.h ../LUA/lua.h ../LUA/lualib.h ../LUA/lapi.h \
+ ../LUA/llimits.h ../LUA/lstate.h ../LUA/lobject.h ../LUA/ltm.h \
+ ../LUA/lzio.h ../LUA/lmem.h ../Shell/PDMhardware.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
@@ -93,6 +95,13 @@ Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
 ../LUA/lauxlib.h:
 ../LUA/lua.h:
 ../LUA/lualib.h:
+../LUA/lapi.h:
+../LUA/llimits.h:
+../LUA/lstate.h:
+../LUA/lobject.h:
+../LUA/ltm.h:
+../LUA/lzio.h:
+../LUA/lmem.h:
 ../Shell/PDMhardware.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 ../Core/Inc/FreeRTOSConfig.h:
