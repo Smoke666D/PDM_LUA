@@ -27,7 +27,7 @@
 
 
 #include "CO_driver_ST32F4xx.h"
-
+#include "cantask.h"
 
 /* CAN masks for identifiers */
 #define CANID_MASK                              0x07FF  /*!< CAN standard ID mask */
@@ -509,68 +509,35 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 }
 
 
-static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo) {
+static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo)
+{
     static CAN_RxHeaderTypeDef rx;
-    static CO_CANrxMsg_t rcvMsg;
-    CO_CANrx_t *buffer = NULL;              /* receive message buffer from CO_CANmodule_t object. */
-    uint16_t index;                         /* index of received message */
-    uint32_t rcvMsgIdent;                   /* identifier of the received message */
-    uint8_t messageFound = 0;
-
+    CAN_FRAME_TYPE rx_message;
     /* Read received message from FIFO */
-    if (HAL_CAN_GetRxMessage(can, fifo, &rx, rcvMsg.data) != HAL_OK)
+    if (HAL_CAN_GetRxMessage(can, fifo, &rx, rx_message.data) != HAL_OK)
     {
         return;
     }
-
-    /* Setup identifier (with RTR) and length */
-    rcvMsg.ident = rx.StdId  | (rx.RTR == CAN_RTR_REMOTE ? FLAG_RTR : 0x00);
-    rcvMsg.dlc = rx.DLC;
-    rcvMsgIdent = rcvMsg.ident;
-
-    /*
-     * Hardware filters are not used for the moment
-     * \todo: Implement hardware filters...
-     */
-    if (CANModule_local->useCANrxFilters) {
-
-    	buffer = CANModule_local->rxArray;
-    	        for (index = CANModule_local->rxSize; index > 0U; --index, ++buffer) {
-    	            if (((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U) {
-    	                messageFound = 1;
-    	                break;
-    	            }
-    	        }
-
-
-    } else {
-        /*
-         * We are not using hardware filters, hence it is necessary
-         * to manually match received message ID with all buffers
-         */
-        buffer = CANModule_local->rxArray;
-        for (index = CANModule_local->rxSize; index > 0U; --index, ++buffer) {
-            if (((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U) {
-                messageFound = 1;
-                break;
-            }
-        }
+    //Игнорируем RTR фрайм, поскольку у него нет данных для нас.
+    if ( rx.RTR !=CAN_RTR_REMOTE )
+    {
+    	rx_message.ident = rx.StdId;
+    	rx_message.DLC = rx.DLC;
+    	vCanInsertToRXQueue(& rx_message);
     }
-
-    /* Call specific function, which will process the message */
-    if (messageFound && buffer != NULL && buffer->CANrx_callback != NULL) {
-        buffer->CANrx_callback(buffer->object, (void*) &rcvMsg);
-    }
+    return;
 }
 
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	prv_read_can_received_msg(hcan, CAN_RX_FIFO0);
+	return;
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	prv_read_can_received_msg(hcan, CAN_RX_FIFO1);
+	return;
 }
 

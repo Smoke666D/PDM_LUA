@@ -49,7 +49,7 @@ Shell/CO_driver_ST32F4xx.o: ../Shell/CO_driver_ST32F4xx.c \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Shell/CO_driver.h ../Shell/CO_driver_target.h \
- ../Drivers/CMSIS/Include/cmsis_gcc.h
+ ../Drivers/CMSIS/Include/cmsis_gcc.h ../Shell/cantask.h
 ../Shell/CO_driver_ST32F4xx.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -103,3 +103,4 @@ Shell/CO_driver_ST32F4xx.o: ../Shell/CO_driver_ST32F4xx.c \
 ../Shell/CO_driver.h:
 ../Shell/CO_driver_target.h:
 ../Drivers/CMSIS/Include/cmsis_gcc.h:
+../Shell/cantask.h:
