@@ -14,7 +14,7 @@
 #endif
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      2U
+#define CLI_TARGETS_NUMBER      3U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -31,8 +31,10 @@
 #define CLI_RESET_COMMAND_STR   "reset"
 #define CLI_GET_COMMAND_STR     "get"
 
+#define CLI_TARGET_VERSION_STR  "version"
 #define CLI_TARGET_DOUT_STR     "dout"
 #define CLI_TARGET_CURRENT_STR  "current"
+
 
 #define CLI_DIO_ON_STR          "on"
 #define CLI_DIO_OFF_STR         "off"
@@ -48,7 +50,8 @@ typedef enum
 {
   CLI_VERSION_BOOTLOADER,
   CLI_VERSION_FIRMWARE,
-  CLI_VERSION_HARDWARE
+  CLI_VERSION_HARDWARE,
+  CLI_VERSION_LUA
 } CLI_VERSION;
 
 typedef enum
@@ -71,8 +74,9 @@ typedef enum
 typedef enum
 {
   CLI_TARGET_NO,      /* 00 no */
-  CLI_TARGET_DOUT,    /* 01 get & set */
-  CLI_TARGET_CURRENT, /* 02 get */
+  CLI_TARGET_VERSION, /* 01 get */
+  CLI_TARGET_DOUT,    /* 02 get & set */
+  CLI_TARGET_CURRENT, /* 03 get */
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

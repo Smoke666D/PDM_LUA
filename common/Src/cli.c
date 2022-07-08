@@ -17,6 +17,7 @@ static const char* const commandStrings[CLI_COMMANDS_NUMBER] = {
   CLI_GET_COMMAND_STR
 };
 static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
+  CLI_TARGET_VERSION_STR,
   CLI_TARGET_DOUT_STR,
   CLI_TARGET_CURRENT_STR
 };
@@ -268,6 +269,13 @@ CLI_STATUS vCLIprocess ( const char* str, uint8_t length )
                 break;
               case CLI_VERSION_HARDWARE:
                 message.length = uCLIversionToStr( ( const uint16_t* )( versionBootloader.value ), message.out );
+                break;
+              case CLI_VERSION_LUA:
+                ( void )memset( message.out, 0U, 8U );
+                ( void )strcat( message.out, LUA_VERSION_MAJOR );
+                ( void )strcat( message.out, "." );
+                ( void )strcat( message.out, LUA_VERSION_MINOR );
+                message.length = ( uint8_t )strlen( message.out );
                 break;
               default:
                 res = CLI_STATUS_ERROR_DATA;
