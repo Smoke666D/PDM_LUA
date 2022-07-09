@@ -1,9 +1,10 @@
 ../Shell/luatask.c:30:5:CanSetResiveFilter	24	static
 ../Shell/luatask.c:40:5:CanCheckData	24	static
-../Shell/luatask.c:52:5:CnaGetResivedData	40	static
-../Shell/luatask.c:82:5:CanSendRequest	48	static
-../Shell/luatask.c:108:5:CanSendPDM	40	static
-../Shell/luatask.c:130:6:OutConfig	40	static
-../Shell/luatask.c:146:6:OutResetConfig	32	static
-../Shell/luatask.c:162:6:OutSetPWM	32	static
-../Shell/luatask.c:247:6:vLuaTask	72	static
+../Shell/luatask.c:52:5:CanGetMessage	40	static
+../Shell/luatask.c:73:5:CanGetResivedData	40	static
+../Shell/luatask.c:103:5:CanSendRequest	48	static
+../Shell/luatask.c:129:5:CanSendPDM	40	static
+../Shell/luatask.c:151:6:OutConfig	40	static
+../Shell/luatask.c:167:6:OutResetConfig	32	static
+../Shell/luatask.c:183:6:OutSetPWM	32	static
+../Shell/luatask.c:335:6:vLuaTask	72	static

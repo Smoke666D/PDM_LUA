@@ -49,32 +49,53 @@ int CanCheckData(lua_State *L )
 	return 1;
 
 }
-int CnaGetResivedData(lua_State *L )
+int CanGetMessage(lua_State *L )
 {
-	uint32_t id;
 	uint8_t n;
 	CAN_FRAME_TYPE  RXPacket;
 	if (lua_gettop(L) >= 1U )  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
 				RXPacket.ident = (uint32_t) lua_tointeger(L,-1);
-				if (vCanCheckMessage(&RXPacket, 0) == 1)
+				if ( vCanGetMessage(&RXPacket, 0) != 0)
 				{
-					n = luaL_len(L, 1);
+
+						n = RXPacket.DLC;
+						for (int i = 0; i <n;i++)
+						{
+							lua_pushnumber(L,RXPacket.data[i]);
+						}
+					}
+	}
+	return n;
+
+}
+
+int CanGetResivedData(lua_State *L )
+{
+	uint32_t id;
+	uint8_t n;
+
+	CAN_FRAME_TYPE  RXPacket;
+	if (lua_gettop(L) >= 1U )  //Проверяем, что при вызове нам передали нужное число аргументов
+	{
+		        luaL_checktype(L, -1, LUA_TTABLE);
+				RXPacket.ident = (uint32_t) lua_tointeger(L,-2);
+				if ( vCanGetMessage(&RXPacket, 0) == 1)
+				{
+					n = luaL_len(L, -1);
 					for (int i = 1; i<(n+1);i++)
 					{
-						lua_pushnumber(L,RXPacket.data[i]);
-						lua_rawseti(L, 1, i);
+						lua_pushnumber(L,RXPacket.data[i-1]);
+						lua_seti(L, -2, i);
 					}
-					lua_pushnumber(L,0U );
+					lua_pushnumber(L,1U );
 				}
 				else
 				{
-					lua_pushnumber(L,1U );
+					lua_pushnumber(L,0U );
 				}
 	}
 	return 1;
-
-
 
 }
 
@@ -185,60 +206,127 @@ Out11 = false Out12 = false Out13 = true Out14 = false Out15 = false Out16 = fal
 KEYPAD8 = {}\n\
 KEYPAD8.__index = KEYPAD8\n\
                function KEYPAD8:NEW( addr)\n\
-		       local obj = {ADDR = addr, NEW = false, led_red=0,led_green=0, led_blue =0}\n\
+		       local obj = {ADDR = addr, new = false, key =0x00, tog= 0x00, old =0x00, led_red=0x00,led_green=0x00, led_blue =0x00}\n\
 	       	       setmetatable (obj, self) SetCanFilter(0x180 +addr)\n\
      		       return obj\n\
      		   end\n\
 			 	function KEYPAD8:PROCESS()\n\
-			if NEW == true then\n\
-				NEW = false		\n\
-				CanSend(0x215+adr,led_red,led_green,led_blue)\n\
+		if (SheckCanId(0x180 + self.ADDR)==1) then  self.old =self.key self.key = GetCanMessage(0x180 +self.ADDR) self.led_blue =self.key self.tog = (~ self.old & self.key) ~ self.tog		 end\n\
+			if self.new == true then\n\
+				self.new = false		\n\
+				CanSend(0x215,self.led_red,self.led_green,self.led_blue,0,0,0,0,0)\n\
 			end\n\
 		end \n\
+		function KEYPAD8:KEY( ind ) \n\
+		  	  return  (self.key & ( 0x01 << (ind-1)) ) ~= 0 \n\
+					end \n\
+		function KEYPAD8:TOG( ind ) \n\
+                 return  (self.tog & ( 0x01 << (ind-1)) ) ~= 0 \n\
+	        end \n\
+		function KEYPAD8:RES( ind ) \n\
+		 self.tog =  (~(0x01<< ind)) & self.tog \n\
+		end \n\
 	        function KEYPAD8:LED_RED( ind, data)\n\
-	  	  led_red = (data) and (led_red | (0x01<<ind)) or (led_red & (~(0x01<<1)))\n\
-		  NEW = true\n\
-		end\n\
+		 	 if (data == false) then self.led_red = self.led_red & (~(0x01<<(ind-1))) else self.led_red = self.led_red | (0x01<<(ind-1)) end\n\
+		    self.new = true\n\
+	     	end\n\
+		function KEYPAD8:LED_GREEN( ind, data)\n\
+				 	 if (data == false) then self.led_green = self.led_green & (~(0x01<<(ind-1))) else self.led_green = self.led_green | (0x01<<(ind-1)) end\n\
+				    self.new = true\n\
+			     	end\n\
+					function KEYPAD8:LED_BLUE( ind, data)\n\
+							 	 if (data == false) then self.led_blue = self.led_blue & (~(0x01<<(ind-1))) else self.led_blue = self.led_blue | (0x01<<(ind-1)) end\n\
+							    self.new = true\n\
+						     	end\n\
+		TURNS_LIGTH = {}\n\
+		TURNS_LIGTH.__index = TURNS_LIGTH\n\
+		               function TURNS_LIGTH:NEW()\n\
+				       local obj = { in_left = false, in_rigth = false, in_alarm = false,  out_left = false, out_rigth, out_alarm =false, timer =0, clock = false}\n\
+		       	       setmetatable (obj, self)\n\
+						return obj\n\
+						end\n\
+				function TURNS_LIGTH:PROCESS( tim ,ign )\n\
+					self.timer = self.timer + tim \n\
+					if (ign == true) then\n\
+					if (self.timer > 500) then if self.clock == true then self.clock = false else self.clock = true end self.timer=0 end\n\
+					self.out_alarm = false self.out_left = false  self.out_rigth = false				\n\
+					if (self.in_alarm == true) then  self.out_alarm = self.clock  else \n\
+					if (self.in_rigth == true) then   self.out_rigth=self.clock  else\n\
+					if (self.in_left  == true) then   self.out_left =self.clock  end\n\
+						 end end  end\n\
+				end\n\
 function stop() timer = coroutine.yield(Out20,Out19,Out18,Out17,Out16,Out15,Out14,Out13,Out12,Out11,Out10,Out9,Out8,Out7,Out6,Out5,Out4,Out3,Out2,Out1) end\n\
-main = function ()  OutConfig(10,10,1000,60) KeyPad      = KEYPAD8:NEW(0x15)  k=1  i=0\n\
-while true do OutSetPWM(13,k) KeyPad:PROCESS() i = i + timer  if (i > 500) then i = 0  k = k+1 CanSend(0x615,0x2f,0x01,0x20,0x01,k,0,0,0)\n\
-  if k ==255 then k =1 end  end  stop() end end";
+main = function ()  OutConfig(10,10,1000,60) KeyPad      = KEYPAD8:NEW(0x15) al=TURNS_LIGTH:NEW()   k=3  i=0 t=1\n\
+while true do OutSetPWM(13,k) KeyPad:PROCESS()  al:PROCESS(timer,true) al.in_left = KeyPad:TOG(1) al.in_rigth = KeyPad:TOG(3) al.in_alarm = KeyPad:TOG(2) \n\
+KeyPad:LED_RED(1,al.out_left) KeyPad:LED_RED(2,al.out_alarm) KeyPad:LED_RED(3,al.out_rigth)		\n\
+		 i = i + timer  if (i > 500) then i = 0    k = k+1\n\
+  if k >8 then k = 3 if t==false then t=true else t=false end\n\
+		 else KeyPad:LED_GREEN(k,t) end  end  stop() end end";
+
 */
-
-
 static const char* mainscript1 = "Out1 = true Out2 = false Out3 = false Out4 = false Out5 = false Out6 = false Out7 = false Out8 = false Out9 = false Out10 = false\n\
 Out11 = false Out12 = false Out13 = true Out14 = false Out15 = false Out16 = false Out17 = false Out18 = false Out19 = false Out20 = false timer = 0\n\
 KEYPAD8 = {}\n\
 KEYPAD8.__index = KEYPAD8\n\
                function KEYPAD8:NEW( addr)\n\
-		       local obj = {ADDR = addr, new = false, led_red=0x00,led_green=0x00, led_blue =0x00}\n\
+		       local obj = {key = 0x00, ADDR = addr, new = false,  tog= 0x00, old =0x00, led_red=0x00,led_green=0x00, led_blue =0x00, temp={0}}\n\
 	       	       setmetatable (obj, self) SetCanFilter(0x180 +addr)\n\
      		       return obj\n\
      		   end\n\
 			 	function KEYPAD8:PROCESS()\n\
-		 if (SheckCanId(0x180 + self.ADDR)==1) then  self.led_green =0xFF end\n\
-			if new == true then\n\
-				new = false		\n\
+		if (GetCanToTable(0x180 + self.ADDR,self.temp)==1) then  self.tog = (~ self.key & self.temp[1]) ~ self.tog	self.key =self.temp[1]	 end\n\
+			if self.new == true then\n\
+				self.new = false		\n\
 				CanSend(0x215,self.led_red,self.led_green,self.led_blue,0,0,0,0,0)\n\
 			end\n\
 		end \n\
+		function KEYPAD8:KEY( ind ) \n\
+		  	  return  (self.key & ( 0x01 << (ind-1)) ) ~= 0 \n\
+					end \n\
+		function KEYPAD8:TOG( ind ) \n\
+                 return  (self.tog & ( 0x01 << (ind-1)) ) ~= 0 \n\
+	        end \n\
+		function KEYPAD8:RES( ind ) \n\
+		 self.tog =  (~(0x01<< ind)) & self.tog \n\
+		end \n\
 	        function KEYPAD8:LED_RED( ind, data)\n\
-		 	 if (data == 0) then self.led_red = self.led_red & (~(0x01<<(ind-1))) else self.led_red = self.led_red | (0x01<<(ind-1)) end\n\
-		    new = true\n\
+		 	 if (data == false) then self.led_red = self.led_red & (~(0x01<<(ind-1))) else self.led_red = self.led_red | (0x01<<(ind-1)) end\n\
+		    self.new = true\n\
 	     	end\n\
 		function KEYPAD8:LED_GREEN( ind, data)\n\
-				 	 if (data == 0) then self.led_green = self.led_green & (~(0x01<<(ind-1))) else self.led_green = self.led_green | (0x01<<(ind-1)) end\n\
-				    new = true\n\
+				 	 if (data == false) then self.led_green = self.led_green & (~(0x01<<(ind-1))) else self.led_green = self.led_green | (0x01<<(ind-1)) end\n\
+				    self.new = true\n\
 			     	end\n\
 					function KEYPAD8:LED_BLUE( ind, data)\n\
-							 	 if (data == 0) then self.led_blue = self.led_blue & (~(0x01<<(ind-1))) else self.led_blue = self.led_blue | (0x01<<(ind-1)) end\n\
-							    new = true\n\
+							 	 if (data == false) then self.led_blue = self.led_blue & (~(0x01<<(ind-1))) else self.led_blue = self.led_blue | (0x01<<(ind-1)) end\n\
+							    self.new = true\n\
 						     	end\n\
+		TURNS_LIGTH = {}\n\
+		TURNS_LIGTH.__index = TURNS_LIGTH\n\
+		               function TURNS_LIGTH:NEW()\n\
+				       local obj = { in_left = false, in_rigth = false, in_alarm = false,  out_left = false, out_rigth, out_alarm =false, timer =0, clock = false}\n\
+		       	       setmetatable (obj, self)\n\
+						return obj\n\
+						end\n\
+				function TURNS_LIGTH:PROCESS( tim ,ign )\n\
+					self.timer = self.timer + tim \n\
+					if (ign == true) then\n\
+					if (self.timer > 500) then if self.clock == true then self.clock = false else self.clock = true end self.timer=0 end\n\
+					self.out_alarm = false self.out_left = false  self.out_rigth = false				\n\
+					if (self.in_alarm == true) then  self.out_alarm = self.clock  else \n\
+					if (self.in_rigth == true) then   self.out_rigth=self.clock  else\n\
+					if (self.in_left  == true) then   self.out_left =self.clock  end\n\
+						 end end  end\n\
+				end\n\
 function stop() timer = coroutine.yield(Out20,Out19,Out18,Out17,Out16,Out15,Out14,Out13,Out12,Out11,Out10,Out9,Out8,Out7,Out6,Out5,Out4,Out3,Out2,Out1) end\n\
-main = function ()  OutConfig(10,10,1000,60) KeyPad      = KEYPAD8:NEW(0x15)  k=0  i=0 t=1\n\
-while true do OutSetPWM(13,k) KeyPad:PROCESS() i = i + timer  if (i > 500) then i = 0    k = k+1\n\
-  if k >8 then k = 0 if t==0 then t=1 else t=0 end\n\
-		 else KeyPad:LED_RED(k,t) end  end  stop() end end";
+main = function ()  OutConfig(10,10,1000,60) KeyPad      = KEYPAD8:NEW(0x15) al=TURNS_LIGTH:NEW()   k=3  i=0 t=1\n\
+while true do OutSetPWM(13,k) KeyPad:PROCESS()  al:PROCESS(timer,true) al.in_left = KeyPad:TOG(1) al.in_rigth = KeyPad:TOG(3) al.in_alarm = KeyPad:TOG(2) \n\
+KeyPad:LED_RED(1,al.out_left) KeyPad:LED_RED(2,al.out_alarm) KeyPad:LED_RED(3,al.out_rigth)		\n\
+		 i = i + timer  if (i > 500) then i = 0    k = k+1\n\
+  if k >8 then k = 3 if t==false then t=true else t=false end\n\
+		 else KeyPad:LED_GREEN(k,t) end  end  stop() end end";
+
+
 
 //static const char* mainscript1 = " return 10";
 
@@ -272,6 +360,8 @@ void vLuaTask(void *argument)
     lua_register(L1,"CanSend", CanSendPDM);
     lua_register(L1,"SetCanFilter", CanSetResiveFilter);
     lua_register(L1,"SheckCanId", CanCheckData);
+    lua_register(L1,"GetCanMessage",CanGetMessage);
+    lua_register(L1,"GetCanToTable",CanGetResivedData);
 
     res = luaL_dostring(L1,mainscript1);
 
@@ -285,7 +375,6 @@ void vLuaTask(void *argument)
 		 {
 			 for (i=0;i<OUT_COUNT;i++)
 			 {
-				 //res = lua_toboolean(L1,-(i+1));
 				 out[i] =lua_toboolean(L1,-(i+1));
 				 vOutState(i,(uint8_t)out[i]);
 			 }
