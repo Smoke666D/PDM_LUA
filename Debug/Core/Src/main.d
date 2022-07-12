@@ -49,7 +49,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Shell/PDMhardware.h ../Shell/cantask.h ../Shell/CO_driver_ST32F4xx.h \
  ../Shell/CO_driver.h ../Shell/CO_driver_target.h \
- ../Shell/CO_driver_ST32F4xx.h ../Drivers/CMSIS/Include/cmsis_gcc.h
+ ../Shell/CO_driver_ST32F4xx.h ../Drivers/CMSIS/Include/cmsis_gcc.h \
+ ../Shell/pdm_input.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -106,3 +107,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Shell/CO_driver_target.h:
 ../Shell/CO_driver_ST32F4xx.h:
 ../Drivers/CMSIS/Include/cmsis_gcc.h:
+../Shell/pdm_input.h:

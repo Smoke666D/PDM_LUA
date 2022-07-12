@@ -8,7 +8,9 @@ C_SRCS += \
 ../Shell/CO_driver_ST32F4xx.c \
 ../Shell/PDMhardware.c \
 ../Shell/cantask.c \
+../Shell/luaDefScript.c \
 ../Shell/luatask.c \
+../Shell/pdm_input.c \
 ../Shell/pdm_lua_lib.c \
 ../Shell/script.c 
 
@@ -16,7 +18,9 @@ C_DEPS += \
 ./Shell/CO_driver_ST32F4xx.d \
 ./Shell/PDMhardware.d \
 ./Shell/cantask.d \
+./Shell/luaDefScript.d \
 ./Shell/luatask.d \
+./Shell/pdm_input.d \
 ./Shell/pdm_lua_lib.d \
 ./Shell/script.d 
 
@@ -24,7 +28,9 @@ OBJS += \
 ./Shell/CO_driver_ST32F4xx.o \
 ./Shell/PDMhardware.o \
 ./Shell/cantask.o \
+./Shell/luaDefScript.o \
 ./Shell/luatask.o \
+./Shell/pdm_input.o \
 ./Shell/pdm_lua_lib.o \
 ./Shell/script.o 
 
@@ -36,7 +42,7 @@ Shell/%.o Shell/%.su: ../Shell/%.c Shell/subdir.mk
 clean: clean-Shell
 
 clean-Shell:
-	-$(RM) ./Shell/CO_driver_ST32F4xx.d ./Shell/CO_driver_ST32F4xx.o ./Shell/CO_driver_ST32F4xx.su ./Shell/PDMhardware.d ./Shell/PDMhardware.o ./Shell/PDMhardware.su ./Shell/cantask.d ./Shell/cantask.o ./Shell/cantask.su ./Shell/luatask.d ./Shell/luatask.o ./Shell/luatask.su ./Shell/pdm_lua_lib.d ./Shell/pdm_lua_lib.o ./Shell/pdm_lua_lib.su ./Shell/script.d ./Shell/script.o ./Shell/script.su
+	-$(RM) ./Shell/CO_driver_ST32F4xx.d ./Shell/CO_driver_ST32F4xx.o ./Shell/CO_driver_ST32F4xx.su ./Shell/PDMhardware.d ./Shell/PDMhardware.o ./Shell/PDMhardware.su ./Shell/cantask.d ./Shell/cantask.o ./Shell/cantask.su ./Shell/luaDefScript.d ./Shell/luaDefScript.o ./Shell/luaDefScript.su ./Shell/luatask.d ./Shell/luatask.o ./Shell/luatask.su ./Shell/pdm_input.d ./Shell/pdm_input.o ./Shell/pdm_input.su ./Shell/pdm_lua_lib.d ./Shell/pdm_lua_lib.o ./Shell/pdm_lua_lib.su ./Shell/script.d ./Shell/script.o ./Shell/script.su
 
 .PHONY: clean-Shell
 

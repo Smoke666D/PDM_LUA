@@ -1,5 +1,6 @@
-Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
- ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h \
+ ../Shell/luaDefScript.h ../Shell/luatask.h ../Core/Inc/main.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -47,6 +48,7 @@ Shell/luatask.o: ../Shell/luatask.c ../LUA/lprefix.h ../Shell/luatask.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
  ../Shell/cantask.h ../Shell/script.c ../Shell/script.h
 ../LUA/lprefix.h:
+../Shell/luaDefScript.h:
 ../Shell/luatask.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:

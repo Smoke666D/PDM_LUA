@@ -25,6 +25,7 @@
 #include "PDMhardware.h"
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
+#include "pdm_input.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,6 +118,18 @@ const osThreadAttr_t CanTask_attributes = {
   .stack_size = sizeof(CanTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for DinTask */
+osThreadId_t DinTaskHandle;
+uint32_t DinTaskBuffer[ 128 ];
+osStaticThreadDef_t DinTaskControlBlock;
+const osThreadAttr_t DinTask_attributes = {
+  .name = "DinTask",
+  .cb_mem = &DinTaskControlBlock,
+  .cb_size = sizeof(DinTaskControlBlock),
+  .stack_mem = &DinTaskBuffer[0],
+  .stack_size = sizeof(DinTaskBuffer),
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* Definitions for CanTX */
 osMessageQueueId_t CanTXHandle;
 uint8_t CanTXBuffer[ 16 * sizeof( CO_CANtx_t ) ];
@@ -166,6 +179,7 @@ extern void vLuaTask(void *argument);
 extern void vADCTask(void *argument);
 extern void vOutContolTask(void *argument);
 extern void vCanTask(void *argument);
+extern void vDinTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -264,6 +278,9 @@ int main(void)
 
   /* creation of CanTask */
   CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
+
+  /* creation of DinTask */
+  DinTaskHandle = osThreadNew(vDinTask, NULL, &DinTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1137,6 +1154,7 @@ static void MX_TIM9_Init(void)
   /* USER CODE END TIM9_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM9_Init 1 */
 
@@ -1153,6 +1171,23 @@ static void MX_TIM9_Init(void)
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim9, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim9) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICFilter = 4;
+  if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1340,10 +1375,10 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Din3_Pin Din4_Pin Din5_Pin Din6_Pin
-                           Din7_Pin Din1_Pin Din2_Pin */
-  GPIO_InitStruct.Pin = Din3_Pin|Din4_Pin|Din5_Pin|Din6_Pin
-                          |Din7_Pin|Din1_Pin|Din2_Pin;
+  /*Configure GPIO pins : Din3_Pin Din4_Pin Din5_Pin Din1_Pin
+                           Din2_Pin */
+  GPIO_InitStruct.Pin = Din3_Pin|Din4_Pin|Din5_Pin|Din1_Pin
+                          |Din2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);

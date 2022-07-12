@@ -51,6 +51,10 @@ void SetWaitFilter(uint32_t id)
 {
 	 MailBoxBuffer[0].ident = id;
 }
+uint8_t CheckAnswer( void )
+{
+	 return MailBoxBuffer[0].new_data;
+}
 
 void SetMailboxFilter(uint32_t id)
 {
@@ -112,13 +116,28 @@ uint8_t vCanChekMessage(uint32_t id)
 	return res;
 }
 
+uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket)
+{
+	uint8_t res =0;
+	res = CheckAnswer();
+	if (res!=0)
+	{
+		RXPacket->ident = MailBoxBuffer[0].ident;
+		RXPacket->DLC = MailBoxBuffer[0].DLC;
+		for (int i =0; i < RXPacket->DLC;i++)
+		{
+			RXPacket->data[i] = MailBoxBuffer[0].data[i];
+		}
+		MailBoxBuffer[0].new_data = 0;
+	}
+	return res;
+}
 
-uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket, uint8_t is_answer)
+
+uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket)
 {
 	uint8_t res = 0;
-	uint8_t max_data =MAILBOXSIZE;
-	if (is_answer == 1) max_data = 1;
-	for (int k=0;k < max_data;k++)
+	for (int k=0;k < MAILBOXSIZE;k++)
 	{
 		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident = RXPacket->ident))
 		{

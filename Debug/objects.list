@@ -76,6 +76,8 @@
 "./Shell/CO_driver_ST32F4xx.o"
 "./Shell/PDMhardware.o"
 "./Shell/cantask.o"
+"./Shell/luaDefScript.o"
 "./Shell/luatask.o"
+"./Shell/pdm_input.o"
 "./Shell/pdm_lua_lib.o"
 "./Shell/script.o"

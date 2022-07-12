@@ -23,8 +23,10 @@ typedef struct {
     uint8_t data[8];
 } CAN_FRAME_TYPE;
 
+uint8_t CheckAnswer( void );
+uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket);
 uint8_t vCanChekMessage(uint32_t id);
-uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket, uint8_t is_answer);
+uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket);
 void SetMailboxFilter(uint32_t id);
 void SetWaitFilter(uint32_t id);
 void vCanTask(void *argument);
