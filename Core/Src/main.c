@@ -28,6 +28,7 @@
 #include "CO_driver_ST32F4xx.h"
 
 #include "system.h"
+#include "serial.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -192,7 +193,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  vSERIALinit( &huart2 );
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -245,7 +246,7 @@ int main(void)
   CanRXHandle = osMessageQueueNew (16, sizeof(CAN_FRAME_TYPE), &CanRX_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  vSYSqueueInit();
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -265,7 +266,7 @@ int main(void)
   CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  vSYStaskInit();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -1373,6 +1374,8 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+  char welcomeString[] = "Power Distribution Module by SIDER Ltd. 2022";
+  vSYSserialString( welcomeString );
   /* Infinite loop */
   for(;;)
   {

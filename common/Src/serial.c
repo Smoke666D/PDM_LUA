@@ -31,15 +31,15 @@ static osThreadId_t  serialProtectTaskHandle = NULL;
 /*---------------------------------------------------------------------------------------------------*/
 osThreadId_t* osSERIALgetSerialTxTaskHandle ( void )
 {
-  return serialTxTaskHandle;
+  return &serialTxTaskHandle;
 }
 osThreadId_t* osSERIALgetSerialRxTaskHandle ( void )
 {
-  return serialTxTaskHandle;
+  return &serialRxTaskHandle;
 }
 osThreadId_t* osSERIALgetSerialProtectTaskHandle ( void )
 {
-  return serialProtectTaskHandle;
+  return &serialProtectTaskHandle;
 }
 QueueHandle_t* pSERIALgetQueue ( void )
 {
@@ -76,6 +76,11 @@ void vSYSserial ( const char* data, uint16_t length )
     };
     xQueueSend( pSERIALqueue, &message, SERIAL_OUTPUT_TIMEOUT );
   }
+  return;
+}
+void vSYSserialString ( const char* string )
+{
+  vSYSserial( string, strlen( string ) );
   return;
 }
 #if defined ( UNIT_TEST )
@@ -151,17 +156,16 @@ void vSERIALrxTask ( void* argument )
 /*---------------------------------------------------------------------------------------------------*/
 void vSERIALprotectTask ( void* argument )
 {
-  BaseType_t   yield = pdFALSE;
-  TaskHandle_t hTask = ( TaskHandle_t )serialTxTaskHandle;
+  BaseType_t yield = pdFALSE;
   for (;;)
   {
     if ( ulTaskNotifyTake( pdTRUE, SERIAL_OUTPUT_TIMEOUT ) )
     {
       osDelay( SERIAL_PROTECT_TIMEOUT );
-      if ( serial.state == SERIAL_STATE_READING )
+      if ( ( serial.state == SERIAL_STATE_READING ) && ( serialTxTaskHandle != NULL ) )
       {
         serial.error = 1U;
-        vTaskNotifyGiveFromISR( hTask, &yield );
+        vTaskNotifyGiveFromISR( ( TaskHandle_t )serialTxTaskHandle, &yield );
         portYIELD_FROM_ISR ( yield );
       }
     }
@@ -173,7 +177,7 @@ void vSERIALprotectTask ( void* argument )
 void HAL_UART_TxCpltCallback ( UART_HandleTypeDef *huart )
 {
   BaseType_t yield = pdFALSE;
-  if ( huart == serial.uart )
+  if ( ( huart == serial.uart ) && ( serialTxTaskHandle != NULL ) )
   {
     vTaskNotifyGiveFromISR( ( TaskHandle_t )serialTxTaskHandle, &yield );
     portYIELD_FROM_ISR ( yield );
@@ -185,7 +189,7 @@ void HAL_UART_TxCpltCallback ( UART_HandleTypeDef *huart )
 void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
 {
   BaseType_t yield = pdFALSE;
-  if ( huart == serial.uart )
+  if ( ( huart == serial.uart ) && ( serialProtectTaskHandle != NULL ) && ( serialTxTaskHandle != NULL ) )
   {
     switch ( serial.state )
     {

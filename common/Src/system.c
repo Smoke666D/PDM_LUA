@@ -132,9 +132,9 @@ static void vSYSaddTask ( osThreadId_t thread, uint32_t size )
   return;
 }
 /*----------------------------------------------------------------------------*/
-static void vSYSstaticTaskInit ( uint32_t* stack,
-                                 StaticTask_t* controlBlock,
-                                 const char* name,
+static void vSYSstaticTaskInit ( uint32_t*      stackAlloc,
+                                 StaticTask_t*  controlBlock,
+                                 const char*    name,
                                  osThreadId_t*  thread, 
                                  osPriority_t   priority, 
                                  osThreadFunc_t func )
@@ -143,8 +143,8 @@ static void vSYSstaticTaskInit ( uint32_t* stack,
     .name       = name,
     .cb_mem     = controlBlock,
     .cb_size    = sizeof( *controlBlock ),
-    .stack_mem  = stack,
-    .stack_size = sizeof( *stack ),
+    .stack_mem  = stackAlloc,
+    .stack_size = sizeof( *stackAlloc ),
     .priority   = priority
   };
   *thread = osThreadNew( func, NULL, &task_attributes );

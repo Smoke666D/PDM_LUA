@@ -61,6 +61,7 @@ typedef struct
 /*----------------------- Functions ------------------------------------*/
 void           vSERIALinit ( UART_HandleTypeDef* uart );
 void           vSYSserial ( const char* data, uint16_t length );
+void           vSYSserialString ( const char* string );
 uint32_t       uSYSputChar ( char* str, uint32_t length, char ch );
 uint32_t       uSYSendString ( char* str, uint32_t length );
 osThreadId_t*  osSERIALgetSerialTxTaskHandle ( void );
