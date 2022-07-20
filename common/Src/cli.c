@@ -8,6 +8,10 @@
 #include "cli.h"
 #include "string.h"
 #include "stdlib.h"
+
+#include "common.h"
+#include "version.h"
+#include "lua.h"
 /*------------------------- Define ------------------------------------------------------------------*/
 /*----------------------- Structures ----------------------------------------------------------------*/
 /*----------------------- Constant ------------------------------------------------------------------*/
@@ -18,8 +22,10 @@ static const char* const commandStrings[CLI_COMMANDS_NUMBER] = {
 };
 static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
   CLI_TARGET_VERSION_STR,
+  CLI_TARGET_UNIQUE_STR,
   CLI_TARGET_DOUT_STR,
-  CLI_TARGET_CURRENT_STR
+  CLI_TARGET_CURRENT_STR,
+  CLI_TARGET_BAT_STR
 };
 /*----------------------- Variables -----------------------------------------------------------------*/
 static TEST_TYPE message = { 0U };
@@ -89,16 +95,9 @@ static void vCLIparseString ( const char* str, TEST_TYPE* message )
       message->target = ( CLI_TARGET )( uCLIparse( ( const char* )filds[1U], targetStrings, CLI_TARGETS_NUMBER ) );
       if ( ( message->dataFlag > 0U ) && ( message->target != CLI_TARGET_NO ) )
       {
-        if ( ( message->cmd == CLI_COMMAND_SET ) && ( message->target == CLI_TARGET_TIME ) )
+        for ( uint8_t i=0U; i<message->dataFlag; i++ )
         {
-          ( void )strcpy( message->out, filds[CLI_SYSTEM_FILDS_NUMBER] );
-        }
-        else
-        {
-          for ( uint8_t i=0U; i<message->dataFlag; i++ )
-          {
-            message->data[i] = atoi( filds[CLI_SYSTEM_FILDS_NUMBER + i] );
-          }
+          message->data[i] = atoi( filds[CLI_SYSTEM_FILDS_NUMBER + i] );
         }
       }
     }
@@ -184,16 +183,16 @@ uint8_t uCLIhexToStr ( uint8_t* data, uint8_t length, char* buf )
   return ( ( length * 2U ) + length );
 }
 /*---------------------------------------------------------------------------------------------------*/
-uint8_t uCLIversionToStr ( const uint16_t* version, char* buf )
+uint8_t uCLIversionToStr ( uint8_t major, uint8_t minor, uint8_t patch, char* buf )
 {
   char sub[5U] = { 0U };
-  ( void )itoa( ( uint8_t )( version[0U] ), sub, 10U );
+  ( void )itoa( ( uint8_t )( major ), sub, 10U );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, "." );
-  ( void )itoa( ( uint8_t )( version[1U] ), sub, 10U );
+  ( void )itoa( ( uint8_t )( minor ), sub, 10U );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, "." );
-  ( void )itoa( ( uint8_t )( version[2U] ), sub, 10U );
+  ( void )itoa( ( uint8_t )( patch ), sub, 10U );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, CLI_LINE_END );
   return strlen( buf );
@@ -210,9 +209,7 @@ uint8_t uCLIserialToStr ( const uint16_t* data, char* buf )
 CLI_STATUS vCLIprocess ( const char* str, uint8_t length )
 {
   CLI_STATUS res  = CLI_STATUS_OK;
-  RTC_TIME   time = { 0U };
   uint16_t   id[UNIQUE_ID_LENGTH] = { 0U };
-  uint8_t    adr = 0U;
   vCLIparseString( str, &message );
   switch ( message.cmd )
   {
@@ -262,19 +259,21 @@ CLI_STATUS vCLIprocess ( const char* str, uint8_t length )
             switch ( message.data[0U] )
             {
               case CLI_VERSION_BOOTLOADER:
-                message.length = uCLIversionToStr( ( const uint16_t* )( versionController.value ), message.out );
+                //message.length = uCLIversionToStr( , message.out );
+                res = CLI_STATUS_ERROR_DATA;
                 break;
               case CLI_VERSION_FIRMWARE:
-                message.length = uCLIversionToStr( ( const uint16_t* )( versionFirmware.value ),   message.out );
+                message.length = uCLIversionToStr( FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, FIRMWARE_VERSION_PATCH, message.out );
                 break;
               case CLI_VERSION_HARDWARE:
-                message.length = uCLIversionToStr( ( const uint16_t* )( versionBootloader.value ), message.out );
+                message.length = uCLIversionToStr( HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, HARDWARE_VERSION_PATCH, message.out );
                 break;
               case CLI_VERSION_LUA:
                 ( void )memset( message.out, 0U, 8U );
                 ( void )strcat( message.out, LUA_VERSION_MAJOR );
                 ( void )strcat( message.out, "." );
                 ( void )strcat( message.out, LUA_VERSION_MINOR );
+                ( void )strcat( message.out, CLI_LINE_END );
                 message.length = ( uint8_t )strlen( message.out );
                 break;
               default:

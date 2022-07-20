@@ -8,10 +8,10 @@
 #ifndef INC_SYSTEM_H_
 #define INC_SYSTEM_H_
 /*----------------------- Includes -------------------------------------*/
-#include "stm32f2xx_hal.h"
-#include "cmsis_os.h"
+#include "stdint.h"
+#include "cmsis_os2.h"
 /*------------------------ Define --------------------------------------*/
-#define  TASK_RAM_SECTION         ".RAM"
+#define  TASK_RAM_SECTION               ".RAM"
 
 #define  DEFAULT_TASK_PRIORITY          osPriorityNormal
 #define  LUA_TASK_PRIORITY              osPriorityLow

@@ -5,33 +5,46 @@
  *      Author: photo_Mickey
  */
 /*----------------------- Includes ------------------------------------------------------------------*/
+#include "serial.h"
+#include "stm32f4xx_hal.h"
 #include "cli.h"
 #include "common.h"
 #include "string.h"
 #include "stdio.h"
 #include "system.h"
-#include "cmsis_os.h"
-#include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
 #include "semphr.h"
 #include "event_groups.h"
 #include "stdlib.h"
 /*----------------------- Structures ----------------------------------------------------------------*/
-static QueueHandle_t pSERIALqueue        = NULL;
-static StaticQueue_t xSERIALqueue        = { 0U };
-static osThreadId_t  serialHandle        = NULL;
-static osThreadId_t  serialOutHandle     = NULL;
-static osThreadId_t  serialProtectHandle = NULL;
-static SERIAL_TYPE   serial              = { 0U };
+static SERIAL_TYPE   serial                  = { 0U };
+static QueueHandle_t pSERIALqueue            = NULL;
+static osThreadId_t  serialTxTaskHandle      = NULL;
+static osThreadId_t  serialRxTaskHandle      = NULL;
+static osThreadId_t  serialProtectTaskHandle = NULL;
 /*------------------------ Variables ----------------------------------------------------------------*/
-static UART_MESSAGE outputBuffer[SERIAL_QUEUE_SIZE] = { 0U };
-
 #if defined ( UNIT_TEST )
   static char     unitOutput[UNIT_TEST_BUFFER_SIZE] = { 0U };
   static uint16_t unitCounter                       = 0U;
   static uint8_t  unitSenderDone                    = 0U;
 #endif
+/*---------------------------------------------------------------------------------------------------*/
+osThreadId_t* osSERIALgetSerialTxTaskHandle ( void )
+{
+  return serialTxTaskHandle;
+}
+osThreadId_t* osSERIALgetSerialRxTaskHandle ( void )
+{
+  return serialTxTaskHandle;
+}
+osThreadId_t* osSERIALgetSerialProtectTaskHandle ( void )
+{
+  return serialProtectTaskHandle;
+}
+QueueHandle_t* pSERIALgetQueue ( void )
+{
+  return &pSERIALqueue;
+}
 /*---------------------------------------------------------------------------------------------------*/
 void vSERIALstartReading ( void )
 {
@@ -92,7 +105,7 @@ void vUNITwriteOutput ( void )
 }
 #endif
 /*---------------------------------------------------------------------------------------------------*/
-void vSERIALtask ( void* argument )
+void vSERIALtxTask ( void* argument )
 {
   for (;;)
   {
@@ -115,7 +128,7 @@ void vSERIALtask ( void* argument )
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
-void vSERIALoutputTask ( void* argument )
+void vSERIALrxTask ( void* argument )
 {
   for (;;)
   {
@@ -139,7 +152,7 @@ void vSERIALoutputTask ( void* argument )
 void vSERIALprotectTask ( void* argument )
 {
   BaseType_t   yield = pdFALSE;
-  TaskHandle_t hTask = (TaskHandle_t)serialHandle;
+  TaskHandle_t hTask = ( TaskHandle_t )serialTxTaskHandle;
   for (;;)
   {
     if ( ulTaskNotifyTake( pdTRUE, SERIAL_OUTPUT_TIMEOUT ) )
@@ -162,7 +175,7 @@ void HAL_UART_TxCpltCallback ( UART_HandleTypeDef *huart )
   BaseType_t yield = pdFALSE;
   if ( huart == serial.uart )
   {
-    vTaskNotifyGiveFromISR( (TaskHandle_t)serialHandle, &yield );
+    vTaskNotifyGiveFromISR( ( TaskHandle_t )serialTxTaskHandle, &yield );
     portYIELD_FROM_ISR ( yield );
   }
   return;
@@ -181,7 +194,7 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
         serial.input[0U] = serial.buffer;
         serial.state     = SERIAL_STATE_READING;
         vSERIALstartReading();
-        vTaskNotifyGiveFromISR( (TaskHandle_t)serialProtectHandle, &yield );
+        vTaskNotifyGiveFromISR( ( TaskHandle_t )serialProtectTaskHandle, &yield );
         portYIELD_FROM_ISR ( yield );
         break;
       case SERIAL_STATE_READING:
@@ -190,7 +203,7 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
         if ( iSERIALisEndChar( serial.buffer ) > 0U )
         {
           serial.input[serial.length] = 0U;
-          vTaskNotifyGiveFromISR( (TaskHandle_t)serialHandle, &yield );
+          vTaskNotifyGiveFromISR( ( TaskHandle_t )serialTxTaskHandle, &yield );
           portYIELD_FROM_ISR ( yield );
         }
         else
@@ -199,7 +212,7 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
         }
         break;
       default:
-        vTaskNotifyGiveFromISR( (TaskHandle_t)serialHandle, &yield );
+        vTaskNotifyGiveFromISR( ( TaskHandle_t )serialTxTaskHandle, &yield );
         portYIELD_FROM_ISR ( yield );
         break;
     }
@@ -214,23 +227,8 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
  */
 void vSERIALinit ( UART_HandleTypeDef* uart )
 {
-  osThreadAttr_t task_attributes = { 0U };
-  serial.uart                = uart;
-  serial.state               = SERIAL_STATE_IDLE;
-  pSERIALqueue               = xQueueCreateStatic( SERIAL_QUEUE_SIZE, sizeof( UART_MESSAGE ), ( uint8_t* )outputBuffer, &xSERIALqueue );
-
-  task_attributes.name       = "serialTxTask";
-  task_attributes.priority   = ( osPriority_t ) SERIAL_TX_TASK_PRIORITY;
-  task_attributes.stack_size = SERIAL_TX_TASK_STACK_SIZE * 4U;
-  serialHandle               = osThreadNew( vSERIALtask,       NULL, &task_attributes );
-  task_attributes.name       = "serialRxTask";
-  task_attributes.priority   = ( osPriority_t ) SERIAL_RX_TASK_PRIORITY;
-  task_attributes.stack_size = SERIAL_RX_TASK_STACK_SIZE * 4U;
-  serialOutHandle            = osThreadNew( vSERIALoutputTask, NULL, &task_attributes );
-  task_attributes.name       = "serialProtectTask";
-  task_attributes.priority   = ( osPriority_t ) SERIAL_PROTECT_TASK_PRIORITY;
-  task_attributes.stack_size = SERIAL_PROTECT_TSAK_STACK_SIZE * 4U;
-  serialProtectHandle        = osThreadNew( vSERIALprotectTask, NULL, &task_attributes );
+  serial.uart  = uart;
+  serial.state = SERIAL_STATE_IDLE;
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/

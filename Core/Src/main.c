@@ -26,6 +26,8 @@
 #include "PDMhardware.h"
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
+
+#include "system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

@@ -8,13 +8,13 @@
 #ifndef INC_CLI_H_
 #define INC_CLI_H_
 /*----------------------- Includes -------------------------------------*/
-#include "stm32f2xx_hal.h"
+#include "stm32f4xx_hal.h"
 #if defined ( UNIT_TEST )
 #include "RTC.h"
 #endif
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      3U
+#define CLI_TARGETS_NUMBER      5U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -32,8 +32,10 @@
 #define CLI_GET_COMMAND_STR     "get"
 
 #define CLI_TARGET_VERSION_STR  "version"
+#define CLI_TARGET_UNIQUE_STR   "unique"
 #define CLI_TARGET_DOUT_STR     "dout"
 #define CLI_TARGET_CURRENT_STR  "current"
+#define CLI_TARGET_BAT_STR      "bat"
 
 
 #define CLI_DIO_ON_STR          "on"
@@ -75,8 +77,10 @@ typedef enum
 {
   CLI_TARGET_NO,      /* 00 no */
   CLI_TARGET_VERSION, /* 01 get */
-  CLI_TARGET_DOUT,    /* 02 get & set */
-  CLI_TARGET_CURRENT, /* 03 get */
+  CLI_TARGET_UNIQUE,  /* 02 get */
+  CLI_TARGET_DOUT,    /* 03 get & set */
+  CLI_TARGET_CURRENT, /* 04 get */
+  CLI_TARGET_BAT,     /* 05 get */
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

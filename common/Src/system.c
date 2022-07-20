@@ -8,50 +8,58 @@
 #include "system.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "serial.h"
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
 /*-------------------------------- Variables ---------------------------------*/
 static TASK_ANALIZE tasks[SYS_MAX_TSAK_NUMBER] = { 0U };
 static uint8_t      taskNumber                 = 0U;
 
+/*
 static uint32_t defaultTaskBuffer[DEFAULT_TASK_STACK_SIZE]      __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t luaTaskBuffer[LUA_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t adcTaskBuffer[ADC_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t doutTaskBuffer[DOUT_TASK_STACK_SIZE]            __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t canTaskBuffer[CAN_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t serialTxTaskBuffer[SERIAL_TSAK_STACK_SIZE]      __section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t serialRxTaskBuffer[SERIAL_TSAK_STACK_SIZE]      __section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t serialProtectTaskBuffer[SERIAL_TSAK_STACK_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
+*/
+static uint32_t serialTxTaskBuffer[SERIAL_TX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t serialRxTaskBuffer[SERIAL_RX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t serialProtectTaskBuffer[SERIAL_PROTECT_TSAK_STACK_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
 
-static osStaticThreadDef_t defaultTaskControlBlock       = { 0U };
-static osStaticThreadDef_t luaTaskControlBlock           = { 0U };
-static osStaticThreadDef_t adcTaskControlBlock           = { 0U };
-static osStaticThreadDef_t doutTaskControlBlock          = { 0U };
-static osStaticThreadDef_t canTaskControlBlock           = { 0U };
-static osStaticThreadDef_t serialTxTaskControlBlock      = { 0U };
-static osStaticThreadDef_t serialRxTaskControlBlock      = { 0U };
-static osStaticThreadDef_t serialProtectTaskControlBlock = { 0U };
+/*
+static StaticTask_t defaultTaskControlBlock       __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t luaTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t adcTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t doutTaskControlBlock          __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t canTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+*/
+static StaticTask_t serialTxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t serialRxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) = { 0U };
 
+/*
 static osThreadId_t defaultTaskHandle       = NULL;
 static osThreadId_t luaTaskHandle           = NULL;
 static osThreadId_t adcTaskHandle           = NULL;
 static osThreadId_t doutTaskHandle          = NULL;
 static osThreadId_t canTaskHandle           = NULL;
-static osThreadId_t serialTxTaskHandle      = NULL;
-static osThreadId_t serialRxTaskHandle      = NULL;
-static osThreadId_t serialProtectTaskHandle = NULL;
+*/
 
+/*
 static uint8_t canTXBuffer[ 16U * sizeof( CO_CANtx_t ) ]     __section( TASK_RAM_SECTION ) = { 0U };
 static uint8_t canRXBuffer[ 16U * sizeof( CAN_FRAME_TYPE ) ] __section( TASK_RAM_SECTION ) = { 0U };
 
 static osMessageQueueId_t canTXHandle  = NULL;
 static osMessageQueueId_t canRXHandle  = NULL;
+*/
 
-static uint8_t outputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t serialOutputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
 
-static QueueHandle_t      pSERIALqueue = NULL;
+static StaticQueue_t xSERIALqueue __section( TASK_RAM_SECTION ) = { 0U };
 /*-------------------------------- Functions ---------------------------------*/
 
 /*----------------------------------------------------------------------------*/
@@ -124,8 +132,8 @@ static void vSYSaddTask ( osThreadId_t thread, uint32_t size )
   return;
 }
 /*----------------------------------------------------------------------------*/
-static void vSYSstaticTaskInit ( const uint32_t* stack,
-                                 const osStaticThreadDef_t* controlBlock, 
+static void vSYSstaticTaskInit ( uint32_t* stack,
+                                 StaticTask_t* controlBlock,
                                  const char* name,
                                  osThreadId_t*  thread, 
                                  osPriority_t   priority, 
@@ -148,12 +156,17 @@ static void vSYSstaticTaskInit ( const uint32_t* stack,
 /*----------------------------------------------------------------------------*/
 void vSYStaskInit ( void )
 {
-  vSYSstaticTaskInit( defaultTaskBuffer, defaultTaskControlBlock, DEFAULT_TASK_NAME, defaultTaskHandle, DEFAULT_TASK_PRIORITY, NULL );
+  vSYSstaticTaskInit( serialTxTaskBuffer, &serialTxTaskControlBlock, SERIAL_TX_TASK_NAME,
+                      osSERIALgetSerialTxTaskHandle(), SERIAL_TX_TASK_PRIORITY, vSERIALtxTask );
+  vSYSstaticTaskInit( serialRxTaskBuffer, &serialRxTaskControlBlock, SERIAL_RX_TASK_NAME,
+                      osSERIALgetSerialRxTaskHandle(), SERIAL_RX_TASK_PRIORITY,vSERIALrxTask );
+  vSYSstaticTaskInit( serialProtectTaskBuffer, &serialProtectTaskControlBlock, SERIAL_PROTECT_TASK_NAME,
+                      osSERIALgetSerialProtectTaskHandle(), SERIAL_PROTECT_TASK_PRIORITY, vSERIALprotectTask );
 }
 /*----------------------------------------------------------------------------*/
 void vSYSqueueInit ( void )
 {
-
+  *( pSERIALgetQueue() ) = xQueueCreateStatic( SERIAL_QUEUE_SIZE, sizeof( UART_MESSAGE ), ( uint8_t* )serialOutputBuffer, &xSERIALqueue );
 }
 /*----------------------------------------------------------------------------*/
 void vSYSprintData ( void )
