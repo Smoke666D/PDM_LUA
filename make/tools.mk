@@ -1,0 +1,9 @@
+CROSS_COMPILE ?= arm-none-eabi-
+CC		    = $(CROSS_COMPILE)gcc
+OBJCOPY		= $(CROSS_COMPILE)objcopy
+SIZE		  = $(CROSS_COMPILE)size
+AS        = $(CROSS_COMPILE)gcc -x assembler-with-cpp
+STFLASH		= st-flash
+STUTIL		= st-util
+OPENOCD   = openocd
+CPPCHECK	= cppcheck
