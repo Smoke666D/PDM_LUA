@@ -41,11 +41,24 @@ void test_eFLASHreadScript ( void )
   return;
 }
 
+void test_uFLASHgetScript ( void )
+{
+  TEST_ASSERT_EQUAL_UINT32( FLASH_STORAGE_ADR, uFLASHgetScript() );
+  const uint8_t* script = uFLASHgetScript();
+  TEST_ASSERT_EQUAL_UINT32( FLASH_STORAGE_ADR, script );
+  for ( uint32_t i=0U; i<TEST_FLASH_SIZE; i++ )
+  {
+    TEST_ASSERT_EQUAL_UINT8( ( uint8_t )i, script[i] );
+  }
+  return;
+}
+
 void runTest_flash ( void )
 {
   UnitySetTestFile( "test_flash.c" );
   UnityDefaultTestRun( test_eFLASHwriteScript, "Writing lua script to the FLASH", 0U );
   UnityDefaultTestRun( test_eFLASHreadScript, "Read lua script from the FLASH", 0U );
+  UnityDefaultTestRun( test_uFLASHgetScript, "Read lua script from pointer to the Flash", 0U );
   return;
 }
 

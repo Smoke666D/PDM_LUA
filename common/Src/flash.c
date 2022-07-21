@@ -6,6 +6,9 @@
  */
 
 #include "flash.h"
+#include "system.h"
+
+const uint8_t luaScroptAtFlash[FLASH_STORAGE_LENGTH] __attribute__((section(".user_data")));
 
 FLASH_STATE eFLASHwriteScript ( const uint8_t* data, uint32_t length )
 {
@@ -65,5 +68,10 @@ FLASH_STATE eFLASHreadScript ( uint8_t* data, uint32_t length )
     res = FLASH_ERROR_LENGTH;
   }
   return res;
+}
+
+const uint8_t* uFLASHgetScript ( void )
+{
+  return luaScroptAtFlash;
 }
 
