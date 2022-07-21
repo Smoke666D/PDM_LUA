@@ -148,7 +148,7 @@ static void vSYSstaticTaskInit ( uint32_t*      stackAlloc,
     .priority   = priority
   };
   *thread = osThreadNew( func, NULL, &task_attributes );
-  //vSYSaddTask( thread, task_attributes.stack_size );
+  vSYSaddTask( thread, task_attributes.stack_size );
   return;
 }
 /*----------------------------------------------------------------------------*/

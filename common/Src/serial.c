@@ -24,9 +24,9 @@ static osThreadId_t  serialRxTaskHandle      = NULL;
 static osThreadId_t  serialProtectTaskHandle = NULL;
 /*------------------------ Variables ----------------------------------------------------------------*/
 #if defined ( UNIT_TEST )
-  static char     unitOutput[UNIT_TEST_BUFFER_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
-  static uint16_t unitCounter                       __section( TASK_RAM_SECTION ) = 0U;
-  static uint8_t  unitSenderDone                    __section( TASK_RAM_SECTION ) = 0U;
+  static char     unitOutput[UNIT_TEST_BUFFER_SIZE] = { 0U };
+  static uint16_t unitCounter                       = 0U;
+  static uint8_t  unitSenderDone                    = 0U;
 #endif
 /*---------------------------------------------------------------------------------------------------*/
 osThreadId_t* osSERIALgetSerialTxTaskHandle ( void )
@@ -83,6 +83,7 @@ void vSYSserialString ( const char* string )
   vSYSserial( string, strlen( string ) );
   return;
 }
+
 #if defined ( UNIT_TEST )
 void vUNITputChar ( int data )
 {
@@ -118,7 +119,7 @@ void vSERIALtxTask ( void* argument )
     {
       if ( ( serial.state == SERIAL_STATE_READING ) && ( serial.error == 0U ) )
       {
-        ( void )vCLIprocess( ( const char* )serial.input, serial.length );
+        ( void )eCLIprocess( ( const char* )serial.input, serial.length );
         vSYSserialString( ( const char* )cCLIgetOutput() );
       }
       #if defined ( UNIT_TEST )

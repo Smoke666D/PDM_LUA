@@ -30,6 +30,9 @@
 #include "pdm_input.h"
 #include "system.h"
 #include "serial.h"
+#if defined( UNIT_TEST )
+  #include "tests.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -1411,6 +1414,9 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   char welcomeString[] = "Power Distribution Module by SIDER Ltd. 2022";
   vSYSserialString( welcomeString );
+  #if defined ( UNIT_TEST )
+    vTESTinit();
+  #endif
   /* Infinite loop */
   for(;;)
   {

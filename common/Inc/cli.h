@@ -9,9 +9,6 @@
 #define INC_CLI_H_
 /*----------------------- Includes -------------------------------------*/
 #include "stm32f4xx_hal.h"
-#if defined ( UNIT_TEST )
-#include "RTC.h"
-#endif
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
 #define CLI_TARGETS_NUMBER      5U
@@ -94,18 +91,16 @@ typedef struct
 } TEST_TYPE;
 /*------------------------ Functions -----------------------------------*/
 #if defined ( UNIT_TEST )
+  uint8_t     uCLIversionToStr ( uint8_t major, uint8_t minor, uint8_t patch, char* buf );
   uint8_t     uCLIparsingFields ( const char* str, char** filds );
   uint8_t     uCLIparse ( const char* str, const char* const* dictionary, uint8_t length );
   void        vCLIparseString ( const char* str, TEST_TYPE* message );
-  uint8_t     uCLItimeToStr ( RTC_TIME* time, char* buf );
   char*       cCLIparseTimeFild ( char* pStr, uint8_t* output );
-  CLI_STATUS  eCLIstrToTime ( RTC_TIME* time, char* buf );
   uint8_t     uCLIstatusToString ( CLI_STATUS status, char* buf );
   uint8_t     uCLIdioToStr ( uint8_t state, char* buf );
   uint8_t     uCLIhexToStr ( uint8_t* data, uint8_t length, char* buf );
-  uint8_t     uCLIversionToStr ( const uint16_t* version, char* buf );
 #endif
-CLI_STATUS vCLIprocess ( const char* str, uint8_t length );
+CLI_STATUS eCLIprocess ( const char* str, uint8_t length );
 char*      cCLIgetOutput ( void );
 uint8_t    uCLIgetOutLength ( void );
 /*----------------------------------------------------------------------*/

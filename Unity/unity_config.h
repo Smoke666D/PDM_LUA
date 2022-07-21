@@ -8,7 +8,7 @@
 #ifndef UNITY_CONFIG_H_
 #define UNITY_CONFIG_H_
 
-#include "common.h"
+#include "serial.h"
 
 #define UNITY_EXCLUDE_SETJMP_H
 #define UNITY_OUTPUT_CHAR( a )  vUNITputChar( a )

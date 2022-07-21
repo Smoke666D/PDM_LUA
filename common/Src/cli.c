@@ -34,7 +34,7 @@ static TEST_TYPE message = { 0U };
 /*---------------------------------------------------------------------------------------------------*/
 /*----------------------- PRIVATE -------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------*/
-static uint8_t uCLIparsingFields ( const char* str, char** fields )
+uint8_t uCLIparsingFields ( const char* str, char** fields )
 {
   uint8_t res = 0U;
   char*   p   = NULL;
@@ -59,7 +59,7 @@ static uint8_t uCLIparsingFields ( const char* str, char** fields )
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
-static uint8_t uCLIparse ( const char* str, const char* const* dictionary, uint8_t length )
+uint8_t uCLIparse ( const char* str, const char* const* dictionary, uint8_t length )
 {
   uint8_t res = 0U;
   for ( uint8_t i=0U; i<length; i++ )
@@ -73,7 +73,7 @@ static uint8_t uCLIparse ( const char* str, const char* const* dictionary, uint8
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
-static void vCLIparseString ( const char* str, TEST_TYPE* message )
+void vCLIparseString ( const char* str, TEST_TYPE* message )
 {
   char*   filds[CLI_FILDS_NUMBER] = { 0U };
   uint8_t fieldsCounter = 0U;
@@ -206,7 +206,7 @@ uint8_t uCLIserialToStr ( const uint16_t* data, char* buf )
 /*---------------------------------------------------------------------------------------------------*/
 /*----------------------- PABLIC --------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------*/
-CLI_STATUS vCLIprocess ( const char* str, uint8_t length )
+CLI_STATUS eCLIprocess ( const char* str, uint8_t length )
 {
   CLI_STATUS res  = CLI_STATUS_OK;
   uint16_t   id[UNIQUE_ID_LENGTH] = { 0U };
