@@ -31,7 +31,8 @@ typedef enum
 /*----------------------- Structures -----------------------------------*/
 
 /*------------------------ Functions -----------------------------------*/
-FLASH_STATE eFLASHwriteScript ( const uint8_t* data, uint32_t length );
-FLASH_STATE eFLASHreadScript ( uint8_t* data, uint32_t length );
+FLASH_STATE    eFLASHwriteScript ( const uint8_t* data, uint32_t length );
+FLASH_STATE    eFLASHreadScript ( uint8_t* data, uint32_t length );
+const uint8_t* uFLASHgetScript ( void );
 /*----------------------------------------------------------------------*/
 #endif /* INC_FLASH_H_  */
