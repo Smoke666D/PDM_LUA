@@ -20,9 +20,13 @@ void test_eFLASHwriteScript ( void )
   {
     data[i] = ( uint8_t )i;
   }
-  res = eFLASHwriteScript( data, TEST_FLASH_SIZE );
+  res = eFLASHstartWriting();
   TEST_ASSERT_EQUAL( FLASH_OK, res );
-  res = eFLASHwriteScript( data, FLASH_STORAGE_LENGTH );
+  res = eFLASHwriteScript( 0U, data, TEST_FLASH_SIZE );
+  TEST_ASSERT_EQUAL( FLASH_OK, res );
+  res = eFLASHendWriting();
+  TEST_ASSERT_EQUAL( FLASH_OK, res );
+  res = eFLASHwriteScript( 0U, data, FLASH_STORAGE_LENGTH );
   TEST_ASSERT_EQUAL( FLASH_ERROR_LENGTH, res );
   return;
 }
@@ -30,13 +34,13 @@ void test_eFLASHreadScript ( void )
 {
   FLASH_STATE res = FLASH_OK;
   memset( data, 0U, TEST_FLASH_SIZE );
-  res = eFLASHreadScript( data, TEST_FLASH_SIZE );
+  res = eFLASHreadScript( 0U, data, TEST_FLASH_SIZE );
   TEST_ASSERT_EQUAL( FLASH_OK, res );
   for ( uint32_t i=0U; i<TEST_FLASH_SIZE; i++ )
   {
     TEST_ASSERT_EQUAL_UINT8( ( uint8_t )i, data[i] );
   }
-  res = eFLASHreadScript( data, FLASH_STORAGE_LENGTH );
+  res = eFLASHreadScript( 0U, data, FLASH_STORAGE_LENGTH );
   TEST_ASSERT_EQUAL( FLASH_ERROR_LENGTH, res );
   return;
 }

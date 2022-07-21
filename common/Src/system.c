@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "serial.h"
+#include "usbhid.h"
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
 /*-------------------------------- Variables ---------------------------------*/
@@ -29,6 +30,7 @@ static uint32_t canTaskBuffer[CAN_TASK_STACK_SIZE]              __section( TASK_
 static uint32_t serialTxTaskBuffer[SERIAL_TX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialRxTaskBuffer[SERIAL_RX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialProtectTaskBuffer[SERIAL_PROTECT_TSAK_STACK_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t usbTaskBuffer[USB_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
 
 /*
 static StaticTask_t defaultTaskControlBlock       __section( TASK_RAM_SECTION ) = { 0U };
@@ -40,7 +42,7 @@ static StaticTask_t canTaskControlBlock           __section( TASK_RAM_SECTION ) 
 static StaticTask_t serialTxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t serialRxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) = { 0U };
-
+static StaticTask_t usbTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 /*
 static osThreadId_t defaultTaskHandle       = NULL;
 static osThreadId_t luaTaskHandle           = NULL;
@@ -159,6 +161,8 @@ void vSYStaskInit ( void )
   vSYSstaticTaskInit( serialTxTaskBuffer, &serialTxTaskControlBlock, SERIAL_TX_TASK_NAME, osSERIALgetSerialTxTaskHandle(), SERIAL_TX_TASK_PRIORITY, vSERIALtxTask );
   vSYSstaticTaskInit( serialRxTaskBuffer, &serialRxTaskControlBlock, SERIAL_RX_TASK_NAME, osSERIALgetSerialRxTaskHandle(), SERIAL_RX_TASK_PRIORITY,vSERIALrxTask );
   vSYSstaticTaskInit( serialProtectTaskBuffer, &serialProtectTaskControlBlock, SERIAL_PROTECT_TASK_NAME, osSERIALgetSerialProtectTaskHandle(), SERIAL_PROTECT_TASK_PRIORITY, vSERIALprotectTask );
+  vSYSstaticTaskInit( usbTaskBuffer, &usbTaskControlBlock, USB_TASK_NAME, osUSBgetTaskHandle(), USB_TASK_PRIORITY, vUSBtask );
+
   return;
 }
 /*----------------------------------------------------------------------------*/

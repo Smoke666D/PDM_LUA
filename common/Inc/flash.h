@@ -23,16 +23,28 @@
 typedef enum
 {
   FLASH_OK,
+  FLASH_ERROR_ADR,
   FLASH_ERROR_LENGTH,
+  FLASH_ERROR_UNLOCK,
+  FLASH_ERROR_LOCK,
+  FLASH_ERROR_ACCESS,
   FLASH_ERROR_WRITING,
   FLASH_ERROR_WRITING_TIMEOUT,
   FLASH_ERROR_VERIFICATION
 } FLASH_STATE;
+
+typedef enum
+{
+  FLASH_LOCKED,
+  FLASH_UNLOCKED
+} FLASH_LOCK;
 /*----------------------- Structures -----------------------------------*/
 
 /*------------------------ Functions -----------------------------------*/
-FLASH_STATE    eFLASHwriteScript ( const uint8_t* data, uint32_t length );
-FLASH_STATE    eFLASHreadScript ( uint8_t* data, uint32_t length );
+FLASH_STATE    eFLASHwriteScript ( uint32_t adr, const uint8_t* data, uint32_t length );
+FLASH_STATE    eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length );
+FLASH_STATE    eFLASHstartWriting ( void );
+FLASH_STATE    eFLASHendWriting ( void );
 const uint8_t* uFLASHgetScript ( void );
 /*----------------------------------------------------------------------*/
 #endif /* INC_FLASH_H_  */

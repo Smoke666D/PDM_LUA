@@ -23,6 +23,7 @@
 #define  SERIAL_TX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
+#define  USB_TASK_PRIORITY              osPriorityLow
 
 #define  DEFAULT_TASK_STACK_SIZE        128U
 #define  LUA_TASK_STACK_SIZE            2000U
@@ -32,6 +33,7 @@
 #define  SERIAL_TX_TSAK_STACK_SIZE      256U
 #define  SERIAL_RX_TSAK_STACK_SIZE      128U
 #define  SERIAL_PROTECT_TSAK_STACK_SIZE 128U
+#define  USB_TASK_STACK_SIZE            192U
 
 #define  DEFAULT_TASK_NAME              "defaultTask"
 #define  LUA_TASK_NAME                  "luaTask"
@@ -41,6 +43,7 @@
 #define  SERIAL_TX_TASK_NAME            "serialTxTask"
 #define  SERIAL_RX_TASK_NAME            "serialRxTask"
 #define  SERIAL_PROTECT_TASK_NAME       "serialProtectTask"
+#define  USB_TASK_NAME                  "usbTask"
 
 #define  SYS_MAX_TSAK_NUMBER            20U
 #define  SYS_BAR_LENGTH                 10U

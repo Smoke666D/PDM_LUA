@@ -22,7 +22,7 @@
 #include "usbd_custom_hid_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "usbhid.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -171,6 +171,7 @@ USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops_FS =
 static int8_t CUSTOM_HID_Init_FS(void)
 {
   /* USER CODE BEGIN 4 */
+  vUSBplugHandler();
   return (USBD_OK);
   /* USER CODE END 4 */
 }
@@ -182,6 +183,7 @@ static int8_t CUSTOM_HID_Init_FS(void)
 static int8_t CUSTOM_HID_DeInit_FS(void)
 {
   /* USER CODE BEGIN 5 */
+  vUSBunplugHandler();
   return (USBD_OK);
   /* USER CODE END 5 */
 }
@@ -195,6 +197,7 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
 static int8_t CUSTOM_HID_OutEvent_FS(uint8_t event_idx, uint8_t state)
 {
   /* USER CODE BEGIN 6 */
+  vUSBreceiveHandler();
   UNUSED(event_idx);
   UNUSED(state);
 
