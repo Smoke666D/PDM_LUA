@@ -22,7 +22,6 @@ static const char* const commandStrings[CLI_COMMANDS_NUMBER] = {
   CLI_GET_COMMAND_STR
 };
 static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
-  CLI_TARGET_HELP_STR,
   CLI_TARGET_VERSION_STR,
   CLI_TARGET_UNIQUE_STR,
   CLI_TARGET_DOUT_STR,
@@ -208,21 +207,6 @@ uint8_t uCLIserialToStr ( const uint16_t* data, char* buf )
   return ( uint8_t )strlen( buf );
 }
 /*---------------------------------------------------------------------------------------------------*/
-uint8_t uCLImakeHelp ( char* buf )
-{
-  ( void )strcpy( buf, "usage: get   <target> <data>\n" );
-  ( void )strcat( buf, "   or: set   <target> <data>\n" );
-  ( void )strcat( buf, "   or: reset <target> <data>\n" );
-  ( void )strcat( buf, "targets:\n" );
-  for ( uint8_t i=0U; i<CLI_TARGETS_NUMBER; i++ )
-  {
-    ( void )strcat( buf, "  " );
-    ( void )strcat( buf, targetStrings[i] );
-    ( void )strcat( buf, "\n" );
-  }
-  return ( uint8_t )strlen( buf );
-}
-/*---------------------------------------------------------------------------------------------------*/
 CLI_STATUS eCLIprocessSet ( void )
 {
   CLI_STATUS res = CLI_STATUS_OK;
@@ -288,10 +272,6 @@ CLI_STATUS eCLIprocessGet ( void )
   uint16_t   id[UNIQUE_ID_LENGTH] = { 0U };
   switch ( message.target )
   {
-    case CLI_TARGET_HELP:
-      message.length = uCLImakeHelp( message.out );
-      res = CLI_STATUS_OK;
-      break;
     case CLI_TARGET_DOUT:
       res = CLI_STATUS_ERROR_DATA;
       break;
