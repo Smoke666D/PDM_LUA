@@ -8,13 +8,13 @@
 #ifndef PDM_INPUT_H_
 #define PDM_INPUT_H_
 
+
+
 #include "main.h"
-#include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
 
 #define DIN_CHANNEL 12
 #define DIN_VALID   3
-#include "cmsis_os.h"
+
 
 typedef enum  {
 		DIGITAL = 0,
@@ -26,27 +26,36 @@ typedef struct {
 	GPIO_TypeDef * GPIOx;
 } PIN_CONFIG;
 
+
+typedef enum {
+	POSITIVE_STATE = 0,
+	NEGATIVE_STATE = 1,
+} LOGIC_STATE;
+
 typedef struct {
 PIN_CONFIG pin_data;
 PDM_INPUT_MODE  mode;
 uint8_t counter;
-uint16_t data;
+uint8_t data;
+uint16_t low_counter;
+uint16_t high_counter;
 uint8_t temp_data;
+LOGIC_STATE state;
 } DoutCinfig;
 
 typedef enum {
-		INPUT1 = 1,
-		INPUT2 = 2,
-		INPUT3 = 3,
-		INPUT4 = 4,
-		INPUT5 = 5,
-		INPUT6 = 6,
-		INPUT7 = 7,
-		INPUT8 = 8,
-		INPUT9 = 9,
-		INPUT10 = 10,
-		INPUT11 = 11,
-		INPUT12 = 12,
+		INPUT1 = 0,
+		INPUT2 = 1,
+		INPUT3 = 2,
+		INPUT4 = 3,
+		INPUT5 = 4,
+		INPUT6 = 5,
+		INPUT7 = 6,
+		INPUT8 = 7,
+		INPUT9 = 8,
+		INPUT10 = 9,
+		INPUT11 = 10,
+		INPUT12 = 11,
 
 } PDM_INPUT_NAME;
 typedef struct {
@@ -63,6 +72,8 @@ typedef enum  {
 		WRONG_CHANNEL_MODE =3U,
 } PDM_INPUT_CONFIG_ERROR;
 
-PDM_INPUT_CONFIG_ERROR inputConfig( PDM_INPUT_NAME channel, PDM_INPUT_MODE mode);
+PDM_INPUT_CONFIG_ERROR inputConfig( PDM_INPUT_NAME channel, PDM_INPUT_MODE mode,LOGIC_STATE ls);
 void vDinTask(void *argument);
+void SystemDinTimer(void);
+uint8_t uDinGet(PDM_INPUT_NAME channel);
 #endif /* PDM_INPUT_H_ */

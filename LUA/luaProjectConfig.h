@@ -35,7 +35,7 @@ extern short xTaskResumeAll(void);
 #define LUA_MEM_LEAVE_CRITICAL_SECTION() xTaskResumeAll()
 #endif
 
-#define LUA_HEAP_SIZE (2 * 20000)
+#define LUA_HEAP_SIZE (2 * 30000)
 
 
 #endif /* LUAPROJECTCONFIG_H_ */

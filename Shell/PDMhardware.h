@@ -11,7 +11,7 @@
 #include "main.h"
 
 
-
+#define AIN_COUNT			4U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define DEFAULT_HPOWER      20.0  // Номинальный ток по умолчания для мощных каналов
@@ -76,6 +76,9 @@ typedef enum {
 	OUT_RESTART,
 } OUT_STATE;
 
+
+
+
 //Коофиценты для расчета функции зависимости тока на выходе ISENSE ключей
 typedef struct
 {
@@ -116,7 +119,6 @@ typedef struct
 
 
 
-
 typedef enum {
 	OUT_1 = 0,
 	OUT_2 = 1,
@@ -141,7 +143,16 @@ typedef enum {
 
 } OUT_NAME_TYPE;
 
-void vOutState(OUT_NAME_TYPE out_name, uint8_t state);
+
+typedef enum {
+	AIN_1 = 0,
+	AIN_2 = 1,
+	AIN_3 = 2,
+	AIN_4 = 3,
+} AIN_NAME_TYPE;
+
+
+void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 void vOutContolTask(void * argument);
@@ -153,5 +164,9 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 void SystemTimer(void);
+float vOutGetCurrent(OUT_NAME_TYPE out_name);
 uint16_t GetTimer(void);
+uint8_t vOutGetState(OUT_NAME_TYPE out_name);
+float vOutGetCurrent(OUT_NAME_TYPE out_name);
+float fAinGetState(AIN_NAME_TYPE channel);
 #endif /* PDMHARDWARE_H_ */
