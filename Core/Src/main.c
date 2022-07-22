@@ -1415,7 +1415,7 @@ void StartDefaultTask(void *argument)
   char welcomeString[] = "Power Distribution Module by SIDER Ltd. 2022";
   vSYSserialString( welcomeString );
   #if defined ( UNIT_TEST )
-    vTESTinit();
+    //vTESTinit();
   #endif
   /* Infinite loop */
   for(;;)

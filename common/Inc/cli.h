@@ -11,7 +11,7 @@
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      5U
+#define CLI_TARGETS_NUMBER      10U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -28,11 +28,16 @@
 #define CLI_RESET_COMMAND_STR   "reset"
 #define CLI_GET_COMMAND_STR     "get"
 
+#define CLI_TARGET_HELP_STR     "help"
 #define CLI_TARGET_VERSION_STR  "version"
 #define CLI_TARGET_UNIQUE_STR   "unique"
 #define CLI_TARGET_DOUT_STR     "dout"
+#define CLI_TARGET_DIN_STR      "din"
 #define CLI_TARGET_CURRENT_STR  "current"
 #define CLI_TARGET_BAT_STR      "bat"
+#define CLI_TARGET_FLASH_STR    "flash"
+#define CLI_TARGET_SCRIPT_STR   "script"
+#define CLI_TARGET_LUA_STR      "lua"
 
 
 #define CLI_DIO_ON_STR          "on"
@@ -72,12 +77,17 @@ typedef enum
 
 typedef enum
 {
-  CLI_TARGET_NO,      /* 00 no */
-  CLI_TARGET_VERSION, /* 01 get */
-  CLI_TARGET_UNIQUE,  /* 02 get */
-  CLI_TARGET_DOUT,    /* 03 get & set */
-  CLI_TARGET_CURRENT, /* 04 get */
-  CLI_TARGET_BAT,     /* 05 get */
+  CLI_TARGET_NO,      /*    00 no  */
+  CLI_TARGET_HELP,    /* +- 01 get */
+  CLI_TARGET_VERSION, /* ++ 02 get */
+  CLI_TARGET_UNIQUE,  /* ++ 03 get */
+  CLI_TARGET_DOUT,    /* +  04 get & set */
+  CLI_TARGET_DIN,     /* +  05 get */
+  CLI_TARGET_CURRENT, /* +  06 get */
+  CLI_TARGET_BAT,     /* +  07 get */
+  CLI_TARGET_FLASH,   /* ++ 08 get & set */
+  CLI_TARGET_SCRIPT,  /* ++ 09 set */
+  CLI_TARGET_LAU      /* +  10 get */
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

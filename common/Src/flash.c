@@ -32,7 +32,7 @@ FLASH_STATE eFLASHwriteScript ( uint32_t adr, const uint8_t* data, uint32_t leng
       {
         for ( uint32_t i=0U; i<length; i++ )
         {
-          curentAdr = FLASH_STORAGE_ADR + ( i * sizeof( uint8_t ) );
+          curentAdr = FLASH_STORAGE_ADR + adr + ( i * sizeof( uint8_t ) );
           status    = HAL_FLASH_Program( FLASH_TYPEPROGRAM_BYTE, curentAdr, ( uint64_t )data[i] );
           if ( status == HAL_TIMEOUT )
           {
@@ -124,6 +124,11 @@ FLASH_STATE eFLASHendWriting ( void )
     res = FLASH_ERROR_LOCK;
   }
   return res;
+}
+
+FLASH_LOCK eFLASHgetLockState ( void )
+{
+  return flashLock;
 }
 
 const uint8_t* uFLASHgetScript ( void )

@@ -32,7 +32,6 @@ void vTESTtask ( void *argument )
     {
       UnityBegin( "PDM unit tests:" );
       runTest_flash();
-      //vTESTsendReport();
       UnityEnd();
       done = 1U;
     }

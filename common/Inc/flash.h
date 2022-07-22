@@ -12,7 +12,7 @@
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
 #define  FLASH_STORAGE_ADR     0x080E0000UL
-#define  FLASH_STORAGE_LENGTH  ( 128U * 1024U ) /* byte */
+#define  FLASH_STORAGE_LENGTH  0x20000U /* byte */
 #define  FLASH_STORAGE_SECTOR  FLASH_SECTOR_11
 #define  FLASH_STORAGE_VOLTAGE VOLTAGE_RANGE_3
 /*------------------------- Macros -------------------------------------*/
@@ -45,6 +45,7 @@ FLASH_STATE    eFLASHwriteScript ( uint32_t adr, const uint8_t* data, uint32_t l
 FLASH_STATE    eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length );
 FLASH_STATE    eFLASHstartWriting ( void );
 FLASH_STATE    eFLASHendWriting ( void );
+FLASH_LOCK     eFLASHgetLockState ( void );
 const uint8_t* uFLASHgetScript ( void );
 /*----------------------------------------------------------------------*/
 #endif /* INC_FLASH_H_  */

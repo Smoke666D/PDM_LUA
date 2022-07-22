@@ -54,6 +54,9 @@ void test_uFLASHgetScript ( void )
   {
     TEST_ASSERT_EQUAL_UINT8( ( uint8_t )i, script[i] );
   }
+  uint8_t dd0 = script[0U];
+  uint8_t dd1 = script[1U];
+  uint8_t dd2 = script[2U];
   return;
 }
 
