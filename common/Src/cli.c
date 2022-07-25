@@ -8,11 +8,11 @@
 #include "cli.h"
 #include "string.h"
 #include "stdlib.h"
-
 #include "common.h"
 #include "version.h"
 #include "lua.h"
 #include "flash.h"
+#include "usbhid.h"
 /*------------------------- Define ------------------------------------------------------------------*/
 /*----------------------- Structures ----------------------------------------------------------------*/
 /*----------------------- Constant ------------------------------------------------------------------*/
@@ -30,7 +30,9 @@ static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
   CLI_TARGET_BAT_STR,
   CLI_TARGET_FLASH_STR,
   CLI_TARGET_SCRIPT_STR,
-  CLI_TARGET_LUA_STR
+  CLI_TARGET_LUA_STR,
+  CLI_TARGET_VUSB_STR,
+  CLI_TARGET_USB_STR
 };
 /*----------------------- Variables -----------------------------------------------------------------*/
 static TEST_TYPE message   = { 0U };
@@ -284,18 +286,14 @@ CLI_STATUS eCLIprocessGet ( void )
     case CLI_TARGET_CURRENT:
       res = CLI_STATUS_ERROR_DATA;
       break;
+    case CLI_TARGET_VUSB:
+      message.length = uCLIdioToStr( uUSBisPower(), message.out );
+      break;
+    case CLI_TARGET_USB:
+      message.length = uCLIdioToStr( uUSBisPlug(), message.out );
+      break;
     case CLI_TARGET_FLASH:
-      if ( eFLASHgetLockState() == FLASH_LOCKED )
-      {
-        ( void )strcpy( message.out, CLI_DIO_ON_STR );
-      }
-      else
-      {
-        ( void )strcpy( message.out, CLI_DIO_OFF_STR );
-      }
-      ( void )strcat( message.out, CLI_LINE_END );
-      message.length = ( uint8_t )strlen( message.out );
-      res = CLI_STATUS_OK;
+      message.length = uCLIdioToStr( ( eFLASHgetLockState() == FLASH_LOCKED?1U:0U ), message.out );
       break;
     case CLI_TARGET_LAU:
       res = CLI_STATUS_ERROR_DATA;

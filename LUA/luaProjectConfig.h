@@ -8,6 +8,9 @@
 #ifndef LUAPROJECTCONFIG_H_
 #define LUAPROJECTCONFIG_H_
 
+#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 //The pointer size in this project is not size_t (16 Bit).
 #define  luaPointerSize_t uint32_t
@@ -27,9 +30,6 @@ extern void vPortFree( void *pv );
 
 //This project has to tasks which execute a lua interpreter. Therefore the lua memory calls
 //must be protected.
-
-extern void vTaskSuspendAll(void);
-extern short xTaskResumeAll(void);
 
 #define LUA_MEM_ENTER_CRITICAL_SECTION() vTaskSuspendAll()
 #define LUA_MEM_LEAVE_CRITICAL_SECTION() xTaskResumeAll()

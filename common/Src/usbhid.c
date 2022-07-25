@@ -7,16 +7,18 @@
 /*----------------------- Includes ------------------------------------------------------------------*/
 #include "usbhid.h"
 #include "usbd_conf.h"
-#include "common.h"
 #include "usb_device.h"
 #include "flash.h"
 /*----------------------- Structures ----------------------------------------------------------------*/
 extern USBD_HandleTypeDef  hUsbDeviceFS;
 /*----------------------- Constant ------------------------------------------------------------------*/
 /*----------------------- Variables -----------------------------------------------------------------*/
+static uint8_t      usbPlug                       = 0U;
 static uint8_t      outputBuffer[USB_REPORT_SIZE] = { 0U };
 static uint8_t      inputBuffer[USB_REPORT_SIZE]  = { 0U };
 static osThreadId_t usbHandle                     = NULL;
+static PIN_TYPE*    usbPullUpPin                  = NULL;
+static PIN_TYPE*    usbDetectorPin                = NULL;
 /*----------------------- Functions -----------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------------------------------*/
@@ -80,6 +82,29 @@ USB_CONN_STATUS eUSBgetStatus ( void )
     res = USB_CONNECT;
   }
   return res;
+}
+/*---------------------------------------------------------------------------------------------------*/
+void vUSBinit ( PIN_TYPE* usbDet, PIN_TYPE* usbPullup )
+{
+  usbPullUpPin   = usbPullup;
+  usbDetectorPin = usbDet;
+  HAL_GPIO_WritePin( usbPullUpPin->port, usbPullUpPin->pin, GPIO_PIN_SET );
+  return;
+}
+/*---------------------------------------------------------------------------------------------------*/
+uint8_t uUSBisPower ( void )
+{
+  uint8_t res = 0U;
+  if ( HAL_GPIO_ReadPin( usbDetectorPin->port, usbDetectorPin->pin ) == GPIO_PIN_SET )
+  {
+    res = 1U;
+  }
+  return res;
+}
+/*---------------------------------------------------------------------------------------------------*/
+uint8_t uUSBisPlug ( void )
+{
+  return usbPlug;
 }
 /*---------------------------------------------------------------------------------------------------*/
 /*
@@ -279,11 +304,13 @@ void vUSBreceiveHandler ( void )
 /*---------------------------------------------------------------------------------------------------*/
 void vUSBplugHandler ( void )
 {
+  usbPlug = 1U;
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
 void vUSBunplugHandler ( void )
 {
+  usbPlug = 0U;
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/

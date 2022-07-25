@@ -9,6 +9,7 @@
 #define INC_USBHID_H_
 /*----------------------------- Includes -------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "common.h"
 #include "usbd_customhid.h"
 #include "usbd_custom_hid_if.h"
 #include "usbd_def.h"
@@ -82,7 +83,7 @@ typedef enum
 /*------------------------------ Macros --------------------------------------*/
 #define USB_GET_DIR_VAL( e ) ( e == USB_REPORT_DIR_INPUT ) ? ( USB_INPUT_REPORT_ID ) : ( USB_OUTPUT_REPORT_ID )
 #define USB_GET_DIR( e )     ( e == USB_INPUT_REPORT_ID ) ? ( USB_REPORT_DIR_INPUT ) : ( USB_REPORT_DIR_OUTPUT )
-#if ( USBD_CUSTOMHID_OUTREPORT_BUF_SIZE < ( REPORT_COUNT + 1U ) )
+#if ( USBD_CUSTOMHID_OUTREPORT_BUF_SIZE < USB_REPORT_SIZE )
   #error "Wrong USB buffer size"
 #endif
 /*---------------------------- Structures ------------------------------------*/
@@ -117,6 +118,10 @@ typedef USB_STATUS ( *dataCallBack )( USB_REPORT* report );  /* callback for dat
   void       vUSBparseReport ( USB_REPORT* report );
   USB_STATUS eUSBsaveConfigs ( const USB_REPORT* report );
 #endif
+
+void            vUSBinit ( PIN_TYPE* usbDet, PIN_TYPE* usbPullup );
+uint8_t         uUSBisPower ( void );
+uint8_t         uUSBisPlug ( void );
 USB_CONN_STATUS eUSBgetStatus ( void );      /* Get connection status of USB device */
 void            vUSBreceiveHandler ( void ); /* Handler of USB input interrupt      */
 void            vUSBplugHandler ( void );    /* USB plug interrupt                  */
