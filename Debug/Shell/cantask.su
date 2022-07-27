@@ -9,4 +9,4 @@
 ../Shell/cantask.c:119:9:vCanGetRequest	24	static
 ../Shell/cantask.c:137:9:vCanGetMessage	32	static
 ../Shell/cantask.c:159:6:vCanInsertTXData	56	static
-../Shell/cantask.c:177:6:vCanTask	88	static
+../Shell/cantask.c:177:6:vCanTask	80	static

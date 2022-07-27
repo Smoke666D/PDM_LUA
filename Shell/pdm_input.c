@@ -87,6 +87,7 @@ PDM_INPUT_CONFIG_ERROR inputConfig( PDM_INPUT_NAME channel, PDM_INPUT_MODE mode,
 			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 			HAL_GPIO_Init(sDinConfig[channel].pin_data.GPIOx,&GPIO_InitStruct);
 			sDinConfig[channel].mode = mode;
+			sDinConfig[channel].temp_data = 0;
 			sDinConfig[channel].state = ls;
 			res = CONFIG_OK;
 			break;
@@ -151,21 +152,29 @@ void vDinTask(void *argument)
 				switch (HAL_GPIO_ReadPin(sDinConfig[i].pin_data.GPIOx,sDinConfig[i].pin_data.Pin))
 				{
 				    case GPIO_PIN_SET:
-				    	if ((sDinConfig[i].temp_data == GPIO_PIN_RESET) && (sDinConfig[i].counter >sDinConfig[i].high_counter))
-						{
-							sDinConfig[i].counter = 0;
-							sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
-						}
+				    	if (sDinConfig[i].temp_data == GPIO_PIN_RESET)
+				    	{
+				    			if  (sDinConfig[i].counter >sDinConfig[i].high_counter)
+				    			{
+				    				sDinConfig[i].counter = 0;
+				    				sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
+				    				sDinConfig[i].temp_data = GPIO_PIN_SET;
+				    			}
+				    	}
 						else
 						{
 							sDinConfig[i].counter = 0;
 						}
 				    	break;
 				    case GPIO_PIN_RESET:
-				    	if ((sDinConfig[i].temp_data == GPIO_PIN_SET) && (sDinConfig[i].counter > sDinConfig[i].high_counter))
+				    	if (sDinConfig[i].temp_data == GPIO_PIN_SET)
 				    	{
-				    		sDinConfig[i].counter = 0;
-				    		sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
+				    		if (sDinConfig[i].counter > sDinConfig[i].high_counter)
+				    	    {
+				    			sDinConfig[i].counter = 0;
+				    			sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
+				    			sDinConfig[i].temp_data = GPIO_PIN_RESET;
+				    	    }
 				    	}
 				    	else
 				    	{

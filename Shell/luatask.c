@@ -171,6 +171,35 @@ int CanSendPDM( lua_State *L )
 }
 
 
+int CanSendTable( lua_State *L )
+{
+	int arg_number = lua_gettop(L);
+	uint32_t ID;
+	uint8_t DATA[8];
+	uint8_t size;
+
+		if (arg_number >= 3)  //Проверяем, что при вызове нам передали нужное число аргументов
+		{
+			ID = (uint32_t) lua_tointeger(L,1) ; //Первым аргументом дожен передоваться ID пакета
+			size  = (uint32_t) lua_tointeger(L,2);
+		    luaL_checktype(L, 3, LUA_TTABLE);
+			for (int i=0;i<size;i++)
+			{
+				lua_geti(L, 3, i + 1);
+				DATA[i]= lua_tointeger(L,-1);
+				lua_pop(L,1);
+			}
+			vCanInsertTXData(ID, &DATA[0], size);
+		}
+		return 0;
+}
+
+
+
+
+
+
+
 int CanSendRequest( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
@@ -251,9 +280,8 @@ const char * err;
 void vLuaTask(void *argument)
 {
 
-	 uint32_t temp;
+	 int temp;
 	 uint8_t i,out[20];
-	 const luaL_Reg *lib;
 
 	 int res;
 	 lua_State *L = luaL_newstate();
@@ -270,6 +298,7 @@ void vLuaTask(void *argument)
     luaL_openlibs(L1); // open standard libraries
     // Загружаем библиотеки PDM
 
+    lua_register(L1,"CanTable",CanSendTable);
     lua_register(L1,"OutConfig", OutConfig);
     lua_register(L1,"OutResetConfig", OutResetConfig);
     lua_register(L1,"OutSetPWM", OutSetPWM);
@@ -278,10 +307,10 @@ void vLuaTask(void *argument)
     lua_register(L1,"CheckCanId", CanCheckData);
     lua_register(L1,"GetCanMessage",CanGetMessage);
     lua_register(L1,"GetCanToTable",CanGetResivedData);
-    lua_register(L1,"CanSendRequest",CanSendRequest);
-    lua_register(L1,"CheckAnswer", CanCheckData);
-    lua_register(L1,"GetRequest",CanGetMessage);
-    lua_register(L1,"GetRequestToTable",CanGetResivedData);
+    //lua_register(L1,"CanSendRequest",CanSendRequest);
+   // lua_register(L1,"CheckAnswer", CanCheckData);
+   // lua_register(L1,"GetRequest",CanGetMessage);
+   // lua_register(L1,"GetRequestToTable",CanGetResivedData);
     lua_register(L1,"SetDINConfig",DinConfig);
 
 
@@ -289,7 +318,6 @@ void vLuaTask(void *argument)
 
    while(1)
 	{
-
 	     lua_getglobal(L1, "main");
 	     temp =GetTimer();
 	     lua_pushinteger(L1,temp);
@@ -323,7 +351,5 @@ void vLuaTask(void *argument)
 
 		 vTaskDelay(1 );
 	 }
-
-
 
 }

@@ -117,7 +117,7 @@ const osThreadAttr_t CanTask_attributes = {
   .cb_size = sizeof(CanTaskControlBlock),
   .stack_mem = &CanTaskBuffer[0],
   .stack_size = sizeof(CanTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for DinTask */
 osThreadId_t DinTaskHandle;

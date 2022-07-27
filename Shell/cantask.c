@@ -193,11 +193,11 @@ void vCanTask(void *argument)
 		 size = uxQueueMessagesWaiting( CanTXHandle);
 		 if (size!=0)
 		 {
-			 for (int i=0;i<size;i++)
-			 {
+			// for (int i=0;i<size;i++)
+			// {
 				 xQueueReceive( CanTXHandle, &TXPacket, 0U );
 				 CO_CANsend(&CO_PDM,&TXPacket);
-			 }
+			// }
 		 }
 		 //Проверяем входящую очередь
 		 size = uxQueueMessagesWaiting( CanRXHandle);

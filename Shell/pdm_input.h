@@ -12,7 +12,7 @@
 
 #include "main.h"
 
-#define DIN_CHANNEL 12
+#define DIN_CHANNEL 11
 #define DIN_VALID   3
 
 
