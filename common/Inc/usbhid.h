@@ -56,12 +56,13 @@ typedef enum
   USB_REPORT_CMD_NULL          = 0x00U,
   USB_REPORT_CMD_START_WRITING = 0x01U,
   USB_REPORT_CMD_WRITE_SCRIPT  = 0x02U,
-  USB_REPORT_CMD_END_ERITING   = 0x03U,
-  USB_REPORT_CMD_READ_SCRIPT   = 0x04U
+  USB_REPORT_CMD_END_WRITING   = 0x03U,
+  USB_REPORT_CMD_READ_SCRIPT   = 0x04U,
+  USB_REPORT_CMD_READ_DATA     = 0x05U
 } USB_REPORT_CMD;
 /*
- * |  0  |  1  |  2   |  3   |  4   |  ...  | ... |  64 |
- * | DIR | CMD | STAT | ADR0 | LEN0 | DATA  | ... | ... |
+ * |  0  |  1  |  2   |  3   |  4   |  5   |  6   |  4   |  ...  | ... |  64 |
+ * | DIR | CMD | STAT | ADR0 | ADR1 | ADR2 | ADR3 | LEN0 | DATA  | ... | ... |
  */
 typedef enum
 {
@@ -69,8 +70,11 @@ typedef enum
   USB_CMD_BYTE,  /* 1 */
   USB_STAT_BYTE, /* 2 */
   USB_ADR0_BYTE, /* 3 */
-  USB_LEN0_BYTE, /* 4 */
-  USB_DATA_BYTE, /* 5 */
+  USB_ADR1_BYTE, /* 4 */
+  USB_ADR2_BYTE, /* 5 */
+  USB_ADR3_BYTE, /* 6 */
+  USB_LEN0_BYTE, /* 7 */
+  USB_DATA_BYTE, /* 8 */
 } USB_BYTES;
 typedef enum
 {
@@ -92,9 +96,8 @@ typedef struct
   USB_REPORT_DIR   dir;     /* Direction of transaction */
   USB_REPORT_CMD   cmd;     /* Command */
   USB_REPORT_STATE stat;    /* Status of transaction */
-  uint8_t          adr;     /* Address of register */
   uint8_t          length;  /* Length of data array */
-  uint8_t          multi;   /* Number of USB messages for one report*/
+  uint32_t         adr;     /* Address of register */
   uint8_t*         data;    /* Data array */
   uint8_t*         buf;     /* Pointer to the IO buffer */
 } USB_REPORT;

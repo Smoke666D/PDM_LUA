@@ -9,6 +9,7 @@
 #include "usbd_conf.h"
 #include "usb_device.h"
 #include "flash.h"
+#include "data.h"
 /*----------------------- Structures ----------------------------------------------------------------*/
 extern USBD_HandleTypeDef  hUsbDeviceFS;
 /*----------------------- Constant ------------------------------------------------------------------*/
@@ -128,8 +129,8 @@ void vUSBmakeReport ( USB_REPORT* report )
   report->buf[USB_DIR_BYTE]  = USB_GET_DIR_VAL( report->dir );
   report->buf[USB_CMD_BYTE]  = report->cmd;
   report->buf[USB_STAT_BYTE] = report->stat;
-  report->buf[USB_ADR0_BYTE] = report->adr;
   report->buf[USB_LEN0_BYTE] = report->length;
+  vUint32ToBytes( report->adr, &report->buf[USB_ADR0_BYTE] );
 
   if ( report->length < USB_DATA_SIZE )
   {
@@ -150,9 +151,9 @@ void vUSBmakeReport ( USB_REPORT* report )
 void vUSBparseReport ( USB_REPORT* report )
 {
   report->dir    = USB_GET_DIR( report->buf[USB_DIR_BYTE] );
-  report->cmd    = report->buf[USB_CMD_BYTE];
-  report->stat   = report->buf[USB_STAT_BYTE];
-  report->adr    = report->buf[USB_ADR0_BYTE];
+  report->cmd    = ( USB_REPORT_CMD )report->buf[USB_CMD_BYTE];
+  report->stat   = ( USB_REPORT_STATE )report->buf[USB_STAT_BYTE];
+  report->adr    = uByteToUint32( &report->buf[USB_ADR0_BYTE] );
   report->length = report->buf[USB_LEN0_BYTE];
   report->data   = &( report->buf[USB_DATA_BYTE] );
   return;
@@ -162,11 +163,10 @@ void vUSBparseReport ( USB_REPORT* report )
 /*---------------------------------------------------------------------------------------------------*/
 void vUSBscriptToReport ( USB_REPORT* report )
 {
-  report->length    = USB_DATA_SIZE;
-  FLASH_STATE state = eFLASHreadScript( report->adr, report->data, report->length );
-  if ( state == FLASH_OK )
+  if ( eFLASHreadScript( report->adr, report->data, report->length ) == FLASH_OK )
   {
-    report->stat = USB_REPORT_STATE_OK;
+    report->stat   = USB_REPORT_STATE_OK;
+    report->length = USB_DATA_SIZE;
   }
   else
   {
@@ -176,11 +176,29 @@ void vUSBscriptToReport ( USB_REPORT* report )
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
+void eUSBdataToReport ( USB_REPORT* report )
+{
+  switch ( eDATAget( ( DATA_ADR )report->adr, report->data, &report->length ) )
+  {
+    case DATA_OK:
+      report->stat = USB_REPORT_STATE_OK;
+      break;
+    case DATA_ERROR_ADR:
+      report->stat   = USB_REPORT_STATE_BAD_REQ;
+      report->length = 0U;
+      break;
+    default:
+      report->stat   = USB_REPORT_STATE_INTERNAL;
+      report->length = 0U;
+      break;
+  }
+  return;
+}
+/*---------------------------------------------------------------------------------------------------*/
 USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
 {
-  USB_STATUS  res   = USB_STATUS_DONE;
-  FLASH_STATE state = eFLASHwriteScript( report->adr, report->data, report->length );
-  switch ( state )
+  USB_STATUS res = USB_STATUS_DONE;
+  switch ( eFLASHwriteScript( report->adr, report->data, report->length ) )
   {
     case FLASH_ERROR_ADR:
       res = USB_STATUS_ERROR_ADR;
@@ -198,14 +216,20 @@ USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
 USB_STATUS eUSBstartWriting ( const USB_REPORT* report )
 {
   USB_STATUS res = USB_STATUS_DONE;
-  eFLASHstartWriting();
+  if ( eFLASHstartWriting() != FLASH_OK )
+  {
+    res = USB_STATUS_STORAGE_ERROR;
+  }
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
 USB_STATUS eUSBendWriting ( const USB_REPORT* report )
 {
   USB_STATUS res = USB_STATUS_DONE;
-  eFLASHendWriting();
+  if ( eFLASHendWriting() != FLASH_OK )
+  {
+    res = USB_STATUS_STORAGE_ERROR;
+  }
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
@@ -327,13 +351,16 @@ void vUSBtask ( void *argument )
         case USB_REPORT_CMD_WRITE_SCRIPT:
           vUSBsend( &report, vUSBscriptToReport );
           break;
+        case USB_REPORT_CMD_READ_DATA:
+          vUSBsend( &report, eUSBdataToReport );
+          break;
         case USB_REPORT_CMD_READ_SCRIPT:
           vUSBget( &report, eUSBreportToScript );
           break;
         case USB_REPORT_CMD_START_WRITING:
           vUSBget( &report, eUSBstartWriting );
           break;
-        case USB_REPORT_CMD_END_ERITING:
+        case USB_REPORT_CMD_END_WRITING:
           vUSBget( &report, eUSBendWriting );
           break;
         default:
