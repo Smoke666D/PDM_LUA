@@ -200,6 +200,9 @@ USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
   USB_STATUS res = USB_STATUS_DONE;
   switch ( eFLASHwriteScript( report->adr, report->data, report->length ) )
   {
+    case FLASH_OK:
+      res = USB_STATUS_DONE;
+      break;
     case FLASH_ERROR_ADR:
       res = USB_STATUS_ERROR_ADR;
       break;
@@ -335,6 +338,10 @@ void vUSBplugHandler ( void )
 void vUSBunplugHandler ( void )
 {
   usbPlug = 0U;
+  if ( eFLASHgetLockState() == FLASH_UNLOCKED )
+  {
+    ( void )eFLASHendWriting();
+  }
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
@@ -348,13 +355,13 @@ void vUSBtask ( void *argument )
       vUSBparseReport( &report );
       switch( report.cmd )
       {
-        case USB_REPORT_CMD_WRITE_SCRIPT:
+        case USB_REPORT_CMD_READ_SCRIPT:
           vUSBsend( &report, vUSBscriptToReport );
           break;
         case USB_REPORT_CMD_READ_DATA:
           vUSBsend( &report, eUSBdataToReport );
           break;
-        case USB_REPORT_CMD_READ_SCRIPT:
+        case USB_REPORT_CMD_WRITE_SCRIPT:
           vUSBget( &report, eUSBreportToScript );
           break;
         case USB_REPORT_CMD_START_WRITING:

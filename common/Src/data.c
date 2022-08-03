@@ -7,6 +7,7 @@
 #include "data.h"
 #include <string.h>
 #include "common.h"
+#include "stm32f4xx_hal.h"
 
 void vDATAfloatToByte ( float input, uint8_t* out )
 {
@@ -21,9 +22,17 @@ DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length )
   *length = 0U;
   switch ( adr )
   {
-    case DATA_ADR_UNIQUE:
-      *length = UNIQUE_ID_LENGTH * 2U;
-      vSYSgetUniqueID32( ( uint32_t* )out );
+    case DATA_ADR_UNIQUE_0:
+      *length = 4U;
+      *( uint32_t* )out = HAL_GetUIDw0();
+      break;
+    case DATA_ADR_UNIQUE_1:
+      *length = 4U;
+      *( uint32_t* )out = HAL_GetUIDw1();
+      break;
+    case DATA_ADR_UNIQUE_2:
+      *length = 4U;
+      *( uint32_t* )out = HAL_GetUIDw2();
       break;
     case DATA_ADR_CURRENT_0:
       *length = 4U;
