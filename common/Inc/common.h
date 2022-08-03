@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "stm32f405xx.h"
 /*------------------------ Define --------------------------------------*/
-#define  UNIQUE_ID_LENGTH  6U
+#define  UNIQUE_ID_LENGTH  6U /* in uint16_t */
 /*------------------------ Macros --------------------------------------*/
 #define  REVERSE_BYTE( b ) ( ( ( b << 7U ) & 0x80U ) | ( ( b << 5U ) & 0x40U ) | ( ( b << 3U ) & 0x20U ) | ( ( b << 1U ) & 0x10U ) | ( ( b >> 1U ) & 0x08U ) | ( ( b >> 3U ) & 0x04U ) | ( ( b >> 5U ) & 0x02U ) | ( ( b >> 7U ) & 0x01U ) )
 /*----------------------- Structures -----------------------------------*/
