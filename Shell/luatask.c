@@ -209,8 +209,8 @@ int CanSendRequest( lua_State *L )
 	if (arg_number >= SEND_REQUEST_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
 		ID = (uint32_t) lua_tointeger(L,-arg_number) ; //Первым аргументом дожен передоваться ID пакета
-		SetWaitFilter(lua_tointeger(L,-arg_number-1) );//Второй агрумент - id ответного пакета
-		size  = arg_number -1;
+		SetWaitFilter(lua_tointeger(L,-(arg_number-1)) );//Второй агрумент - id ответного пакета
+		size  = arg_number -2;
 		for (int i=0;i<size;i++)
 		{
 			DATA[i] = (uint8_t) lua_tointeger(L,-(arg_number-2-i)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
@@ -279,7 +279,7 @@ const char * err;
 
 void vLuaTask(void *argument)
 {
-
+     uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
 
@@ -299,26 +299,32 @@ void vLuaTask(void *argument)
     // Загружаем библиотеки PDM
 
     lua_register(L1,"CanTable",CanSendTable);
-    lua_register(L1,"OutConfig", OutConfig);
+    lua_register(L1,"setDINConfig",DinConfig);
+    lua_register(L1,"setOutConfig", OutConfig);
     lua_register(L1,"OutResetConfig", OutResetConfig);
     lua_register(L1,"OutSetPWM", OutSetPWM);
     lua_register(L1,"CanSend", CanSendPDM);
-    lua_register(L1,"SetCanFilter", CanSetResiveFilter);
+    lua_register(L1,"setCanFilter", CanSetResiveFilter);
     lua_register(L1,"CheckCanId", CanCheckData);
     lua_register(L1,"GetCanMessage",CanGetMessage);
     lua_register(L1,"GetCanToTable",CanGetResivedData);
-    //lua_register(L1,"CanSendRequest",CanSendRequest);
-   // lua_register(L1,"CheckAnswer", CanCheckData);
-   // lua_register(L1,"GetRequest",CanGetMessage);
-   // lua_register(L1,"GetRequestToTable",CanGetResivedData);
-    lua_register(L1,"SetDINConfig",DinConfig);
+    lua_register(L1,"sendCandRequest",CanSendRequest);
+    lua_register(L1,"CheckAnswer", CanCheckData);
+    lua_register(L1,"GetRequest",CanGetMessage);
+    lua_register(L1,"GetRequestToTable",CanGetResivedData);
+
 
 
     res = luaL_dostring(L1,defaultLuaScript);
 
    while(1)
 	{
-	     lua_getglobal(L1, "main");
+	    if (init == 0)
+	    	 lua_getglobal(L1, "init");
+	    else
+	    	 lua_getglobal(L1, "main");
+
+
 	     temp =GetTimer();
 	     lua_pushinteger(L1,temp);
 		 for (i=0;i< DIN_CHANNEL;i++)
@@ -331,24 +337,32 @@ void vLuaTask(void *argument)
 			 lua_pushnumber(L1,vOutGetCurrent(i));
 		 }
 		 res = lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp);
-		 if ((res == LUA_OK) || (res == LUA_YIELD))
+		 //if ((res == LUA_OK) || (res == LUA_YIELD))
+		 switch (res)
 		 {
-			 for (i=0;i<OUT_COUNT;i++)
-			 {
-				 out[i] =lua_toboolean(L1,-(i+1));
-				 vOutSetState(i,(uint8_t)out[i]);
-			 }
-		 }
-		 else
-		 {
-			 err =  lua_tostring(L1, -1);
-			 while(1)
-			 {
-				 vTaskDelay(1 );
-			 }
+		 case  LUA_OK:
+		     if (init == 0)
+		 	 {
+		 	   init = 1;
+		 	 }
+		   case LUA_YIELD:
+			   for (i=0;i<OUT_COUNT;i++)
+			   {
+			      	 out[i] =lua_toboolean(L1,-(i+1));
+			   	   	 vOutSetState(i,(uint8_t)out[i]);
+			    }
+			   break;
+
+		   default:
+			   err =  lua_tostring(L1, -1);
+			   while(1)
+			   {
+			   	 vTaskDelay(1 );
+			   }
+			   break;
+
 		 }
 		 lua_pop(L1, temp);
-
 		 vTaskDelay(1 );
 	 }
 

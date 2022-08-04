@@ -129,6 +129,7 @@ uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket)
 			RXPacket->data[i] = MailBoxBuffer[0].data[i];
 		}
 		MailBoxBuffer[0].new_data = 0;
+		MailBoxBuffer[0].ident  =0;
 	}
 	return res;
 }
