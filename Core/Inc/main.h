@@ -169,6 +169,10 @@ void Error_Handler(void);
 #define Cs_Dis8_13_14_GPIO_Port GPIOG
 #define Cs_Dis8_17_18_Pin GPIO_PIN_5
 #define Cs_Dis8_17_18_GPIO_Port GPIOG
+#define USB_PULLUP_Pin GPIO_PIN_6
+#define USB_PULLUP_GPIO_Port GPIOG
+#define USB_VBAT_DET_Pin GPIO_PIN_7
+#define USB_VBAT_DET_GPIO_Port GPIOG
 #define InCH8_13_Pin GPIO_PIN_6
 #define InCH8_13_GPIO_Port GPIOC
 #define InCH8_14_Pin GPIO_PIN_7

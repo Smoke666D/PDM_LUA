@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -66,8 +67,6 @@ TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim12;
 
 UART_HandleTypeDef huart2;
-
-PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -117,7 +116,7 @@ const osThreadAttr_t CanTask_attributes = {
   .cb_size = sizeof(CanTaskControlBlock),
   .stack_mem = &CanTaskBuffer[0],
   .stack_size = sizeof(CanTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for DinTask */
 osThreadId_t DinTaskHandle;
@@ -171,7 +170,6 @@ static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM9_Init(void);
 static void MX_TIM12_Init(void);
-static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C2_Init(void);
@@ -231,7 +229,6 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM9_Init();
   MX_TIM12_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_I2C2_Init();
@@ -1218,7 +1215,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 84;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 2000;
+  htim10.Init.Period = 1000;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
@@ -1321,41 +1318,6 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
-  * @brief USB_OTG_FS Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USB_OTG_FS_PCD_Init(void)
-{
-
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
-
-  /* USER CODE END USB_OTG_FS_Init 0 */
-
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
-
-  /* USER CODE END USB_OTG_FS_Init 1 */
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = ENABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = ENABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
-
-  /* USER CODE END USB_OTG_FS_Init 2 */
-
-}
-
-/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -1407,7 +1369,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(USB_PULLUP_GPIO_Port, USB_PULLUP_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : Din3_Pin Din4_Pin Din5_Pin Din1_Pin
                            Din2_Pin */
@@ -1424,11 +1386,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Cs_Dis20_5_Pin Cs_Dis20_2_Pin Cs_Dis20_1_Pin Cs_Dis8_13_14_Pin
-                           Cs_Dis8_17_18_Pin PG6 PG7 Cs_Dis8_15_16_Pin
-                           Cs_Dis20_3_Pin Cs_Dis20_4_Pin */
+                           Cs_Dis8_17_18_Pin Cs_Dis8_15_16_Pin Cs_Dis20_3_Pin Cs_Dis20_4_Pin */
   GPIO_InitStruct.Pin = Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-                          |Cs_Dis8_17_18_Pin|GPIO_PIN_6|GPIO_PIN_7|Cs_Dis8_15_16_Pin
-                          |Cs_Dis20_3_Pin|Cs_Dis20_4_Pin;
+                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1454,6 +1414,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : USB_PULLUP_Pin */
+  GPIO_InitStruct.Pin = USB_PULLUP_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(USB_PULLUP_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : USB_VBAT_DET_Pin */
+  GPIO_InitStruct.Pin = USB_VBAT_DET_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(USB_VBAT_DET_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : Din9_Pin Din8_Pin */
   GPIO_InitStruct.Pin = Din9_Pin|Din8_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -1475,6 +1448,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
+  /* init code for USB_DEVICE */
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
   /* Infinite loop */
