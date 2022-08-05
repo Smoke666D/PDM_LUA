@@ -26,7 +26,7 @@
 #include "PDMhardware.h"
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
-
+#include "usbhid.h"
 #include "pdm_input.h"
 #include "system.h"
 #include "serial.h"
