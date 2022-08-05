@@ -15,7 +15,7 @@
 #include "FreeRTOS.h"
 #include "cantask.h"
 #include "script.c"
-
+#include "pdm_input.h"
 /*
  * С функция для конфигурации входов из LUA
  *
@@ -26,6 +26,25 @@
 #define CANSEND_ARGUMENT_COUNT 2
 #define CANREQSEND_ARGUMENT_COUNT 3
 #define SEND_REQUEST_ARGUMENT_COUNT 3
+
+/*
+ * Устанавливаем конфигурацию дискрнтого входа
+ */
+int DinConfig(lua_State *L )
+{
+		int in_number = 0;
+		int arg_number = lua_gettop(L);
+		LOGIC_STATE state;
+		if (arg_number >= 2)  //Проверяем, что при вызове нам передали нужное число аргументов
+		{
+			in_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
+			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
+			inputConfig(in_number, DIGITAL,(state == 1)?POSITIVE_STATE:NEGATIVE_STATE );
+
+		}
+		return 0;
+
+}
 
 /*
  * Устанавливаем новый фильтр, позволяющий принимать пакеты с нужным ID
@@ -228,6 +247,7 @@ int  OutSetPWM( lua_State *L )
 
 
 
+const char * err;
 
 void vLuaTask(void *argument)
 {
@@ -235,7 +255,7 @@ void vLuaTask(void *argument)
 	 uint32_t temp;
 	 uint8_t i,out[20];
 	 const luaL_Reg *lib;
-	 const char * err;
+
 	 int res;
 	 lua_State *L = luaL_newstate();
 	 lua_State *L1;
@@ -263,26 +283,45 @@ void vLuaTask(void *argument)
     lua_register(L1,"CheckAnswer", CanCheckData);
     lua_register(L1,"GetRequest",CanGetMessage);
     lua_register(L1,"GetRequestToTable",CanGetResivedData);
+    lua_register(L1,"SetDINConfig",DinConfig);
+
 
     res = luaL_dostring(L1,defaultLuaScript);
 
    while(1)
 	{
+
 	     lua_getglobal(L1, "main");
 	     temp =GetTimer();
-		 lua_pushinteger(L1,temp);
-		 res = lua_resume(L1,L,1,&temp);
+	     lua_pushinteger(L1,temp);
+		 for (i=0;i< DIN_CHANNEL;i++)
+		 {
+			 lua_pushboolean(L1,uDinGet(i));
+		 }
+
+		 for (i=0;i< OUT_COUNT ;i++)
+		 {
+			 lua_pushnumber(L1,vOutGetCurrent(i));
+		 }
+		 res = lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp);
 		 if ((res == LUA_OK) || (res == LUA_YIELD))
 		 {
 			 for (i=0;i<OUT_COUNT;i++)
 			 {
 				 out[i] =lua_toboolean(L1,-(i+1));
-				 vOutState(i,(uint8_t)out[i]);
+				 vOutSetState(i,(uint8_t)out[i]);
 			 }
 		 }
 		 else
+		 {
 			 err =  lua_tostring(L1, -1);
+			 while(1)
+			 {
+				 vTaskDelay(1 );
+			 }
+		 }
 		 lua_pop(L1, temp);
+
 		 vTaskDelay(1 );
 	 }
 

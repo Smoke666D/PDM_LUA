@@ -301,7 +301,7 @@ int main(void)
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
+
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -1229,7 +1229,9 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 84;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
+
   htim10.Init.Period = 1000;
+
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
@@ -1237,6 +1239,7 @@ static void MX_TIM10_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM10_Init 2 */
+   HAL_TIM_Base_Start_IT(&htim10);
 
   /* USER CODE END TIM10_Init 2 */
 
@@ -1465,11 +1468,14 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+
   char welcomeString[] = "Power Distribution Module by SIDER Ltd. 2022";
   vSYSserialString( welcomeString );
   #if defined ( UNIT_TEST )
     //vTESTinit();
   #endif
+
+
   /* Infinite loop */
   for(;;)
   {

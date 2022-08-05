@@ -72,11 +72,11 @@ void SystemTimer(void)
 }
 uint16_t GetTimer(void)
 {
- uint16_t delay;
+ uint16_t delay =0;
  if (overload)
  {
 	 overload = 0;
-	 delay = 65000- timer + system_timer;
+	 delay = 65000 - timer + system_timer;
  }
  else
  {
@@ -230,7 +230,7 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 }
 
 
-void vOutState(OUT_NAME_TYPE out_name, uint8_t state)
+void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 {
 	if (!state)
 		out[out_name].out_logic_state = OUT_OFF;
@@ -246,6 +246,18 @@ void vOutSet(OUT_NAME_TYPE out_name)
 void vOutReset(OUT_NAME_TYPE out_name)
 {
 	out[out_name].out_logic_state = OUT_OFF;
+}
+
+
+uint8_t vOutGetState(OUT_NAME_TYPE out_name)
+{
+	return out[out_name].out_state;
+
+}
+float vOutGetCurrent(OUT_NAME_TYPE out_name)
+{
+	return out[out_name].current;
+
 }
 
 
@@ -283,26 +295,6 @@ void vOutInit()
 }
 
 
-void vADCInit ( void )
-{
-//  HAL_GPIO_WritePin( ANALOG_SWITCH_GPIO_Port, ANALOG_SWITCH_Pin, GPIO_PIN_RESET );
-//  HAL_GPIO_WritePin( DIN_OFFSET_GPIO_Port,    DIN_OFFSET_Pin,    GPIO_PIN_SET   );
-//  vADC3DCInit( DC );
-//  vADC3FrInit( ADC3Freq );
-//  vADC12FrInit( ADC2Freq );
-//  hadc3.DMA_Handle->XferCpltCallback     = ADC_DMAConv;
-//  hadc2.DMA_Handle->XferCpltCallback     = ADC_DMAConv;
- // hadc1.DMA_Handle->XferCpltCallback     = ADC_DMAConv;
-//  hadc3.DMA_Handle->XferHalfCpltCallback = NULL;
-//  hadc2.DMA_Handle->XferHalfCpltCallback = NULL;
- // hadc1.DMA_Handle->XferHalfCpltCallback = NULL;
-//  hadc3.DMA_Handle->XferErrorCallback    = ADC_DMAErro;
- // hadc2.DMA_Handle->XferErrorCallback    = ADC_DMAErro;
-//  hadc1.DMA_Handle->XferErrorCallback    = ADC_DMAErro;
- // ADC_VALID_DATA = 0U;
- // vADCConfigInit();
-  return;
-}
 
 void vADCTask(void * argument)
 {
@@ -516,11 +508,29 @@ void vOutContolTask(void * argument)
    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
    return;
  }
-/***************** Service function ***********************************************/
 
+/*
+ * Напряжение на аналогвом входе
+ */
+ float fAinGetState(AIN_NAME_TYPE channel)
+ {
+	 float res = 0;
+	 if (channel < AIN_COUNT)
+	 {
+		 res = mfVData[channel];
+	 }
+	 return res;
+
+
+ }
  /*
-  * Функция возращает номер канала и управлюящий таймер для выбранного выхода
+  * Дискретные входа
+  *
+  *
   */
+ void vDoutConfig()
+ {
+ }
 
 
 
