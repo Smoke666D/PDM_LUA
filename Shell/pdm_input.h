@@ -55,7 +55,6 @@ typedef enum {
 		INPUT9 = 8,
 		INPUT10 = 9,
 		INPUT11 = 10,
-		INPUT12 = 11,
 
 } PDM_INPUT_NAME;
 typedef struct {

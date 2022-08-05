@@ -10,9 +10,12 @@
 
 #include "pdm_input.h"
 #include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "event_groups.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
-#include "event_groups.h"
+
 
 
 static uint16_t system_timer = 0;
@@ -60,7 +63,7 @@ const osMessageQueueAttr_t CaptureTIM_attributes = {
 
 DoutCinfig sDinConfig[DIN_CHANNEL]={{{Din1_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din2_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din3_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din4_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},
 								    {{Din5_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din6_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din7_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din8_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},
-								    {{Din9_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din10_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din11_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din12_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE} };
+								    {{Din9_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din10_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din11_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE}};
 
 void SetCaptureData( PDM_INPUT_NAME channel, uint32_t data)
 {
@@ -128,7 +131,7 @@ void vDinTask(void *argument)
 	inputConfig(INPUT9,DIGITAL,POSITIVE_STATE );
 	inputConfig(INPUT10,DIGITAL,POSITIVE_STATE );
 	inputConfig(INPUT11,DIGITAL,POSITIVE_STATE );
-	inputConfig(INPUT12,DIGITAL,POSITIVE_STATE );
+
 	CaptureTIMHandle = osMessageQueueNew (16, sizeof(CAPTURE_DATA_TYPE), &CaptureTIM_attributes);
 
 	while(1)
