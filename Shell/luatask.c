@@ -252,9 +252,9 @@ const char * err;
 void vLuaTask(void *argument)
 {
 
-	 uint32_t temp;
+	 int temp;
 	 uint8_t i,out[20];
-	 const luaL_Reg *lib;
+
 
 	 int res;
 	 lua_State *L = luaL_newstate();
