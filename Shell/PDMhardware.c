@@ -20,15 +20,15 @@ volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U 
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 
-PDM_OUTPUT_TYPE out[OUT_COUNT];
+PDM_OUTPUT_TYPE out[OUT_COUNT] __attribute__((section(".ccmram")));
 
-static uint16_t muRawCurData[20];
-static uint16_t muRawVData[4];
-static float mfVData[4] ={};
+static uint16_t muRawCurData[20] __attribute__((section(".ccmram")));
+static uint16_t muRawVData[4] __attribute__((section(".ccmram")));
+static float mfVData[4] __attribute__((section(".ccmram")));
 
 static uint32_t out_register;
 
-static KAL_DATA CurSensData[20][5]={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+static KAL_DATA CurSensData[20][5] __attribute__((section(".ccmram")))={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
@@ -93,7 +93,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  chan
 	{
 		out[out_name].ptim = ptim;
 		out[out_name].channel = channel;
-		out[out_name].out_logic_state =OUT_OFF;
+		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		 =	STATE_OUT_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
@@ -375,7 +375,6 @@ void vDataConvertToFloat( void)
 				 float temp = (float) muRawCurData [ i ]*K;
 				 if ( temp < out[i].CSC[r].data )
 				 {
-
 					 out[i].current =  temp * out[i].CSC[r].k;
 					 out[i].current =  out[i].current + out[i].CSC[r].b ;
 					 out[i].current =  out[i].current* temp/RR;

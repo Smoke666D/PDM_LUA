@@ -105,7 +105,7 @@ typedef struct
    ERROR_FLAGS_TYPE error_flag;
    LIN_COOF CSC[4];
    float current;
-} PDM_OUTPUT_TYPE;
+} PDM_OUTPUT_TYPE ;
 
 
 
@@ -115,8 +115,6 @@ typedef struct
 	uint16_t KOOF;
 	float Data;
 } KAL_DATA;
-
-
 
 
 typedef enum {
@@ -140,7 +138,6 @@ typedef enum {
 	OUT_18 = 17,
 	OUT_19 = 18,
 	OUT_20 = 19,
-
 } OUT_NAME_TYPE;
 
 
