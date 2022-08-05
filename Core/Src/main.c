@@ -127,7 +127,7 @@ const osThreadAttr_t CanTask_attributes = {
 };
 /* Definitions for DinTask */
 osThreadId_t DinTaskHandle;
-uint32_t DinTaskBuffer[ 128 ];
+uint32_t DinTaskBuffer[ 256 ];
 osStaticThreadDef_t DinTaskControlBlock;
 const osThreadAttr_t DinTask_attributes = {
   .name = "DinTask",

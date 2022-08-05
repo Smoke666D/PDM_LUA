@@ -32,12 +32,12 @@
  */
 int DinConfig(lua_State *L )
 {
-		int in_number = 0;
+		uint8_t in_number = 0;
 		int arg_number = lua_gettop(L);
 		LOGIC_STATE state;
 		if (arg_number >= 2)  //Проверяем, что при вызове нам передали нужное число аргументов
 		{
-			in_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
+			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; //Первым аргументом дожен передоваться номер канала
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
 			inputConfig(in_number, DIGITAL,(state == 1)?POSITIVE_STATE:NEGATIVE_STATE );
 

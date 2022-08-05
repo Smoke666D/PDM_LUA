@@ -32,8 +32,10 @@ typedef enum {
 	NEGATIVE_STATE = 1,
 } LOGIC_STATE;
 
-typedef struct {
-PIN_CONFIG pin_data;
+typedef struct
+{
+uint32_t Pin;
+GPIO_TypeDef * GPIOx;
 PDM_INPUT_MODE  mode;
 uint8_t counter;
 uint8_t data;
@@ -54,8 +56,7 @@ typedef enum {
 		INPUT8 = 7,
 		INPUT9 = 8,
 		INPUT10 = 9,
-		INPUT11 = 10,
-
+		INPUT11 = 10
 } PDM_INPUT_NAME;
 typedef struct {
 	PDM_INPUT_NAME channel;
@@ -71,7 +72,7 @@ typedef enum  {
 		WRONG_CHANNEL_MODE =3U,
 } PDM_INPUT_CONFIG_ERROR;
 
-PDM_INPUT_CONFIG_ERROR inputConfig( PDM_INPUT_NAME channel, PDM_INPUT_MODE mode,LOGIC_STATE ls);
+PDM_INPUT_CONFIG_ERROR inputConfig(uint8_t channel, PDM_INPUT_MODE mode,LOGIC_STATE ls);
 void vDinTask(void *argument);
 void SystemDinTimer(void);
 uint8_t uDinGet(PDM_INPUT_NAME channel);
