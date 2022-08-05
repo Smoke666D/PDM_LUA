@@ -10,11 +10,19 @@
 
 #include "pdm_input.h"
 #include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "event_groups.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
+
 #include "event_groups.h"
 #include "task.h"
 #include "semphr.h"
+
+
+
+
 
 static uint16_t system_timer = 0;
 static uint16_t timer = 0;
@@ -59,9 +67,9 @@ const osMessageQueueAttr_t CaptureTIM_attributes = {
 };
 
 
-DoutCinfig sDinConfig[DIN_CHANNEL]={{{Din1_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din2_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din3_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din4_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},
+DoutCinfig sDinConfig[12]={{{Din1_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din2_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din3_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din4_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},
 								    {{Din5_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din6_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din7_Pin,GPIOE},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din8_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},
-								    {{Din9_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din10_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din11_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din12_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE} };
+								    {{Din9_Pin,GPIOB},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din10_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE},{{Din11_Pin,GPIOF},DIGITAL,0,0,10,10,0,POSITIVE_STATE}};
 
 void SetCaptureData( PDM_INPUT_NAME channel, uint32_t data)
 {
@@ -88,7 +96,7 @@ PDM_INPUT_CONFIG_ERROR inputConfig( PDM_INPUT_NAME channel, PDM_INPUT_MODE mode,
 			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 			HAL_GPIO_Init(sDinConfig[channel].pin_data.GPIOx,&GPIO_InitStruct);
 			sDinConfig[channel].mode = mode;
-            sDinConfig[channel].temp_data = 0;
+			sDinConfig[channel].temp_data = 0;
 			sDinConfig[channel].state = ls;
 			res = CONFIG_OK;
 			break;
@@ -129,7 +137,8 @@ void vDinTask(void *argument)
 	inputConfig(INPUT9,DIGITAL,POSITIVE_STATE );
 	inputConfig(INPUT10,DIGITAL,POSITIVE_STATE );
 	inputConfig(INPUT11,DIGITAL,POSITIVE_STATE );
-//	inputConfig(INPUT12,DIGITAL,POSITIVE_STATE );
+
+
 	CaptureTIMHandle = osMessageQueueNew (16, sizeof(CAPTURE_DATA_TYPE), &CaptureTIM_attributes);
 
 	while(1)
@@ -153,29 +162,33 @@ void vDinTask(void *argument)
 				switch (HAL_GPIO_ReadPin(sDinConfig[i].pin_data.GPIOx,sDinConfig[i].pin_data.Pin))
 				{
 				    case GPIO_PIN_SET:
-                        if (sDinConfig[i].temp_data == GPIO_PIN_RESET)
-                        {
-                                if  (sDinConfig[i].counter >sDinConfig[i].high_counter)
-                                {
-                                    sDinConfig[i].counter = 0;
-                                    sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
-                                    sDinConfig[i].temp_data = GPIO_PIN_SET;
-                                }
-                        }
+
+				    	if (sDinConfig[i].temp_data == GPIO_PIN_RESET)
+				    	{
+				    			if  (sDinConfig[i].counter >sDinConfig[i].high_counter)
+				    			{
+				    				sDinConfig[i].counter = 0;
+				    				sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
+				    				sDinConfig[i].temp_data = GPIO_PIN_SET;
+				    			}
+				    	}
+
 						else
 						{
 							sDinConfig[i].counter = 0;
 						}
 				    	break;
 				    case GPIO_PIN_RESET:
-                        if (sDinConfig[i].temp_data == GPIO_PIN_SET)
+
+				    	if (sDinConfig[i].temp_data == GPIO_PIN_SET)
 				    	{
-                            if (sDinConfig[i].counter > sDinConfig[i].high_counter)
-                            {
-                                sDinConfig[i].counter = 0;
-                                sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
-                                sDinConfig[i].temp_data = GPIO_PIN_RESET;
-                            }
+				    		if (sDinConfig[i].counter > sDinConfig[i].high_counter)
+				    	    {
+				    			sDinConfig[i].counter = 0;
+				    			sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
+				    			sDinConfig[i].temp_data = GPIO_PIN_RESET;
+				    	    }
+
 				    	}
 				    	else
 				    	{

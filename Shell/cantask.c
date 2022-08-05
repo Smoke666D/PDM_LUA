@@ -129,6 +129,7 @@ uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket)
 			RXPacket->data[i] = MailBoxBuffer[0].data[i];
 		}
 		MailBoxBuffer[0].new_data = 0;
+		MailBoxBuffer[0].ident  =0;
 	}
 	return res;
 }
@@ -139,7 +140,7 @@ uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket)
 	uint8_t res = 0;
 	for (int k=0;k < MAILBOXSIZE;k++)
 	{
-		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident = RXPacket->ident))
+		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident == RXPacket->ident))
 		{
 			RXPacket->DLC = MailBoxBuffer[k].DLC;
 			for (int i =0; i < RXPacket->DLC;i++)
@@ -193,11 +194,11 @@ void vCanTask(void *argument)
 		 size = uxQueueMessagesWaiting( CanTXHandle);
 		 if (size!=0)
 		 {
-			 for (int i=0;i<size;i++)
-			 {
+			// for (int i=0;i<size;i++)
+			// {
 				 xQueueReceive( CanTXHandle, &TXPacket, 0U );
 				 CO_CANsend(&CO_PDM,&TXPacket);
-			 }
+			// }
 		 }
 		 //Проверяем входящую очередь
 		 size = uxQueueMessagesWaiting( CanRXHandle);

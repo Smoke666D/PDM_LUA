@@ -12,7 +12,7 @@
 
 #include "main.h"
 
-#define DIN_CHANNEL 12
+#define DIN_CHANNEL 11
 #define DIN_VALID   3
 
 
@@ -55,7 +55,6 @@ typedef enum {
 		INPUT9 = 8,
 		INPUT10 = 9,
 		INPUT11 = 10,
-		INPUT12 = 11,
 
 } PDM_INPUT_NAME;
 typedef struct {
