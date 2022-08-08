@@ -580,7 +580,7 @@ typedef enum {
  *
  * @param CANptr Pointer to CAN device
  */
-void CO_CANsetConfigurationMode(void *CANptr);
+void CO_CANsetConfigurationMode();
 
 
 /**
@@ -588,7 +588,7 @@ void CO_CANsetConfigurationMode(void *CANptr);
  *
  * @param CANmodule CO_CANmodule_t object.
  */
-void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule);
+void CO_CANsetNormalMode();
 
 
 /**
@@ -610,10 +610,7 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule);
  *
  * Return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
-CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
-                                   void *CANptr,
-                                   CO_CANrx_t rxArray[],
-                                   uint16_t rxSize,
+CO_ReturnError_t CO_CANmodule_init(
 
                                    uint16_t CANbitRate);
 
@@ -623,7 +620,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
  *
  * @param CANmodule CAN module object.
  */
-void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
+void CO_CANmodule_disable();
 
 
 /**

@@ -13,15 +13,9 @@
 #include "CO_driver.h"
 #include "CO_driver_target.h"
 
-uint8_t co_drv_create_os_objects(void);
-uint8_t co_drv_mutex_lock(void);
-uint8_t co_drv_mutex_unlock(void);
+#define MAILBOXSIZE  14*4
 
-/* Semaphore for main app thread synchronization */
-extern osSemaphoreId_t co_drv_app_thread_sync_semaphore;
 
-/* Semaphore for periodic thread synchronization */
-extern osSemaphoreId_t co_drv_periodic_thread_sync_semaphore;
 
 /* Wakeup specific threads */
 #define CO_WAKEUP_APP_THREAD()                          osSemaphoreRelease(co_drv_app_thread_sync_semaphore)
@@ -33,19 +27,17 @@ extern osSemaphoreId_t co_drv_periodic_thread_sync_semaphore;
 
 
 CO_ReturnError_t CO_CANmodule_init(
-        CO_CANmodule_t         *CANmodule,
-        void                   *CANptr,
-        CO_CANrx_t              rxArray[],
-        uint16_t                rxSize,
+
         uint16_t                CANbitRate);
 
 
 uint8_t  co_drv_create_os_objects(void);
 uint8_t co_drv_mutex_lock(void);
 uint8_t co_drv_mutex_unlock(void);
-void CO_CANsetConfigurationMode(void *CANptr);
+void CO_CANsetConfigurationMode();
 uint8_t getCanFifoFree();
-uint8_t uPDMCanSend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
+uint8_t uPDMCanSend(CO_CANtx_t *buffer);
+void vConfigCAN(CAN_HandleTypeDef  * pcan);
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan);
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan);
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan);

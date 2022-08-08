@@ -14,13 +14,15 @@ typedef struct {
     uint16_t ident;
     uint8_t DLC;
     uint8_t data[8];
+    uint16_t filter_id;
     uint8_t new_data;
-} CANtx;
+} CANRX;
 
 typedef struct {
 	uint32_t ident;
 	uint8_t DLC;
     uint8_t data[8];
+    uint16_t filter_id;
 } CAN_FRAME_TYPE;
 
 uint8_t CheckAnswer( void );
