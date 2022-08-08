@@ -9,6 +9,8 @@
 #define PDMHARDWARE_H_
 
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
 
 
 #define AIN_COUNT			4U		//Количесвто аналоговых входов
@@ -151,13 +153,15 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
-
+osThreadId_t* osADCgetTaskHandle ( void );
+osThreadId_t* osDOUTgetTaskHandle ( void );
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 void vOutContolTask(void * argument);
 void vOutContolTask(void * argument);
 void vHWOutResete( OUT_NAME_TYPE out_name);
+void vOutInit(void);
 void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
 void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);

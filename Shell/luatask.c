@@ -12,7 +12,6 @@
 #include "lualib.h"
 #include "lapi.h"
 #include "PDMhardware.h"
-#include "FreeRTOS.h"
 #include "cantask.h"
 #include "script.c"
 #include "pdm_input.h"
@@ -26,7 +25,12 @@
 #define CANSEND_ARGUMENT_COUNT 2
 #define CANREQSEND_ARGUMENT_COUNT 3
 #define SEND_REQUEST_ARGUMENT_COUNT 3
+static osThreadId_t luaHandle                     = NULL;
 
+osThreadId_t* osLUAgetTaskHandle ( void )
+{
+  return &luaHandle ;
+}
 /*
  * Устанавливаем конфигурацию дискрнтого входа
  */

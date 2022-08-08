@@ -37,8 +37,6 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-typedef StaticTask_t osStaticThreadDef_t;
-typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -82,83 +80,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for luaTask */
-osThreadId_t luaTaskHandle;
-const osThreadAttr_t luaTask_attributes = {
-  .name = "luaTask",
-  .stack_size = 2000 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for ADCTask */
-osThreadId_t ADCTaskHandle;
-uint32_t ADCTaskBuffer[ 128 ];
-osStaticThreadDef_t ADCTaskControlBlock;
-const osThreadAttr_t ADCTask_attributes = {
-  .name = "ADCTask",
-  .cb_mem = &ADCTaskControlBlock,
-  .cb_size = sizeof(ADCTaskControlBlock),
-  .stack_mem = &ADCTaskBuffer[0],
-  .stack_size = sizeof(ADCTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for OutContolTask */
-osThreadId_t OutContolTaskHandle;
-uint32_t OutContolTaskBuffer[ 128 ];
-osStaticThreadDef_t OutContolTaskControlBlock;
-const osThreadAttr_t OutContolTask_attributes = {
-  .name = "OutContolTask",
-  .cb_mem = &OutContolTaskControlBlock,
-  .cb_size = sizeof(OutContolTaskControlBlock),
-  .stack_mem = &OutContolTaskBuffer[0],
-  .stack_size = sizeof(OutContolTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for CanTask */
-osThreadId_t CanTaskHandle;
-uint32_t CanTaskBuffer[ 128 ];
-osStaticThreadDef_t CanTaskControlBlock;
-const osThreadAttr_t CanTask_attributes = {
-  .name = "CanTask",
-  .cb_mem = &CanTaskControlBlock,
-  .cb_size = sizeof(CanTaskControlBlock),
-  .stack_mem = &CanTaskBuffer[0],
-  .stack_size = sizeof(CanTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for DinTask */
-osThreadId_t DinTaskHandle;
-uint32_t DinTaskBuffer[ 256 ];
-osStaticThreadDef_t DinTaskControlBlock;
-const osThreadAttr_t DinTask_attributes = {
-  .name = "DinTask",
-  .cb_mem = &DinTaskControlBlock,
-  .cb_size = sizeof(DinTaskControlBlock),
-  .stack_mem = &DinTaskBuffer[0],
-  .stack_size = sizeof(DinTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for CanTX */
-osMessageQueueId_t CanTXHandle;
-uint8_t CanTXBuffer[ 16 * sizeof( CO_CANtx_t ) ];
-osStaticMessageQDef_t CanTXControlBlock;
-const osMessageQueueAttr_t CanTX_attributes = {
-  .name = "CanTX",
-  .cb_mem = &CanTXControlBlock,
-  .cb_size = sizeof(CanTXControlBlock),
-  .mq_mem = &CanTXBuffer,
-  .mq_size = sizeof(CanTXBuffer)
-};
-/* Definitions for CanRX */
-osMessageQueueId_t CanRXHandle;
-uint8_t CanRXBuffer[ 16 * sizeof( CAN_FRAME_TYPE ) ];
-osStaticMessageQDef_t CanRXControlBlock;
-const osMessageQueueAttr_t CanRX_attributes = {
-  .name = "CanRX",
-  .cb_mem = &CanRXControlBlock,
-  .cb_size = sizeof(CanRXControlBlock),
-  .mq_mem = &CanRXBuffer,
-  .mq_size = sizeof(CanRXBuffer)
-};
 /* USER CODE BEGIN PV */
 const PIN_TYPE usbDet = {
   .pin = USB_VBAT_DET_Pin,
@@ -189,11 +110,6 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM10_Init(void);
 void StartDefaultTask(void *argument);
-extern void vLuaTask(void *argument);
-extern void vADCTask(void *argument);
-extern void vOutContolTask(void *argument);
-extern void vCanTask(void *argument);
-extern void vDinTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -249,6 +165,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   vSERIALinit( &huart2 );
   vUSBinit( &usbDet, &usbPullup );
+  vDINinit();
+  vOutInit();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -266,13 +184,6 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of CanTX */
-  CanTXHandle = osMessageQueueNew (16, sizeof(CO_CANtx_t), &CanTX_attributes);
-
-  /* creation of CanRX */
-  CanRXHandle = osMessageQueueNew (16, sizeof(CAN_FRAME_TYPE), &CanRX_attributes);
-
   /* USER CODE BEGIN RTOS_QUEUES */
   vSYSqueueInit();
   /* USER CODE END RTOS_QUEUES */
@@ -280,21 +191,6 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  /* creation of luaTask */
-  luaTaskHandle = osThreadNew(vLuaTask, NULL, &luaTask_attributes);
-
-  /* creation of ADCTask */
-  ADCTaskHandle = osThreadNew(vADCTask, NULL, &ADCTask_attributes);
-
-  /* creation of OutContolTask */
-  OutContolTaskHandle = osThreadNew(vOutContolTask, NULL, &OutContolTask_attributes);
-
-  /* creation of CanTask */
-  CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
-
-  /* creation of DinTask */
-  DinTaskHandle = osThreadNew(vDinTask, NULL, &DinTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   vSYStaskInit();
@@ -1229,9 +1125,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 84;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-
-  htim10.Init.Period = 2000;
-
+  htim10.Init.Period = 1000;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)

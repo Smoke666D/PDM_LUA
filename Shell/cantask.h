@@ -9,6 +9,10 @@
 #define CANTASK_H_
 
 #include "main.h"
+#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
 typedef struct {
     uint16_t ident;
@@ -25,6 +29,10 @@ typedef struct {
     uint16_t filter_id;
 } CAN_FRAME_TYPE;
 
+
+QueueHandle_t* pCANRXgetQueue ( void );
+QueueHandle_t* pCANTXgetQueue ( void );
+osThreadId_t* osCANgetTaskHandle ( void );
 uint8_t CheckAnswer( void );
 uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket);
 uint8_t vCanChekMessage(uint32_t id);

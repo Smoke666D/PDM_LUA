@@ -13,7 +13,7 @@
 /*------------------------ Define --------------------------------------*/
 #define  RAM_SECTION_RAM                ".ram"
 #define  RAM_SECTION_CCMRAM             ".ccmram"
-#define  TASK_RAM_SECTION               RAM_SECTION_RAM
+#define  TASK_RAM_SECTION               RAM_SECTION_CCMRAM
 
 #define  DEFAULT_TASK_PRIORITY          osPriorityNormal
 #define  LUA_TASK_PRIORITY              osPriorityLow
@@ -24,12 +24,14 @@
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
 #define  USB_TASK_PRIORITY              osPriorityLow
+#define  DIN_TASK_PRIORITY              osPriorityLow
 
 #define  DEFAULT_TASK_STACK_SIZE        128U
 #define  LUA_TASK_STACK_SIZE            2000U
 #define  ADC_TASK_STACK_SIZE            128U
 #define  DOUT_TASK_STACK_SIZE           128U
 #define  CAN_TASK_STACK_SIZE            128U
+#define  DIN_TASK_STACK_SIZE            128U
 #define  SERIAL_TX_TSAK_STACK_SIZE      256U
 #define  SERIAL_RX_TSAK_STACK_SIZE      128U
 #define  SERIAL_PROTECT_TSAK_STACK_SIZE 128U
@@ -37,6 +39,7 @@
 
 #define  DEFAULT_TASK_NAME              "defaultTask"
 #define  LUA_TASK_NAME                  "luaTask"
+#define  DIN_TASK_NAME                  "dinTask"
 #define  ADC_TASK_NAME                  "adcTask"
 #define  DOUT_TASK_NAME                 "doutTask"
 #define  CAN_TASK_NAME                  "canTask"
@@ -49,6 +52,8 @@
 #define  SYS_BAR_LENGTH                 10U
 
 #define  SERIAL_QUEUE_SIZE              16U
+#define  CANRX_QUEUE_SIZE              16U
+#define  CANTX_QUEUE_SIZE              16U
 /*------------------------ Macros --------------------------------------*/
 #ifndef   __SECTION
   #define __SECTION(x) __attribute__((section(x)))
