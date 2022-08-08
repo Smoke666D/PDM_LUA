@@ -6,13 +6,16 @@
  */
 /*----------------------- Includes ------------------------------------------------------------------*/
 #include "cli.h"
-#include "string.h"
-#include "stdlib.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "common.h"
 #include "version.h"
 #include "lua.h"
 #include "flash.h"
 #include "usbhid.h"
+#include "PDMhardware.h"
+#include "pdm_input.h"
 /*------------------------- Define ------------------------------------------------------------------*/
 /*----------------------- Structures ----------------------------------------------------------------*/
 /*----------------------- Constant ------------------------------------------------------------------*/
@@ -32,7 +35,8 @@ static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
   CLI_TARGET_SCRIPT_STR,
   CLI_TARGET_LUA_STR,
   CLI_TARGET_VUSB_STR,
-  CLI_TARGET_USB_STR
+  CLI_TARGET_USB_STR,
+  CLI_TARGET_VOLTAGE_STR
 };
 /*----------------------- Variables -----------------------------------------------------------------*/
 static TEST_TYPE message   = { 0U };
@@ -209,13 +213,27 @@ uint8_t uCLIserialToStr ( const uint16_t* data, char* buf )
   return ( uint8_t )strlen( buf );
 }
 /*---------------------------------------------------------------------------------------------------*/
+uint8_t uCLIfloatToStr ( float data, char* out )
+{
+  ftoa( data, out, 2U );
+  ( void )strcat( out, CLI_LINE_END );
+  return strlen( out );
+}
+/*---------------------------------------------------------------------------------------------------*/
 CLI_STATUS eCLIprocessSet ( void )
 {
   CLI_STATUS res = CLI_STATUS_OK;
   switch ( message.target )
   {
     case CLI_TARGET_DOUT:
-      res = CLI_STATUS_ERROR_DATA;
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
+      {
+        vOutSetState( message.data[0U], 1U );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
       break;
     case CLI_TARGET_FLASH:
       scriptAdr = 0U;
@@ -252,7 +270,14 @@ CLI_STATUS eCLIprocessReset ( void )
   switch ( message.target )
   {
     case CLI_TARGET_DOUT:
-      res = CLI_STATUS_ERROR_DATA;
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
+      {
+        vOutSetState( message.data[0U], 0U );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
       break;
     case CLI_TARGET_FLASH:
       if ( eFLASHendWriting() != FLASH_OK )
@@ -270,21 +295,52 @@ CLI_STATUS eCLIprocessReset ( void )
 /*---------------------------------------------------------------------------------------------------*/
 CLI_STATUS eCLIprocessGet ( void )
 {
-  CLI_STATUS res    = CLI_STATUS_OK;
+  CLI_STATUS res = CLI_STATUS_OK;
   uint16_t   id[UNIQUE_ID_LENGTH] = { 0U };
   switch ( message.target )
   {
     case CLI_TARGET_DOUT:
-      res = CLI_STATUS_ERROR_DATA;
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
+      {
+        message.length = uCLIdioToStr( uOutGetState( message.data[0U] ), message.out );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
       break;
     case CLI_TARGET_DIN:
-      res = CLI_STATUS_ERROR_DATA;
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < DIN_CHANNEL ) )
+      {
+        message.length = uCLIdioToStr( uDinGet( message.data[0U] ), message.out );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
       break;
     case CLI_TARGET_BAT:
       res = CLI_STATUS_ERROR_DATA;
       break;
     case CLI_TARGET_CURRENT:
-      res = CLI_STATUS_ERROR_DATA;
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
+      {
+        message.length = uCLIfloatToStr( fOutGetCurrent( message.data[0U] ), message.out );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
+      break;
+    case CLI_TARGET_VOLTAGE:
+      if ( ( message.dataFlag > 0U ) && ( message.data[0U] < AIN_COUNT ) )
+      {
+        message.length = uCLIfloatToStr( fAinGetState( message.data[0U] ), message.out );
+      }
+      else
+      {
+        res = CLI_STATUS_ERROR_DATA;
+      }
       break;
     case CLI_TARGET_VUSB:
       message.length = uCLIdioToStr( uUSBisPower(), message.out );

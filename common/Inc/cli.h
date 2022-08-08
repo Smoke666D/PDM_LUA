@@ -11,7 +11,7 @@
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      11U
+#define CLI_TARGETS_NUMBER      12U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -39,6 +39,7 @@
 #define CLI_TARGET_LUA_STR      "lua"
 #define CLI_TARGET_VUSB_STR     "vusb"
 #define CLI_TARGET_USB_STR      "usb"
+#define CLI_TARGET_VOLTAGE_STR  "voltage"
 
 
 #define CLI_DIO_ON_STR          "on"
@@ -89,7 +90,8 @@ typedef enum
   CLI_TARGET_SCRIPT,  /* ++ 08 set */
   CLI_TARGET_LAU,     /* +  09 get */
   CLI_TARGET_VUSB,    /* +  10 get */
-  CLI_TARGET_USB      /* +  11 get */
+  CLI_TARGET_USB,     /* +  11 get */
+  CLI_TARGET_VOLTAGE
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

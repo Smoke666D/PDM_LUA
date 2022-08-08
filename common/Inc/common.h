@@ -16,5 +16,6 @@ typedef struct
 /*----------------------- Functions ------------------------------------*/
 void vSYSgetUniqueID32 ( uint32_t* id );
 void vSYSgetUniqueID16 ( uint16_t* id );
+void ftoa ( float n, char *res, int afterpoint );
 /*----------------------------------------------------------------------*/
 #endif

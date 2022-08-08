@@ -164,9 +164,9 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 void SystemTimer(void);
-float vOutGetCurrent(OUT_NAME_TYPE out_name);
+float fOutGetCurrent(OUT_NAME_TYPE out_name);
 uint16_t GetTimer(void);
-uint8_t vOutGetState(OUT_NAME_TYPE out_name);
-float vOutGetCurrent(OUT_NAME_TYPE out_name);
+uint8_t uOutGetState(OUT_NAME_TYPE out_name);
+float fOutGetCurrent(OUT_NAME_TYPE out_name);
 float fAinGetState(AIN_NAME_TYPE channel);
 #endif /* PDMHARDWARE_H_ */

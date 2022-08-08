@@ -85,10 +85,10 @@ USB_CONN_STATUS eUSBgetStatus ( void )
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
-void vUSBinit ( PIN_TYPE* usbDet, PIN_TYPE* usbPullup )
+void vUSBinit ( const PIN_TYPE* usbDet, const PIN_TYPE* usbPullup )
 {
-  usbPullUpPin   = usbPullup;
-  usbDetectorPin = usbDet;
+  usbPullUpPin   = ( PIN_TYPE* )usbPullup;
+  usbDetectorPin = ( PIN_TYPE* )usbDet;
   HAL_GPIO_WritePin( usbPullUpPin->port, usbPullUpPin->pin, GPIO_PIN_SET );
   return;
 }
