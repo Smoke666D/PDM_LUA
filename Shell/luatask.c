@@ -39,7 +39,7 @@ int DinConfig(lua_State *L )
 		{
 			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; //Первым аргументом дожен передоваться номер канала
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-			inputConfig(in_number,(state == 1)?POSITIVE_STATE:NEGATIVE_STATE );
+			inputConfig(in_number, DIGITAL,(state == 1)?POSITIVE_STATE:NEGATIVE_STATE );
 
 		}
 		return 0;
