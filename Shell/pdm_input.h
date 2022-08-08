@@ -16,10 +16,7 @@
 #define DIN_VALID   3
 
 
-typedef enum  {
-		DIGITAL = 0,
-		CAPTURE  = 1,
-} PDM_INPUT_MODE;
+
 
 typedef struct {
 	uint32_t Pin;
@@ -34,9 +31,6 @@ typedef enum {
 
 typedef struct
 {
-uint32_t Pin;
-GPIO_TypeDef * GPIOx;
-PDM_INPUT_MODE  mode;
 uint8_t counter;
 uint8_t data;
 uint16_t low_counter;
@@ -72,7 +66,7 @@ typedef enum  {
 		WRONG_CHANNEL_MODE =3U,
 } PDM_INPUT_CONFIG_ERROR;
 
-PDM_INPUT_CONFIG_ERROR inputConfig(uint8_t channel, PDM_INPUT_MODE mode,LOGIC_STATE ls);
+PDM_INPUT_CONFIG_ERROR inputConfig(uint8_t channel, LOGIC_STATE ls);
 void vDinTask(void *argument);
 void SystemDinTimer(void);
 uint8_t uDinGet(PDM_INPUT_NAME channel);
