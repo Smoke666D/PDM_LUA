@@ -15,18 +15,43 @@
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
 
-#define RX_SIZE  10
+
 
 
 extern CAN_HandleTypeDef hcan1;
 extern osMessageQueueId_t CanRXHandle;
 extern osMessageQueueId_t CanTXHandle;
-CO_CANmodule_t   CO_PDM;
-CO_CANrx_t  RX_BUFFER[RX_SIZE];
 
 
-#define MAILBOXSIZE  50
-CANtx MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
+
+
+
+
+CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
+
+
+
+void setFilter(uint16_t mailboxindex)
+{
+	  CAN_FilterTypeDef  sFilterConfig;
+	  uint16_t index = mailboxindex / 4;
+	 sFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
+     sFilterConfig.FilterBank = index;
+     sFilterConfig.FilterFIFOAssignment =0;
+     sFilterConfig.FilterIdHigh =  MailBoxBuffer[index*4 +2 ].ident<<5 ;
+     sFilterConfig.FilterIdLow  =MailBoxBuffer[index*4  ].ident<<5 ;
+     sFilterConfig.FilterMaskIdHigh = MailBoxBuffer[index*4 +3 ].ident<<5 ;
+     sFilterConfig.FilterMaskIdLow  =  MailBoxBuffer[index*4 +1 ].ident<<5 ;
+     sFilterConfig.FilterMode = CAN_FILTERMODE_IDLIST;
+     sFilterConfig.FilterScale =CAN_FILTERSCALE_16BIT;
+
+
+     if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK)
+     {
+         Error_Handler();
+     }
+
+}
 
 
 void vCanInsertToRXQueue(CAN_FRAME_TYPE * data)
@@ -51,6 +76,7 @@ void InitMailBoxBuffer()
 void SetWaitFilter(uint32_t id)
 {
 	 MailBoxBuffer[0].ident = id;
+	 setFilter(0);
 }
 uint8_t CheckAnswer( void )
 {
@@ -64,6 +90,7 @@ void SetMailboxFilter(uint32_t id)
 		if (MailBoxBuffer[i].ident == 0U)
 		{
 			 MailBoxBuffer[i].ident = id;
+			 setFilter(i);
 			 break;
 		}
 	}
@@ -86,18 +113,16 @@ void ResetMailboxFilter(uint32_t id)
 
 void vCanInsertRXData(CAN_FRAME_TYPE * RXPacket)
 {
-	for (int i=0;i<MAILBOXSIZE;i++)
+	uint16_t id = RXPacket->filter_id;
+	if (MailBoxBuffer[id].ident == RXPacket->ident)
 	{
-		if (MailBoxBuffer[i].ident == RXPacket->ident)
-		{
-				MailBoxBuffer[i].DLC = RXPacket->DLC;
-				for (int k =0;k <RXPacket->DLC;k++)
-				{
-					 MailBoxBuffer[i].data[k] =  RXPacket->data[k];
-				}
-				MailBoxBuffer[i].new_data = 1;
-				return;
-		}
+			MailBoxBuffer[id].DLC = RXPacket->DLC;
+			for (int k =0;k <RXPacket->DLC;k++)
+			{
+				 MailBoxBuffer[id].data[k] =  RXPacket->data[k];
+			}
+			MailBoxBuffer[id].new_data = 1;
+			return;
 	}
 	return;
 }
@@ -163,8 +188,6 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 	CO_CANtx_t data_to_send;
 	data_to_send.ident = CanID;
 	data_to_send.DLC = data_len;
-	data_to_send.bufferFull = false;
-	data_to_send.syncFlag = false;
 	for (uint8_t i=0; i<data_len;i++)
 	{
 		data_to_send.data[i] = data[i];
@@ -179,16 +202,18 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 void vCanTask(void *argument)
 {
 	uint8_t size;
-    CO_PDM.CANptr = &hcan1;
-	CO_PDM.CANnormal = false;
+   // CO_PDM.CANptr = &hcan1;
+	//CO_PDM.CANnormal = false;
 
 	//Инициализация модуля CAN
 	CO_CANtx_t TXPacket;
 	CAN_FRAME_TYPE RXPacket;
-	CO_CANsetConfigurationMode(CO_PDM.CANptr);
-	CO_CANmodule_disable(&CO_PDM);
-	CO_CANmodule_init(&CO_PDM,&hcan1,RX_BUFFER,RX_SIZE,1000);
-	CO_CANsetNormalMode(&CO_PDM);
+	InitMailBoxBuffer();
+	vConfigCAN(&hcan1);
+	CO_CANsetConfigurationMode();
+	CO_CANmodule_disable();
+	CO_CANmodule_init(1000);
+	CO_CANsetNormalMode();
 	while(1)
 	{
          //Проверяем исходящую очередь
@@ -200,7 +225,7 @@ void vCanTask(void *argument)
 				 if (getCanFifoFree())
 				 {
 					 xQueueReceive( CanTXHandle, &TXPacket, 0U );
-					 uPDMCanSend(&CO_PDM,&TXPacket);
+					 uPDMCanSend(&TXPacket);
 				 }
 				 else
 				 {

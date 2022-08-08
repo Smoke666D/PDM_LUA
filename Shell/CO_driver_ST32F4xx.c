@@ -37,147 +37,88 @@
 CAN_HandleTypeDef  * pPDMCan;
 
 
+void vConfigCAN(CAN_HandleTypeDef  * pcan)
+{
+	pPDMCan = pcan;
 
-
-/* Semaphore for main app thread synchronization */
-osSemaphoreId_t co_drv_app_thread_sync_semaphore;
-
-/* Semaphore for periodic thread synchronization */
-osSemaphoreId_t co_drv_periodic_thread_sync_semaphore;
-/* Local CAN module object */
-static CO_CANmodule_t* CANModule_local = NULL;  /* Local instance of global CAN module */
-
-
-
+}
 
 /******************************************************************************/
-void CO_CANsetConfigurationMode(void *CANptr){
+void CO_CANsetConfigurationMode()
+{
     /* Put CAN module in configuration mode */
-	 if (CANptr != NULL) {
-		 HAL_CAN_Stop(CANptr);
+	 if (pPDMCan != NULL) {
+		 HAL_CAN_Stop(pPDMCan);
 	 }
 }
 
-
 /******************************************************************************/
-void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule){
+void CO_CANsetNormalMode(){
     /* Put CAN module in normal mode */
-	  if (CANmodule->CANptr != NULL && HAL_CAN_Start(CANmodule->CANptr) == HAL_OK) {
-	        CANmodule->CANnormal = true;
-	  }
+	if (pPDMCan != NULL)
+	{
+		HAL_CAN_Start(pPDMCan);
+	}
 }
-
-
 /******************************************************************************/
 CO_ReturnError_t CO_CANmodule_init(
-        CO_CANmodule_t         *CANmodule,
-        void                   *CANptr,
-        CO_CANrx_t              rxArray[],
-        uint16_t                rxSize,
+
         uint16_t                CANbitRate)
 {
-    uint16_t i;
-    CAN_HandleTypeDef * hcan = CANptr;
-    CAN_FilterTypeDef  sFilterConfig;
-
-    /* verify arguments */
-    if(CANmodule==NULL || rxArray==NULL ){
-        return CO_ERROR_ILLEGAL_ARGUMENT;
-    }
-    CANModule_local = CANmodule;
-
-
     //Конфигурация драйвера
-    pPDMCan = CANptr;  //Указатель на ca
-    /* Configure CANptrobject variables */
-
-
-
-    CANmodule->CANptr = CANptr;
-    CANmodule->rxArray = rxArray;
-    CANmodule->rxSize = rxSize;
-    CANmodule->CANerrorStatus = 0;
-    CANmodule->CANnormal = false;
-    CANmodule->useCANrxFilters = (rxSize <= 32U) ? true : false;/* microcontroller dependent */
-    CANmodule->bufferInhibitFlag = false;
-    CANmodule->firstCANtxMessage = true;
-    CANmodule->CANtxCount = 0U;
-    CANmodule->errOld = 0U;
-
-    for(i=0U; i<rxSize; i++){
-        rxArray[i].ident = 0U;
-        rxArray[i].mask = 0xFFFFU;
-        rxArray[i].object = NULL;
-        rxArray[i].CANrx_callback = NULL;
-    }
-
 
     /* Configure CAN module registers */
-
-    /* Configure CAN module registers */
-    hcan->Init.Mode = CAN_MODE_NORMAL;
-    hcan->Init.TimeTriggeredMode = DISABLE;
-    hcan->Init.AutoBusOff = DISABLE;
-    hcan->Init.AutoWakeUp = DISABLE;
-    hcan->Init.AutoRetransmission = ENABLE;
-    hcan->Init.ReceiveFifoLocked = DISABLE;
-    hcan->Init.TransmitFifoPriority = DISABLE;
+    pPDMCan->Init.Mode = CAN_MODE_NORMAL;
+    pPDMCan->Init.TimeTriggeredMode = DISABLE;
+    pPDMCan->Init.AutoBusOff = DISABLE;
+    pPDMCan->Init.AutoWakeUp = DISABLE;
+    pPDMCan->Init.AutoRetransmission = ENABLE;
+    pPDMCan->Init.ReceiveFifoLocked = DISABLE;
+    pPDMCan->Init.TransmitFifoPriority = DISABLE;
 
     /* Configure CAN timing */
 
         switch (CANbitRate)
         {
-            case 1000:  hcan->Init.Prescaler = 2;
+            case 1000:  pPDMCan->Init.Prescaler = 2;
                    break;
-            case 500:  hcan->Init.Prescaler = 4;
+            case 500:  pPDMCan->Init.Prescaler = 4;
                    break;
-            case 250:  hcan->Init.Prescaler = 8;
+            case 250:  pPDMCan->Init.Prescaler = 8;
                    break;
             default:
-            case 125:  hcan->Init.Prescaler = 16;
+            case 125:  pPDMCan->Init.Prescaler = 16;
                   break;
-            case 100:  hcan->Init.Prescaler = 20;
+            case 100:  pPDMCan->Init.Prescaler = 20;
                  break;
-            case 50:  hcan->Init.Prescaler = 120;
+            case 50:  pPDMCan->Init.Prescaler = 120;
                  break;
-            case 20:  hcan->Init.Prescaler = 300;
+            case 20:  pPDMCan->Init.Prescaler = 300;
                  break;
-            case 10:  hcan->Init.Prescaler = 600;
+            case 10:  pPDMCan->Init.Prescaler = 600;
                  break;
         }
-        hcan->Init.SyncJumpWidth = CAN_SJW_1TQ;
-        hcan->Init.TimeSeg1 = CAN_BS1_15TQ;
-        hcan->Init.TimeSeg2 = CAN_BS2_5TQ;
+        pPDMCan->Init.SyncJumpWidth = CAN_SJW_1TQ;
+        pPDMCan->Init.TimeSeg1 = CAN_BS1_15TQ;
+        pPDMCan->Init.TimeSeg2 = CAN_BS2_5TQ;
 
-        sFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
-        sFilterConfig.FilterBank =0;
-        sFilterConfig.FilterFIFOAssignment =0;
-        sFilterConfig.FilterIdHigh =0xFFFF;
-        sFilterConfig.FilterMaskIdLow = 0;
-        sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-        sFilterConfig.FilterScale =CAN_FILTERSCALE_16BIT;
-        sFilterConfig.SlaveStartFilterBank = 0;
 
-        if (HAL_CAN_ConfigFilter(hcan, &sFilterConfig) != HAL_OK)
+
+        if (HAL_CAN_Init(pPDMCan) != HAL_OK)
         {
             Error_Handler();
         }
 
-        if (HAL_CAN_Init(hcan) != HAL_OK)
-        {
-            Error_Handler();
-        }
-
-        if (HAL_CAN_ActivateNotification(hcan,
+        if (HAL_CAN_ActivateNotification(pPDMCan,
                   0
-                  | CAN_IT_TX_MAILBOX_EMPTY
+             //     | CAN_IT_TX_MAILBOX_EMPTY
 				  | CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL | CAN_IT_RX_FIFO0_OVERRUN
 				  | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL | CAN_IT_RX_FIFO1_OVERRUN
 				  ) != HAL_OK) {
               return CO_ERROR_ILLEGAL_ARGUMENT;
           }
-        HAL_NVIC_SetPriority(CAN1_TX_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+     //   HAL_NVIC_SetPriority(CAN1_TX_IRQn, 5, 0);
+      //  HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
         HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
         HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
@@ -190,62 +131,12 @@ CO_ReturnError_t CO_CANmodule_init(
 
 
 /******************************************************************************/
-void CO_CANmodule_disable(CO_CANmodule_t *CANmodule) {
-	if (CANmodule != NULL && CANmodule->CANptr != NULL) {
-		    HAL_CAN_Stop(CANmodule->CANptr);
-	    }
+void CO_CANmodule_disable() {
+	if (pPDMCan!= NULL)
+	{
+	    HAL_CAN_Stop(pPDMCan);
+	}
 }
-
-
-/******************************************************************************/
-CO_ReturnError_t CO_CANrxBufferInit(
-        CO_CANmodule_t         *CANmodule,
-        uint16_t                index,
-        uint16_t                ident,
-        uint16_t                mask,
-        bool_t                  rtr,
-        void                   *object,
-        void                  (*CANrx_callback)(void *object, void *message))
-{
-    CO_ReturnError_t ret = CO_ERROR_NO;
-
-    if((CANmodule!=NULL) && (object!=NULL) && (CANrx_callback!=NULL) && (index < CANmodule->rxSize)){
-        /* buffer, which will be configured */
-        CO_CANrx_t *buffer = &CANmodule->rxArray[index];
-
-        /* Configure object variables */
-        buffer->object = object;
-        buffer->CANrx_callback = CANrx_callback;
-
-        /* CAN identifier and CAN mask, bit aligned with CAN module. Different on different microcontrollers. */
-        buffer->ident = ident & 0x07FFU;
-        if(rtr){
-            buffer->ident |= 0x0800U;
-        }
-        buffer->mask = (mask & 0x07FFU) | 0x0800U;
-
-        /* Set CAN hardware module filter and mask. */
-        if(CANmodule->useCANrxFilters){
-
-        }
-    }
-    else{
-        ret = CO_ERROR_ILLEGAL_ARGUMENT;
-    }
-
-    return ret;
-}
-
-
-
-
-/**
- * \brief           Send CAN message to network
- * This function must be called with atomic access.
- *
- * \param[in]       CANmodule: CAN module instance
- * \param[in]       buffer: Pointer to buffer to transmit
- */
 
 
 
@@ -261,12 +152,12 @@ uint8_t getCanFifoFree()
  * Поскольку используется апаратный Fifo конртеллера, создание программного буфера не имеет смысла
  */
 
-uint8_t uPDMCanSend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
+uint8_t uPDMCanSend(CO_CANtx_t *buffer)
 {
 	uint8_t res = 0;
 	static  CAN_TxHeaderTypeDef pTXHeader;
     uint32_t TxMailbox;
-	CO_LOCK_CAN_SEND(CANmodule);
+	//CO_LOCK_CAN_SEND(CANmodule);
     if (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan) > 0) {
 
 	        pTXHeader.DLC                = (uint32_t)buffer->DLC;
@@ -283,7 +174,7 @@ uint8_t uPDMCanSend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 	        }
 	  }
 
-	 CO_UNLOCK_CAN_SEND(CANmodule);
+//	 CO_UNLOCK_CAN_SEND(CANmodule);
 	 return res;
 }
 
@@ -380,6 +271,7 @@ static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo)
     {
     	rx_message.ident = rx.StdId;
     	rx_message.DLC = rx.DLC;
+    	rx_message.filter_id = rx.FilterMatchIndex;
     	vCanInsertToRXQueue(& rx_message);
     }
     return;

@@ -82,23 +82,15 @@ typedef struct {
     uint32_t ident;
     uint8_t DLC;
     uint8_t data[8];
-    volatile bool_t bufferFull;
-    volatile bool_t syncFlag;
+
 } CO_CANtx_t;
 
 /* CAN module object */
 typedef struct {
     void *CANptr;
-    CO_CANrx_t *rxArray;
-    uint16_t rxSize;
-    CO_CANtx_t *txArray;
-    uint16_t txSize;
     uint16_t CANerrorStatus;
     volatile bool_t CANnormal;
     volatile bool_t useCANrxFilters;
-    volatile bool_t bufferInhibitFlag;
-    volatile bool_t firstCANtxMessage;
-    volatile uint16_t CANtxCount;
     uint32_t errOld;
 
     /* STM32 specific features */
