@@ -122,7 +122,7 @@ typedef USB_STATUS ( *dataCallBack )( USB_REPORT* report );  /* callback for dat
   USB_STATUS eUSBsaveConfigs ( const USB_REPORT* report );
 #endif
 
-void            vUSBinit ( PIN_TYPE* usbDet, PIN_TYPE* usbPullup );
+void            vUSBinit ( const PIN_TYPE* usbDet, const PIN_TYPE* usbPullup );
 uint8_t         uUSBisPower ( void );
 uint8_t         uUSBisPlug ( void );
 USB_CONN_STATUS eUSBgetStatus ( void );      /* Get connection status of USB device */

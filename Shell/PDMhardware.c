@@ -249,15 +249,13 @@ void vOutReset(OUT_NAME_TYPE out_name)
 }
 
 
-uint8_t vOutGetState(OUT_NAME_TYPE out_name)
+uint8_t uOutGetState ( OUT_NAME_TYPE out_name )
 {
 	return out[out_name].out_state;
-
 }
-float vOutGetCurrent(OUT_NAME_TYPE out_name)
+float fOutGetCurrent ( OUT_NAME_TYPE out_name )
 {
 	return out[out_name].current;
-
 }
 
 

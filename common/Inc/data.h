@@ -42,16 +42,15 @@ typedef enum
   DATA_ADR_CURRENT_17,  /* 20 */
   DATA_ADR_CURRENT_18,  /* 21 */
   DATA_ADR_CURRENT_19,  /* 22 */
-  DATA_ADR_CURRENT_20,  /* 23 */
-  DATA_ADR_VOLTAGE_BAT, /* 24 */
-  DATA_ADR_VOLTAGE_0,   /* 25 */
-  DATA_ADR_VOLTAGE_1,   /* 26 */
-  DATA_ADR_VOLTAGE_2,   /* 27 */
-  DATA_ADR_VOLTAGE_3,   /* 28 */
-  DATA_ADR_DIN,         /* 29 */
-  DATA_ADR_DOUT,        /* 30 */
-  DATA_ADR_STATUS,      /* 31 */
-  DATA_ADR_LUA          /* 32 */
+  DATA_ADR_VOLTAGE_BAT, /* 23 */
+  DATA_ADR_VOLTAGE_0,   /* 24 */
+  DATA_ADR_VOLTAGE_1,   /* 25 */
+  DATA_ADR_VOLTAGE_2,   /* 26 */
+  DATA_ADR_VOLTAGE_3,   /* 27 */
+  DATA_ADR_DIN,         /* 28 */
+  DATA_ADR_DOUT,        /* 29 */
+  DATA_ADR_STATUS,      /* 30 */
+  DATA_ADR_LUA          /* 31 */
 } DATA_ADR;
 
 DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length );

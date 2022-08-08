@@ -335,7 +335,7 @@ void vLuaTask(void *argument)
 
 		 for (i=0;i< OUT_COUNT ;i++)
 		 {
-			 lua_pushnumber(L1,vOutGetCurrent(i));
+			 lua_pushnumber(L1,fOutGetCurrent(i));
 		 }
 		 res = lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp);
 		 //if ((res == LUA_OK) || (res == LUA_YIELD))
