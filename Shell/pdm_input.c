@@ -10,6 +10,7 @@
 
 #include "pdm_input.h"
 #include "FreeRTOS.h"
+#include "system.h"
 #include "task.h"
 #include "semphr.h"
 #include "event_groups.h"
@@ -37,7 +38,7 @@ const  PIN_CONFIG DINPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											   {Din11_Pin,GPIOF}};
 
 
-volatile DoutCinfig sDinConfig[DIN_CHANNEL];
+volatile DoutCinfig sDinConfig[DIN_CHANNEL]  __SECTION(RAM_SECTION_CCMRAM);
 
 void SystemDinTimer(void)
 {
@@ -89,7 +90,6 @@ PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls)
 }
 
 
-
 void vDinTask(void *argument)
 {
 	uint8_t delay = 0;
@@ -104,7 +104,6 @@ void vDinTask(void *argument)
 	inputConfig(INPUT9,POSITIVE_STATE );
 	inputConfig(INPUT10,POSITIVE_STATE );
 	inputConfig(INPUT11,POSITIVE_STATE );
-
 	while(1)
 	{
 		vTaskDelay(1);

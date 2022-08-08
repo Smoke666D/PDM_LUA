@@ -10,22 +10,23 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "system.h"
 #include "event_groups.h"
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
 
 #define RX_SIZE  10
-#define TX_SIZE  10
+
 
 extern CAN_HandleTypeDef hcan1;
 extern osMessageQueueId_t CanRXHandle;
 extern osMessageQueueId_t CanTXHandle;
 CO_CANmodule_t   CO_PDM;
 CO_CANrx_t  RX_BUFFER[RX_SIZE];
-CO_CANtx_t  TX_BUFFER[TX_SIZE];
+
 
 #define MAILBOXSIZE  50
-CANtx MailBoxBuffer[MAILBOXSIZE];
+CANtx MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
 
 
 void vCanInsertToRXQueue(CAN_FRAME_TYPE * data)
@@ -186,7 +187,7 @@ void vCanTask(void *argument)
 	CAN_FRAME_TYPE RXPacket;
 	CO_CANsetConfigurationMode(CO_PDM.CANptr);
 	CO_CANmodule_disable(&CO_PDM);
-	CO_CANmodule_init(&CO_PDM,&hcan1,RX_BUFFER,RX_SIZE,TX_BUFFER,TX_SIZE,1000);
+	CO_CANmodule_init(&CO_PDM,&hcan1,RX_BUFFER,RX_SIZE,1000);
 	CO_CANsetNormalMode(&CO_PDM);
 	while(1)
 	{
@@ -194,11 +195,19 @@ void vCanTask(void *argument)
 		 size = uxQueueMessagesWaiting( CanTXHandle);
 		 if (size!=0)
 		 {
-			// for (int i=0;i<size;i++)
-			// {
-				 xQueueReceive( CanTXHandle, &TXPacket, 0U );
-				 CO_CANsend(&CO_PDM,&TXPacket);
-			// }
+			for (int i=0;i<size;i++)
+			{
+				 if (getCanFifoFree())
+				 {
+					 xQueueReceive( CanTXHandle, &TXPacket, 0U );
+					 uPDMCanSend(&CO_PDM,&TXPacket);
+				 }
+				 else
+				 {
+					 break;
+				 }
+
+			}
 		 }
 		 //Проверяем входящую очередь
 		 size = uxQueueMessagesWaiting( CanRXHandle);

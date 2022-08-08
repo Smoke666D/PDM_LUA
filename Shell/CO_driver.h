@@ -614,8 +614,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
                                    void *CANptr,
                                    CO_CANrx_t rxArray[],
                                    uint16_t rxSize,
-                                   CO_CANtx_t txArray[],
-                                   uint16_t txSize,
+
                                    uint16_t CANbitRate);
 
 

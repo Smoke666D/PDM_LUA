@@ -32,8 +32,12 @@
 /* CAN masks for identifiers */
 #define CANID_MASK                              0x07FF  /*!< CAN standard ID mask */
 #define FLAG_RTR                                0x8000  /*!< RTR flag, part of identifier */
-/* Mutex for atomic access */
-static osMutexId_t co_mutex;
+
+
+CAN_HandleTypeDef  * pPDMCan;
+
+
+
 
 /* Semaphore for main app thread synchronization */
 osSemaphoreId_t co_drv_app_thread_sync_semaphore;
@@ -43,52 +47,8 @@ osSemaphoreId_t co_drv_periodic_thread_sync_semaphore;
 /* Local CAN module object */
 static CO_CANmodule_t* CANModule_local = NULL;  /* Local instance of global CAN module */
 
-uint8_t co_drv_create_os_objects(void) {
-    /* Create new mutex for OS context */
-    if (co_mutex == NULL) {
-        const osMutexAttr_t attr = {
-            .attr_bits = osMutexRecursive,
-            .name = "co"
-        };
-        co_mutex = osMutexNew(&attr);
-    }
 
-    /* Semaphore for main app thread synchronization */
-    if (co_drv_app_thread_sync_semaphore == NULL) {
-        const osSemaphoreAttr_t attr = {
-                .name = "co_app_thread_sync"
-        };
-        co_drv_app_thread_sync_semaphore = osSemaphoreNew(1, 1, &attr);
-    }
 
-    /* Semaphore for periodic thread synchronization */
-    if (co_drv_periodic_thread_sync_semaphore == NULL) {
-        const osSemaphoreAttr_t attr = {
-                .name = "co_periodic_thread_sync"
-        };
-        co_drv_periodic_thread_sync_semaphore = osSemaphoreNew(1, 1, &attr);
-    }
-
-    return 1;
-}
-
-/**
- * \brief           Lock mutex or wait to be available
- * \return          `1` on success, `0` otherwise
- */
-uint8_t
-co_drv_mutex_lock(void) {
-    return osMutexAcquire(co_mutex, osWaitForever) == osOK;
-}
-
-/**
- * \brief           Release previously locked mutex
- * \return          `1` on success, `0` otherwise
- */
-uint8_t
-co_drv_mutex_unlock(void) {
-    return osMutexRelease(co_mutex) == osOK;
-}
 
 /******************************************************************************/
 void CO_CANsetConfigurationMode(void *CANptr){
@@ -114,8 +74,6 @@ CO_ReturnError_t CO_CANmodule_init(
         void                   *CANptr,
         CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t              txArray[],
-        uint16_t                txSize,
         uint16_t                CANbitRate)
 {
     uint16_t i;
@@ -123,16 +81,21 @@ CO_ReturnError_t CO_CANmodule_init(
     CAN_FilterTypeDef  sFilterConfig;
 
     /* verify arguments */
-    if(CANmodule==NULL || rxArray==NULL || txArray==NULL){
+    if(CANmodule==NULL || rxArray==NULL ){
         return CO_ERROR_ILLEGAL_ARGUMENT;
     }
     CANModule_local = CANmodule;
-    /* Configure object variables */
+
+
+    //Конфигурация драйвера
+    pPDMCan = CANptr;  //Указатель на ca
+    /* Configure CANptrobject variables */
+
+
+
     CANmodule->CANptr = CANptr;
     CANmodule->rxArray = rxArray;
     CANmodule->rxSize = rxSize;
-    CANmodule->txArray = txArray;
-    CANmodule->txSize = txSize;
     CANmodule->CANerrorStatus = 0;
     CANmodule->CANnormal = false;
     CANmodule->useCANrxFilters = (rxSize <= 32U) ? true : false;/* microcontroller dependent */
@@ -146,9 +109,6 @@ CO_ReturnError_t CO_CANmodule_init(
         rxArray[i].mask = 0xFFFFU;
         rxArray[i].object = NULL;
         rxArray[i].CANrx_callback = NULL;
-    }
-    for(i=0U; i<txSize; i++){
-        txArray[i].bufferFull = false;
     }
 
 
@@ -277,33 +237,6 @@ CO_ReturnError_t CO_CANrxBufferInit(
 }
 
 
-/******************************************************************************/
-CO_CANtx_t *CO_CANtxBufferInit(
-        CO_CANmodule_t         *CANmodule,
-        uint16_t                index,
-        uint16_t                ident,
-        bool_t                  rtr,
-        uint8_t                 noOfBytes,
-        bool_t                  syncFlag)
-{
-    CO_CANtx_t *buffer = NULL;
-
-    if((CANmodule != NULL) && (index < CANmodule->txSize)){
-        /* get specific buffer */
-        buffer = &CANmodule->txArray[index];
-
-        /* CAN identifier, DLC and rtr, bit aligned with CAN module transmit buffer.
-         * Microcontroller specific. */
-        buffer->ident = ((uint32_t)ident & CANID_MASK)
-                               | ((uint32_t)(rtr ? FLAG_RTR : 0x00));
-        buffer->DLC = noOfBytes;
-        buffer->bufferFull = false;
-        buffer->syncFlag = syncFlag;
-    }
-
-    return buffer;
-}
-
 
 
 /**
@@ -313,94 +246,47 @@ CO_CANtx_t *CO_CANtxBufferInit(
  * \param[in]       CANmodule: CAN module instance
  * \param[in]       buffer: Pointer to buffer to transmit
  */
-uint32_t TxMailbox;
-static uint8_t
-prv_send_can_message(CO_CANmodule_t* CANmodule, CO_CANtx_t *buffer) {
-    static  CAN_TxHeaderTypeDef pTXHeader;
-    uint8_t success = 0;
 
-    /* Check if TX FIFO is ready to accept more messages */
-    if (HAL_CAN_GetTxMailboxesFreeLevel(CANmodule->CANptr) > 0) {
 
-        pTXHeader.DLC                = (uint32_t)buffer->DLC;
-        pTXHeader.ExtId              = 0U;
-        pTXHeader.IDE                = CAN_ID_STD;
-        pTXHeader.RTR                = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
-        pTXHeader.StdId              = buffer->ident & CANID_MASK;
-        pTXHeader.TransmitGlobalTime = DISABLE;
 
-        /* Now add message to FIFO. Should not fail */
-        if (HAL_CAN_AddTxMessage(CANmodule->CANptr,  &pTXHeader, buffer->data, &TxMailbox) == HAL_OK)
-        {
-        	success = 1;
-        }
-    }
-    return success;
+
+uint8_t getCanFifoFree()
+{
+	return HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan);
 }
 
 
+/*
+ * Функция отправики пакета СAN
+ * Поскольку используется апаратный Fifo конртеллера, создание программного буфера не имеет смысла
+ */
 
-/******************************************************************************/
-CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
-    CO_ReturnError_t err = CO_ERROR_NO;
+uint8_t uPDMCanSend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
+{
+	uint8_t res = 0;
+	static  CAN_TxHeaderTypeDef pTXHeader;
+    uint32_t TxMailbox;
+	CO_LOCK_CAN_SEND(CANmodule);
+    if (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan) > 0) {
 
-    /* Verify overflow */
-    if(buffer->bufferFull){
-        if(!CANmodule->firstCANtxMessage){
-            /* don't set error, if bootup message is still on buffers */
-            CANmodule->CANerrorStatus |= CO_CAN_ERRTX_OVERFLOW;
-        }
-        err = CO_ERROR_TX_OVERFLOW;
-    }
+	        pTXHeader.DLC                = (uint32_t)buffer->DLC;
+	        pTXHeader.ExtId              = 0U;
+	        pTXHeader.IDE                = CAN_ID_STD;
+	        pTXHeader.RTR                = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
+	        pTXHeader.StdId              = buffer->ident & CANID_MASK;
+	        pTXHeader.TransmitGlobalTime = DISABLE;
 
-    CO_LOCK_CAN_SEND(CANmodule);
-    /* if CAN TX buffer is free, copy message to it */
-    if (prv_send_can_message(CANmodule, buffer) ) {
-          CANmodule->bufferInhibitFlag = buffer->syncFlag;
-      } else {
-          buffer->bufferFull = true;
-          CANmodule->CANtxCount++;
-      }
-    CO_UNLOCK_CAN_SEND(CANmodule);
+	        /* Now add message to FIFO. Should not fail */
+	        if (HAL_CAN_AddTxMessage(pPDMCan,  &pTXHeader, buffer->data, &TxMailbox) == HAL_OK)
+	        {
+	        	res = 1;
+	        }
+	  }
 
-    return err;
+	 CO_UNLOCK_CAN_SEND(CANmodule);
+	 return res;
 }
 
-
-/******************************************************************************/
-void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
-    uint32_t tpdoDeleted = 0U;
-
-    CO_LOCK_CAN_SEND(CANmodule);
-    /* Abort message from CAN module, if there is synchronous TPDO.
-     * Take special care with this functionality. */
-    if(/*messageIsOnCanBuffer && */CANmodule->bufferInhibitFlag){
-        /* clear TXREQ */
-        CANmodule->bufferInhibitFlag = false;
-        tpdoDeleted = 1U;
-    }
-    /* delete also pending synchronous TPDOs in TX buffers */
-    if(CANmodule->CANtxCount != 0U){
-        uint16_t i;
-        CO_CANtx_t *buffer = &CANmodule->txArray[0];
-        for(i = CANmodule->txSize; i > 0U; i--){
-            if(buffer->bufferFull){
-                if(buffer->syncFlag){
-                    buffer->bufferFull = false;
-                    CANmodule->CANtxCount--;
-                    tpdoDeleted = 2U;
-                }
-            }
-            buffer++;
-        }
-    }
-    CO_UNLOCK_CAN_SEND(CANmodule);
-
-
-    if(tpdoDeleted != 0U){
-        CANmodule->CANerrorStatus |= CO_CAN_ERRTX_PDO_LATE;
-    }
-}
 
 
 /******************************************************************************/
@@ -463,49 +349,20 @@ void CO_CANmodule_process(CO_CANmodule_t *CANmodule) {
 
 
 
-void CAN_SendMessage()
-{
-
-
-	CANModule_local->firstCANtxMessage = false;
-	CANModule_local->bufferInhibitFlag = false;
-    if(CANModule_local->CANtxCount > 0U)
-    {
-        uint16_t i;             /* index of transmitting message */
-        CO_CANtx_t *buffer = &CANModule_local->txArray[0];
-        CO_LOCK_CAN_SEND(CANModule_local);
-
-        for (i = CANModule_local->txSize; i > 0U; --i, ++buffer) {
-                   /* Try to send message */
-                   if (buffer->bufferFull) {
-                       if (prv_send_can_message(CANModule_local, buffer)) {
-                           buffer->bufferFull = false;
-                           CANModule_local->CANtxCount--;
-                           CANModule_local->bufferInhibitFlag = buffer->syncFlag;
-                       }
-                   }
-               }
-        /* Clear counter if no more messages */
-        if(i == 0U){
-        	CANModule_local->CANtxCount = 0U;
-        }
-        CO_UNLOCK_CAN_SEND(CANModule_local);
-    }
-}
 
 
 
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-	CAN_SendMessage();
+	//CAN_SendMessage();
 }
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-	CAN_SendMessage();
+	//CAN_SendMessage();
 }
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 {
-	CAN_SendMessage();
+	//CAN_SendMessage();
 }
 
 

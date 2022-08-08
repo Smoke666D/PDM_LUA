@@ -30,19 +30,22 @@ extern osSemaphoreId_t co_drv_periodic_thread_sync_semaphore;
 #define CO_WAIT_SYNC_PERIODIC_THREAD(max_time_in_ms)    osSemaphoreAcquire(co_drv_periodic_thread_sync_semaphore, (max_time_in_ms))
 /* (un)lock critical section in CO_CANsend() */
 
+
+
 CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
         void                   *CANptr,
         CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t              txArray[],
-        uint16_t                txSize,
         uint16_t                CANbitRate);
+
 
 uint8_t  co_drv_create_os_objects(void);
 uint8_t co_drv_mutex_lock(void);
 uint8_t co_drv_mutex_unlock(void);
 void CO_CANsetConfigurationMode(void *CANptr);
+uint8_t getCanFifoFree();
+uint8_t uPDMCanSend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan);
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan);
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan);
