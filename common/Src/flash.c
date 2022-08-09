@@ -7,6 +7,7 @@
 
 #include "flash.h"
 #include "system.h"
+#include "luatask.h"
 
 static FLASH_LOCK flashLock = FLASH_LOCKED;
 
@@ -103,6 +104,7 @@ FLASH_STATE eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length )
 FLASH_STATE eFLASHstartWriting ( void )
 {
   FLASH_STATE res = FLASH_OK;
+  vLUAstopPDM();
   if ( HAL_FLASH_Unlock() == HAL_OK )
   {
     __HAL_FLASH_CLEAR_FLAG( FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGSERR | FLASH_FLAG_PGPERR );
@@ -122,6 +124,8 @@ FLASH_STATE eFLASHendWriting ( void )
   if ( eFLASHlock() != HAL_OK )
   {
     res = FLASH_ERROR_LOCK;
+  } else {
+    vLUArunPDM();
   }
   return res;
 }
