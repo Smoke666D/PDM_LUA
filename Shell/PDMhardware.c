@@ -1,10 +1,12 @@
 #include "PDMhardware.h"
-#include "system.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
 #include "event_groups.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern ADC_HandleTypeDef hadc3;
+
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
@@ -18,11 +20,11 @@ volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U 
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 
-PDM_OUTPUT_TYPE out[OUT_COUNT] __attribute__((section(".ccmram")));
+PDM_OUTPUT_TYPE out[OUT_COUNT];
 
-static uint16_t muRawCurData[20]  __attribute__((section(".ccmram")));
-static uint16_t muRawVData[4] 	 __attribute__((section(".ccmram")));
-static float mfVData[4] 		__attribute__((section(".ccmram"))) ={ 0U };
+static uint16_t muRawCurData[20];
+static uint16_t muRawVData[4];
+static float mfVData[4] ={};
 
 static uint32_t out_register;
 
@@ -48,22 +50,11 @@ static KAL_DATA CurSensData[20][5] __attribute__((section(".ccmram")))={    {{0U
 										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
 										};
 
-static   osThreadId_t doutTaskHandle            = NULL;
-static   osThreadId_t adcTaskHandle             = NULL;
+
 static   EventGroupHandle_t xADCEvent;
 static   StaticEventGroup_t xADCCreatedEventGroup;
 static   EventGroupHandle_t xOutEvent;
 static   StaticEventGroup_t xOutCreatedEventGroup;
-
-osThreadId_t* osDOUTgetTaskHandle ( void )
-{
-  return &doutTaskHandle ;
-}
-osThreadId_t* osADCgetTaskHandle ( void )
-{
-  return &adcTaskHandle ;
-}
-
 void vDataConvertToFloat(void);
 void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
 
@@ -310,7 +301,7 @@ void vADCTask(void * argument)
   /* Infinite loop */
   for(;;)
   {
-	vTaskDelay(1);
+	  osDelay(1);
 	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
     HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
@@ -403,6 +394,7 @@ void vOutContolTask(void * argument)
 	uint8_t temp_power,cur_power;
 	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
 	EventBits_t config_state;
+	vOutInit();
 	for(;;)
 	{
 		   vTaskDelay(1);

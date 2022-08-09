@@ -11,12 +11,8 @@
 #include "queue.h"
 #include <stdio.h>
 #include <string.h>
-#include "luatask.h"
-#include "PDMhardware.h"
-#include "pdm_input.h"
+
 #include "serial.h"
-#include "cantask.h"
-#include "CO_driver_ST32F4xx.h"
 #include "usbhid.h"
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
@@ -26,45 +22,46 @@ static uint8_t      taskNumber                 = 0U;
 
 /*
 static uint32_t defaultTaskBuffer[DEFAULT_TASK_STACK_SIZE]      __section( TASK_RAM_SECTION ) = { 0U };
-
+static uint32_t luaTaskBuffer[LUA_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t adcTaskBuffer[ADC_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t doutTaskBuffer[DOUT_TASK_STACK_SIZE]            __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t canTaskBuffer[CAN_TASK_STACK_SIZE]              __section( TASK_RAM_SECTION ) = { 0U };
 */
-static uint32_t canTaskBuffer[CAN_TASK_STACK_SIZE]             		    __section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t adcTaskBuffer[ADC_TASK_STACK_SIZE]              		__section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t doutTaskBuffer[DOUT_TASK_STACK_SIZE]           			__section( TASK_RAM_SECTION) = { 0U };
-static uint32_t luaTaskBuffer[LUA_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialTxTaskBuffer[SERIAL_TX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialRxTaskBuffer[SERIAL_RX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialProtectTaskBuffer[SERIAL_PROTECT_TSAK_STACK_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t usbTaskBuffer[USB_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t dinTaskBuffer[DIN_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
+
 /*
 static StaticTask_t defaultTaskControlBlock       __section( TASK_RAM_SECTION ) = { 0U };
-
-*/
-static StaticTask_t canTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t luaTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t adcTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t doutTaskControlBlock          __section( TASK_RAM_SECTION ) = { 0U };
-static StaticTask_t luaTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t canTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+*/
 static StaticTask_t serialTxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t serialRxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t usbTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
-static StaticTask_t dinTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 /*
 static osThreadId_t defaultTaskHandle       = NULL;
-
+static osThreadId_t luaTaskHandle           = NULL;
+static osThreadId_t adcTaskHandle           = NULL;
+static osThreadId_t doutTaskHandle          = NULL;
+static osThreadId_t canTaskHandle           = NULL;
 */
 
+/*
+static uint8_t canTXBuffer[ 16U * sizeof( CO_CANtx_t ) ]     __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t canRXBuffer[ 16U * sizeof( CAN_FRAME_TYPE ) ] __section( TASK_RAM_SECTION ) = { 0U };
 
-static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE  * sizeof( CO_CANtx_t ) ]     __section( TASK_RAM_SECTION ) = { 0U };
-static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE  * sizeof( CAN_FRAME_TYPE ) ] __section( TASK_RAM_SECTION ) = { 0U };
-
+static osMessageQueueId_t canTXHandle  = NULL;
+static osMessageQueueId_t canRXHandle  = NULL;
+*/
 
 static uint8_t serialOutputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
 
 static StaticQueue_t xSERIALqueue __section( TASK_RAM_SECTION ) = { 0U };
-static StaticQueue_t xCANRXqueue  __section( TASK_RAM_SECTION ) = { 0U };
-static StaticQueue_t xCANTXqueue  __section( TASK_RAM_SECTION ) = { 0U };
 /*-------------------------------- Functions ---------------------------------*/
 
 /*----------------------------------------------------------------------------*/
@@ -165,19 +162,13 @@ void vSYStaskInit ( void )
   vSYSstaticTaskInit( serialRxTaskBuffer, &serialRxTaskControlBlock, SERIAL_RX_TASK_NAME, osSERIALgetSerialRxTaskHandle(), SERIAL_RX_TASK_PRIORITY,vSERIALrxTask );
   vSYSstaticTaskInit( serialProtectTaskBuffer, &serialProtectTaskControlBlock, SERIAL_PROTECT_TASK_NAME, osSERIALgetSerialProtectTaskHandle(), SERIAL_PROTECT_TASK_PRIORITY, vSERIALprotectTask );
   vSYSstaticTaskInit( usbTaskBuffer, &usbTaskControlBlock, USB_TASK_NAME, osUSBgetTaskHandle(), USB_TASK_PRIORITY, vUSBtask );
-  vSYSstaticTaskInit( luaTaskBuffer, &luaTaskControlBlock , LUA_TASK_NAME, osLUAgetTaskHandle(), LUA_TASK_PRIORITY, vLuaTask );
-  vSYSstaticTaskInit( doutTaskBuffer, &doutTaskControlBlock   , DOUT_TASK_NAME, osDOUTgetTaskHandle(), DOUT_TASK_PRIORITY, vOutContolTask);
-  vSYSstaticTaskInit( adcTaskBuffer, &adcTaskControlBlock   , ADC_TASK_NAME, osADCgetTaskHandle() , ADC_TASK_PRIORITY, vADCTask);
-  vSYSstaticTaskInit( dinTaskBuffer, &dinTaskControlBlock   , DIN_TASK_NAME, osDINgetTaskHandle() , DIN_TASK_PRIORITY, vDinTask);
-  vSYSstaticTaskInit( canTaskBuffer, &canTaskControlBlock   , CAN_TASK_NAME, osCANgetTaskHandle()   , CAN_TASK_PRIORITY, vCanTask);
+
   return;
 }
 /*----------------------------------------------------------------------------*/
 void vSYSqueueInit ( void )
 {
   *( pSERIALgetQueue() ) = xQueueCreateStatic( SERIAL_QUEUE_SIZE, sizeof( UART_MESSAGE ), ( uint8_t* )serialOutputBuffer, &xSERIALqueue );
-  *( pCANTXgetQueue() )  = xQueueCreateStatic( CANTX_QUEUE_SIZE,  sizeof( CO_CANtx_t ), ( uint8_t* )canTXBuffer, &xCANTXqueue );
-  *( pCANRXgetQueue() )  = xQueueCreateStatic( CANRX_QUEUE_SIZE, sizeof( CAN_FRAME_TYPE), ( uint8_t* )canRXBuffer, &xCANRXqueue );
 }
 /*----------------------------------------------------------------------------*/
 void vSYSprintData ( void )

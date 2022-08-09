@@ -11,9 +11,6 @@
 
 
 #include "main.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "cmsis_os.h"
 
 #define DIN_CHANNEL 11
 #define DIN_VALID   3
@@ -70,9 +67,6 @@ typedef enum  {
 } PDM_INPUT_CONFIG_ERROR;
 
 PDM_INPUT_CONFIG_ERROR inputConfig(uint8_t channel, LOGIC_STATE ls);
-
-osThreadId_t* osDINgetTaskHandle ( void );
-void vDINinit();
 void vDinTask(void *argument);
 void SystemDinTimer(void);
 uint8_t uDinGet(PDM_INPUT_NAME channel);

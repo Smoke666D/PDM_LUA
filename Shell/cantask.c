@@ -9,7 +9,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
-
+#include "semphr.h"
 #include "system.h"
 #include "event_groups.h"
 #include "cantask.h"
@@ -19,25 +19,12 @@
 
 
 extern CAN_HandleTypeDef hcan1;
+extern osMessageQueueId_t CanRXHandle;
+extern osMessageQueueId_t CanTXHandle;
 
-static QueueHandle_t CanRXHandle            = NULL;
-static QueueHandle_t CanTXHandle            = NULL;
 
-QueueHandle_t* pCANRXgetQueue ( void )
-{
-  return &CanRXHandle ;
-}
 
-QueueHandle_t* pCANTXgetQueue ( void )
-{
-  return &CanTXHandle ;
-}
 
-static osThreadId_t canTaskHandle       = NULL;
-osThreadId_t* osCANgetTaskHandle ( void )
-{
-  return &canTaskHandle ;
-}
 
 
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
