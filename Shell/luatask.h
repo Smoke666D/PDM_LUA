@@ -15,6 +15,16 @@
 
 
 #define RUN_STATE  0x01
+#define STOPR_STATE  0x02
+#define RESTART_STATE  0x04
+
+typedef enum {
+	LUA_INIT = 0,
+	LUA_RUN = 1,
+	LUA_ERROR = 2,
+	LUA_STOP =3,
+	LUA_RESTART = 4,
+} LUA_STATE;
 
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void );
 void vLUArunPDM();

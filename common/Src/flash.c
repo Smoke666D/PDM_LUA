@@ -10,7 +10,7 @@
 
 static FLASH_LOCK flashLock = FLASH_LOCKED;
 
-const uint8_t luaScroptAtFlash[FLASH_STORAGE_LENGTH] __attribute__((section(".user_data")));
+//const char * luaScroptAtFlash = FLASH_STORAGE_ADR;//__attribute__((section(".user_data")));
 
 
 static HAL_StatusTypeDef eFLASHlock ( void )
@@ -131,8 +131,8 @@ FLASH_LOCK eFLASHgetLockState ( void )
   return flashLock;
 }
 
-const uint8_t* uFLASHgetScript ( void )
+const char* uFLASHgetScript ( void )
 {
-  return luaScroptAtFlash;
+  return (const char*)FLASH_STORAGE_ADR;
 }
 

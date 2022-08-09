@@ -38,6 +38,9 @@ typedef enum
   FLASH_LOCKED,
   FLASH_UNLOCKED
 } FLASH_LOCK;
+
+
+
 /*----------------------- Structures -----------------------------------*/
 
 /*------------------------ Functions -----------------------------------*/
@@ -46,6 +49,6 @@ FLASH_STATE    eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length )
 FLASH_STATE    eFLASHstartWriting ( void );
 FLASH_STATE    eFLASHendWriting ( void );
 FLASH_LOCK     eFLASHgetLockState ( void );
-const uint8_t* uFLASHgetScript ( void );
+const char* uFLASHgetScript ( void );
 /*----------------------------------------------------------------------*/
 #endif /* INC_FLASH_H_  */
