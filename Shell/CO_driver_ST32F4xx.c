@@ -29,6 +29,7 @@
 #include "CO_driver_ST32F4xx.h"
 #include "cantask.h"
 
+
 /* CAN masks for identifiers */
 #define CANID_MASK                              0x07FF  /*!< CAN standard ID mask */
 #define FLAG_RTR                                0x8000  /*!< RTR flag, part of identifier */
@@ -152,7 +153,7 @@ uint8_t getCanFifoFree()
  * Поскольку используется апаратный Fifo конртеллера, создание программного буфера не имеет смысла
  */
 
-uint8_t uPDMCanSend(CO_CANtx_t *buffer)
+uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
 {
 	uint8_t res = 0;
 	static  CAN_TxHeaderTypeDef pTXHeader;

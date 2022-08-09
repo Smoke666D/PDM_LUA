@@ -17,6 +17,7 @@
 #include "luatask.h"
 #include "cantask.h"
 #include "PDMhardware.h"
+
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
 /*-------------------------------- Variables ---------------------------------*/
@@ -73,8 +74,12 @@ static osMessageQueueId_t canRXHandle  = NULL;
 static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
 
 static uint8_t serialOutputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]     __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] __section( TASK_RAM_SECTION ) = { 0U };
 
 static StaticQueue_t xSERIALqueue __section( TASK_RAM_SECTION ) = { 0U };
+static StaticQueue_t xcanRXqueue __section( TASK_RAM_SECTION ) = { 0U };
+static StaticQueue_t xcanTXqueue __section( TASK_RAM_SECTION ) = { 0U };
 /*-------------------------------- Functions ---------------------------------*/
 
 /*----------------------------------------------------------------------------*/
@@ -186,6 +191,8 @@ void vSYStaskInit ( void )
 void vSYSqueueInit ( void )
 {
   *( pSERIALgetQueue() ) = xQueueCreateStatic( SERIAL_QUEUE_SIZE, sizeof( UART_MESSAGE ), ( uint8_t* )serialOutputBuffer, &xSERIALqueue );
+  *( pCANRXgetQueue() ) = xQueueCreateStatic( CANRX_QUEUE_SIZE, sizeof( CAN_FRAME_TYPE), ( uint8_t* )canRXBuffer, &xcanRXqueue );
+  *( pCANTXgetQueue() ) = xQueueCreateStatic( CANTX_QUEUE_SIZE, sizeof( CAN_TX_FRAME_TYPE ), ( uint8_t* )canTXBuffer, &xcanTXqueue );
 }
 /*----------------------------------------------------------------------------*/
 void vSYSeventInit ( void )

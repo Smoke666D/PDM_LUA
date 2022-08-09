@@ -37,7 +37,6 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -87,28 +86,6 @@ const osThreadAttr_t luaTask_attributes = {
   .name = "luaTask",
   .stack_size = 2000 * 4,
   .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for CanTX */
-osMessageQueueId_t CanTXHandle;
-uint8_t CanTXBuffer[ 16 * sizeof( CO_CANtx_t ) ];
-osStaticMessageQDef_t CanTXControlBlock;
-const osMessageQueueAttr_t CanTX_attributes = {
-  .name = "CanTX",
-  .cb_mem = &CanTXControlBlock,
-  .cb_size = sizeof(CanTXControlBlock),
-  .mq_mem = &CanTXBuffer,
-  .mq_size = sizeof(CanTXBuffer)
-};
-/* Definitions for CanRX */
-osMessageQueueId_t CanRXHandle;
-uint8_t CanRXBuffer[ 16 * sizeof( CAN_FRAME_TYPE ) ];
-osStaticMessageQDef_t CanRXControlBlock;
-const osMessageQueueAttr_t CanRX_attributes = {
-  .name = "CanRX",
-  .cb_mem = &CanRXControlBlock,
-  .cb_size = sizeof(CanRXControlBlock),
-  .mq_mem = &CanRXBuffer,
-  .mq_size = sizeof(CanRXBuffer)
 };
 /* USER CODE BEGIN PV */
 const PIN_TYPE usbDet = {
@@ -214,13 +191,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
-
-  /* Create the queue(s) */
-  /* creation of CanTX */
-  CanTXHandle = osMessageQueueNew (16, sizeof(CO_CANtx_t), &CanTX_attributes);
-
-  /* creation of CanRX */
-  CanRXHandle = osMessageQueueNew (16, sizeof(CAN_FRAME_TYPE), &CanRX_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   vSYSqueueInit();
