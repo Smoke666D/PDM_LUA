@@ -5,16 +5,15 @@
  *      Author: igor.dymov
  */
 
-
+#include "cantask.h"
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 #include "system.h"
 #include "event_groups.h"
-#include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
-
+#include "luatask.h"
 
 
 
@@ -28,7 +27,7 @@ extern osMessageQueueId_t CanTXHandle;
 
 
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
-
+static   EventGroupHandle_t  * xPDMstatusEvent __SECTION(RAM_SECTION_CCMRAM) = NULL;
 
 
 void setFilter(uint16_t mailboxindex)
@@ -202,10 +201,8 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 void vCanTask(void *argument)
 {
 	uint8_t size;
-   // CO_PDM.CANptr = &hcan1;
-	//CO_PDM.CANnormal = false;
-
 	//Инициализация модуля CAN
+	xPDMstatusEvent = osLUAetPDMstatusHandle();
 	CO_CANtx_t TXPacket;
 	CAN_FRAME_TYPE RXPacket;
 	InitMailBoxBuffer();
@@ -216,6 +213,7 @@ void vCanTask(void *argument)
 	CO_CANsetNormalMode();
 	while(1)
 	{
+		 xEventGroupWaitBits(* xPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
          //Проверяем исходящую очередь
 		 size = uxQueueMessagesWaiting( CanTXHandle);
 		 if (size!=0)

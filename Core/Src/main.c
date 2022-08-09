@@ -113,18 +113,6 @@ const osThreadAttr_t OutContolTask_attributes = {
   .stack_size = sizeof(OutContolTaskBuffer),
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for CanTask */
-osThreadId_t CanTaskHandle;
-uint32_t CanTaskBuffer[ 128 ];
-osStaticThreadDef_t CanTaskControlBlock;
-const osThreadAttr_t CanTask_attributes = {
-  .name = "CanTask",
-  .cb_mem = &CanTaskControlBlock,
-  .cb_size = sizeof(CanTaskControlBlock),
-  .stack_mem = &CanTaskBuffer[0],
-  .stack_size = sizeof(CanTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for CanTX */
 osMessageQueueId_t CanTXHandle;
 uint8_t CanTXBuffer[ 16 * sizeof( CO_CANtx_t ) ];
@@ -180,7 +168,6 @@ void StartDefaultTask(void *argument);
 extern void vLuaTask(void *argument);
 extern void vADCTask(void *argument);
 extern void vOutContolTask(void *argument);
-extern void vCanTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -278,9 +265,6 @@ int main(void)
 
   /* creation of OutContolTask */
   OutContolTaskHandle = osThreadNew(vOutContolTask, NULL, &OutContolTask_attributes);
-
-  /* creation of CanTask */
-  CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   vSYStaskInit();
@@ -1215,7 +1199,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 84;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 1000;
+  htim10.Init.Period = 2000;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
