@@ -156,7 +156,6 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 void vOutContolTask(void * argument);
-void vOutContolTask(void * argument);
 void vHWOutResete( OUT_NAME_TYPE out_name);
 void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
 void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM);

@@ -37,7 +37,6 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-typedef StaticTask_t osStaticThreadDef_t;
 typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
@@ -88,30 +87,6 @@ const osThreadAttr_t luaTask_attributes = {
   .name = "luaTask",
   .stack_size = 2000 * 4,
   .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for ADCTask */
-osThreadId_t ADCTaskHandle;
-uint32_t ADCTaskBuffer[ 128 ];
-osStaticThreadDef_t ADCTaskControlBlock;
-const osThreadAttr_t ADCTask_attributes = {
-  .name = "ADCTask",
-  .cb_mem = &ADCTaskControlBlock,
-  .cb_size = sizeof(ADCTaskControlBlock),
-  .stack_mem = &ADCTaskBuffer[0],
-  .stack_size = sizeof(ADCTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for OutContolTask */
-osThreadId_t OutContolTaskHandle;
-uint32_t OutContolTaskBuffer[ 128 ];
-osStaticThreadDef_t OutContolTaskControlBlock;
-const osThreadAttr_t OutContolTask_attributes = {
-  .name = "OutContolTask",
-  .cb_mem = &OutContolTaskControlBlock,
-  .cb_size = sizeof(OutContolTaskControlBlock),
-  .stack_mem = &OutContolTaskBuffer[0],
-  .stack_size = sizeof(OutContolTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for CanTX */
 osMessageQueueId_t CanTXHandle;
@@ -166,8 +141,6 @@ static void MX_I2C2_Init(void);
 static void MX_TIM10_Init(void);
 void StartDefaultTask(void *argument);
 extern void vLuaTask(void *argument);
-extern void vADCTask(void *argument);
-extern void vOutContolTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -259,12 +232,6 @@ int main(void)
 
   /* creation of luaTask */
   luaTaskHandle = osThreadNew(vLuaTask, NULL, &luaTask_attributes);
-
-  /* creation of ADCTask */
-  ADCTaskHandle = osThreadNew(vADCTask, NULL, &ADCTask_attributes);
-
-  /* creation of OutContolTask */
-  OutContolTaskHandle = osThreadNew(vOutContolTask, NULL, &OutContolTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   vSYStaskInit();
