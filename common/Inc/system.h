@@ -13,7 +13,7 @@
 /*------------------------ Define --------------------------------------*/
 #define  RAM_SECTION_RAM                ".ram"
 #define  RAM_SECTION_CCMRAM             ".ccmram"
-#define  TASK_RAM_SECTION               RAM_SECTION_RAM
+#define  TASK_RAM_SECTION                RAM_SECTION_CCMRAM
 
 #define  DEFAULT_TASK_PRIORITY          osPriorityNormal
 #define  LUA_TASK_PRIORITY              osPriorityLow
