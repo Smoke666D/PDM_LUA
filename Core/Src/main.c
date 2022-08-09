@@ -123,19 +123,7 @@ const osThreadAttr_t CanTask_attributes = {
   .cb_size = sizeof(CanTaskControlBlock),
   .stack_mem = &CanTaskBuffer[0],
   .stack_size = sizeof(CanTaskBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for DinTask */
-osThreadId_t DinTaskHandle;
-uint32_t DinTaskBuffer[ 256 ];
-osStaticThreadDef_t DinTaskControlBlock;
-const osThreadAttr_t DinTask_attributes = {
-  .name = "DinTask",
-  .cb_mem = &DinTaskControlBlock,
-  .cb_size = sizeof(DinTaskControlBlock),
-  .stack_mem = &DinTaskBuffer[0],
-  .stack_size = sizeof(DinTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for CanTX */
 osMessageQueueId_t CanTXHandle;
@@ -193,7 +181,6 @@ extern void vLuaTask(void *argument);
 extern void vADCTask(void *argument);
 extern void vOutContolTask(void *argument);
 extern void vCanTask(void *argument);
-extern void vDinTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -249,6 +236,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   vSERIALinit( &huart2 );
   vUSBinit( &usbDet, &usbPullup );
+  vDINconfig( );
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -260,6 +248,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+   vSYSeventInit ( );
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -292,9 +281,6 @@ int main(void)
 
   /* creation of CanTask */
   CanTaskHandle = osThreadNew(vCanTask, NULL, &CanTask_attributes);
-
-  /* creation of DinTask */
-  DinTaskHandle = osThreadNew(vDinTask, NULL, &DinTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   vSYStaskInit();
@@ -1229,9 +1215,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 84;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-
-  htim10.Init.Period = 2000;
-
+  htim10.Init.Period = 1000;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)

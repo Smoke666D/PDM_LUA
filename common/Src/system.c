@@ -11,9 +11,10 @@
 #include "queue.h"
 #include <stdio.h>
 #include <string.h>
-
+#include "pdm_input.h"
 #include "serial.h"
 #include "usbhid.h"
+#include "luatask.h"
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
 /*-------------------------------- Variables ---------------------------------*/
@@ -31,6 +32,7 @@ static uint32_t serialTxTaskBuffer[SERIAL_TX_TSAK_STACK_SIZE]           __sectio
 static uint32_t serialRxTaskBuffer[SERIAL_RX_TSAK_STACK_SIZE]           __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t serialProtectTaskBuffer[SERIAL_PROTECT_TSAK_STACK_SIZE] __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t usbTaskBuffer[USB_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
+static uint32_t dinTaskBuffer[DIN_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
 
 /*
 static StaticTask_t defaultTaskControlBlock       __section( TASK_RAM_SECTION ) = { 0U };
@@ -43,6 +45,7 @@ static StaticTask_t serialTxTaskControlBlock      __section( TASK_RAM_SECTION ) 
 static StaticTask_t serialRxTaskControlBlock      __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t usbTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t dinTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 /*
 static osThreadId_t defaultTaskHandle       = NULL;
 static osThreadId_t luaTaskHandle           = NULL;
@@ -50,6 +53,7 @@ static osThreadId_t adcTaskHandle           = NULL;
 static osThreadId_t doutTaskHandle          = NULL;
 static osThreadId_t canTaskHandle           = NULL;
 */
+static osThreadId_t dinTaskHandle          	    __section( TASK_RAM_SECTION ) = NULL;
 
 /*
 static uint8_t canTXBuffer[ 16U * sizeof( CO_CANtx_t ) ]     __section( TASK_RAM_SECTION ) = { 0U };
@@ -58,6 +62,8 @@ static uint8_t canRXBuffer[ 16U * sizeof( CAN_FRAME_TYPE ) ] __section( TASK_RAM
 static osMessageQueueId_t canTXHandle  = NULL;
 static osMessageQueueId_t canRXHandle  = NULL;
 */
+
+static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
 
 static uint8_t serialOutputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
 
@@ -163,13 +169,18 @@ void vSYStaskInit ( void )
   vSYSstaticTaskInit( serialRxTaskBuffer,sizeof( serialRxTaskBuffer), &serialRxTaskControlBlock, SERIAL_RX_TASK_NAME, osSERIALgetSerialRxTaskHandle(), SERIAL_RX_TASK_PRIORITY,vSERIALrxTask );
   vSYSstaticTaskInit( serialProtectTaskBuffer, sizeof(serialProtectTaskBuffer),&serialProtectTaskControlBlock, SERIAL_PROTECT_TASK_NAME, osSERIALgetSerialProtectTaskHandle(), SERIAL_PROTECT_TASK_PRIORITY, vSERIALprotectTask );
   vSYSstaticTaskInit( usbTaskBuffer, sizeof(usbTaskBuffer),&usbTaskControlBlock, USB_TASK_NAME, osUSBgetTaskHandle(), USB_TASK_PRIORITY, vUSBtask );
-
+  vSYSstaticTaskInit( dinTaskBuffer, sizeof(dinTaskBuffer),&dinTaskControlBlock, DIN_TASK_NAME, &dinTaskHandle, DIN_TASK_PRIORITY, vDinTask);
   return;
 }
 /*----------------------------------------------------------------------------*/
 void vSYSqueueInit ( void )
 {
   *( pSERIALgetQueue() ) = xQueueCreateStatic( SERIAL_QUEUE_SIZE, sizeof( UART_MESSAGE ), ( uint8_t* )serialOutputBuffer, &xSERIALqueue );
+}
+/*----------------------------------------------------------------------------*/
+void vSYSeventInit ( void )
+{
+*(osLUAetPDMstatusHandle () ) = xEventGroupCreateStatic(&xPDMstatusEventGroup );
 }
 /*----------------------------------------------------------------------------*/
 void vSYSprintData ( void )

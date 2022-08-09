@@ -24,12 +24,14 @@
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
 #define  USB_TASK_PRIORITY              osPriorityLow
+#define  DIN_TASK_PRIORITY              osPriorityLow
 
 #define  DEFAULT_TASK_STACK_SIZE        128U
 #define  LUA_TASK_STACK_SIZE            2000U
 #define  ADC_TASK_STACK_SIZE            128U
 #define  DOUT_TASK_STACK_SIZE           128U
 #define  CAN_TASK_STACK_SIZE            128U
+#define  DIN_TASK_STACK_SIZE            128U
 #define  SERIAL_TX_TSAK_STACK_SIZE      256U
 #define  SERIAL_RX_TSAK_STACK_SIZE      128U
 #define  SERIAL_PROTECT_TSAK_STACK_SIZE 128U
@@ -44,6 +46,7 @@
 #define  SERIAL_RX_TASK_NAME            "serialRxTask"
 #define  SERIAL_PROTECT_TASK_NAME       "serialProtectTask"
 #define  USB_TASK_NAME                  "usbTask"
+#define  DIN_TASK_NAME                  "dinTask"
 
 #define  SYS_MAX_TSAK_NUMBER            20U
 #define  SYS_BAR_LENGTH                 10U
@@ -68,6 +71,7 @@ typedef struct
   uint16_t total;
 } SYSTEM_DATA;
 /*----------------------- Functions ------------------------------------*/
+void    vSYSeventInit ( void );
 void    vSYStaskInit ( void );
 void    vSYSqueueInit ( void );
 void    vSYSprintData ( void );

@@ -4,15 +4,14 @@
  *  Created on: Apr 6, 2022
  *      Author: igor.dymov
  */
+#include "luatask.h"
 #include "lprefix.h"
 #include "luaDefScript.h"
-#include "luatask.h"
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "lapi.h"
 #include "PDMhardware.h"
-#include "FreeRTOS.h"
 #include "cantask.h"
 #include "script.c"
 #include "pdm_input.h"
@@ -27,11 +26,30 @@
 #define CANREQSEND_ARGUMENT_COUNT 3
 #define SEND_REQUEST_ARGUMENT_COUNT 3
 
+static   EventGroupHandle_t xPDMstatusEvent;
+/*---------------------------------------------------------------------------------------------------*/
+EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
+{
+  return &xPDMstatusEvent;
+}
+void vLUArunPDM()
+{
+	xEventGroupSetBits(xPDMstatusEvent,RUN_STATE);
+}
+
+void vLUAstopPDM()
+{
+	xEventGroupClearBits(xPDMstatusEvent,RUN_STATE);
+}
+
+
+
 /*
  * Устанавливаем конфигурацию дискрнтого входа
  */
 int DinConfig(lua_State *L )
 {
+		uint32_t lf = DEF_L_FRONT, hf = DEF_H_FRONT;
 		uint8_t in_number = 0;
 		int arg_number = lua_gettop(L);
 		LOGIC_STATE state;
@@ -39,7 +57,15 @@ int DinConfig(lua_State *L )
 		{
 			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; //Первым аргументом дожен передоваться номер канала
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-			inputConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE );
+			if ( arg_number > 2)
+			{
+				lf = lua_tointeger(L,-arg_number-2);
+			}
+			if ( arg_number > 3)
+			{
+				lf = lua_tointeger(L,-arg_number-3);
+			}
+			inputConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
 
 		}
 		return 0;
@@ -314,12 +340,13 @@ void vLuaTask(void *argument)
     lua_register(L1,"GetRequest",CanGetMessage);
     lua_register(L1,"GetRequestToTable",CanGetResivedData);
 
-
+    vLUArunPDM();
 
     res = luaL_dostring(L1,defaultLuaScript);
 
    while(1)
 	{
+		vTaskDelay(1 );
 	    if (init == 0)
 	    	 lua_getglobal(L1, "init");
 	    else
@@ -364,7 +391,7 @@ void vLuaTask(void *argument)
 
 		 }
 		 lua_pop(L1, temp);
-		 vTaskDelay(1 );
+
 	 }
 
 }

@@ -9,21 +9,20 @@
 #define PDM_INPUT_C_
 
 #include "pdm_input.h"
-#include "FreeRTOS.h"
-#include "system.h"
+
 #include "task.h"
 #include "semphr.h"
-#include "event_groups.h"
 #include "stm32f4xx_hal.h"
-#include "cmsis_os.h"
-#include "event_groups.h"
 #include "task.h"
 #include "semphr.h"
 
 
-static uint16_t system_timer = 0;
-static uint16_t timer = 0;
-static uint8_t overload =0;
+static uint16_t system_timer		__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint16_t timer 				__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint8_t overload				__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint8_t delay   				__SECTION(RAM_SECTION_CCMRAM) = 0;
+DoutCinfig sDinConfig[DIN_CHANNEL]  __SECTION(RAM_SECTION_CCMRAM);
+
 
 const  PIN_CONFIG DINPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											   {Din2_Pin,GPIOE},
@@ -37,8 +36,8 @@ const  PIN_CONFIG DINPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											   {Din10_Pin,GPIOF},
 											   {Din11_Pin,GPIOF}};
 
+static   EventGroupHandle_t  * xPDMstatusEvent __SECTION(RAM_SECTION_CCMRAM) = NULL;
 
-volatile DoutCinfig sDinConfig[DIN_CHANNEL]  __SECTION(RAM_SECTION_CCMRAM);
 
 void SystemDinTimer(void)
 {
@@ -68,7 +67,7 @@ uint16_t GetDinTimer(void)
 
 
 
-PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls)
+PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls, uint32_t hfront, uint32_t lfront)
 {
 	PDM_INPUT_CONFIG_ERROR res = WRONG_CHANNEL_NUMBER;
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -78,9 +77,9 @@ PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls)
 			GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 			HAL_GPIO_Init(DINPortConfig[channel].GPIOx,&GPIO_InitStruct);
-			sDinConfig[channel].high_counter = 10;
-			sDinConfig[channel].low_counter = 10;
-			sDinConfig[channel].data = 0;
+			sDinConfig[channel].high_counter = hfront;
+			sDinConfig[channel].low_counter = lfront;
+			sDinConfig[channel].data = (ls == NEGATIVE_STATE) ?1U : 0U;
 			sDinConfig[channel].temp_data = 0;
 			sDinConfig[channel].state = ls;
 			res = CONFIG_OK;
@@ -89,65 +88,52 @@ PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls)
 
 }
 
+void vDINconfig( void )
+{
+	inputConfig(INPUT1,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
+	inputConfig(INPUT2,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
+	inputConfig(INPUT3,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
+	inputConfig(INPUT4,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	inputConfig(INPUT5,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
+	inputConfig(INPUT6,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	inputConfig(INPUT7,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
+	inputConfig(INPUT8,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	inputConfig(INPUT9,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	inputConfig(INPUT10,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	inputConfig(INPUT11,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+
+}
 
 void vDinTask(void *argument)
 {
-	uint8_t delay = 0;
-	inputConfig(INPUT1,POSITIVE_STATE );
-	inputConfig(INPUT2,POSITIVE_STATE );
-	inputConfig(INPUT3,POSITIVE_STATE );
-	inputConfig(INPUT4,POSITIVE_STATE );
-	inputConfig(INPUT5,POSITIVE_STATE );
-	inputConfig(INPUT6,POSITIVE_STATE );
-	inputConfig(INPUT7,POSITIVE_STATE );
-	inputConfig(INPUT8,POSITIVE_STATE );
-	inputConfig(INPUT9,POSITIVE_STATE );
-	inputConfig(INPUT10,POSITIVE_STATE );
-	inputConfig(INPUT11,POSITIVE_STATE );
+	uint32_t cur_din_state;
+	xPDMstatusEvent = osLUAetPDMstatusHandle();
 	while(1)
 	{
 		vTaskDelay(1);
+		xEventGroupWaitBits(* xPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 		delay= GetDinTimer();
 		for (uint8_t i = 0; i<DIN_CHANNEL; i++)
 		{
-				sDinConfig[i].counter +=  delay ;
-				switch (HAL_GPIO_ReadPin(DINPortConfig[i].GPIOx,DINPortConfig[i].Pin))
+
+				cur_din_state = HAL_GPIO_ReadPin(DINPortConfig[i].GPIOx,DINPortConfig[i].Pin);
+
+				if (cur_din_state != sDinConfig[i].temp_data )
 				{
-				    case GPIO_PIN_SET:
-				    	if (sDinConfig[i].temp_data == GPIO_PIN_RESET)
-				    	{
-				    			if  (sDinConfig[i].counter >sDinConfig[i].high_counter)
-				    			{
-				    				sDinConfig[i].counter = 0;
-				    				sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
-				    				sDinConfig[i].temp_data = GPIO_PIN_SET;
-				    			}
-				    	}
+					sDinConfig[i].counter +=  delay ;
+					if (sDinConfig[i].counter > (sDinConfig[i].temp_data == GPIO_PIN_RESET) ? sDinConfig[i].high_counter : sDinConfig[i].low_counter )
+					{
+						if (cur_din_state == GPIO_PIN_SET)
+							sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?0U:1U;
 						else
-						{
-							sDinConfig[i].counter = 0;
-						}
-				    	break;
-				    case GPIO_PIN_RESET:
+							sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
+						sDinConfig[i].temp_data = cur_din_state ;
+					}
 
-				    	if (sDinConfig[i].temp_data == GPIO_PIN_SET)
-				    	{
-				    		if (sDinConfig[i].counter > sDinConfig[i].low_counter)
-				    	    {
-				    			sDinConfig[i].counter = 0;
-				    			sDinConfig[i].data = (sDinConfig[i].state == NEGATIVE_STATE) ?1U:0U;
-				    			sDinConfig[i].temp_data = GPIO_PIN_RESET;
-				    	    }
-
-				    	}
-				    	else
-				    	{
-				    		sDinConfig[i].counter = 0;
-				    	}
-				    	break;
-				    default:
-				    	break;
-
+				}
+				else
+				{
+					sDinConfig[i].counter = 0;
 				}
 		}
 	}

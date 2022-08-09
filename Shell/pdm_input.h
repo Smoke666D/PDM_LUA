@@ -11,11 +11,17 @@
 
 
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
+#include "event_groups.h"
+#include "luatask.h"
+#include "system.h"
 
 #define DIN_CHANNEL 11
 #define DIN_VALID   3
 
-
+#define DEF_H_FRONT 10
+#define DEF_L_FRONT 10
 
 
 typedef struct {
@@ -31,10 +37,10 @@ typedef enum {
 
 typedef struct
 {
-uint8_t counter;
+uint32_t counter;
 uint8_t data;
-uint16_t low_counter;
-uint16_t high_counter;
+uint32_t low_counter;
+uint32_t high_counter;
 uint8_t temp_data;
 LOGIC_STATE state;
 } DoutCinfig;
@@ -66,7 +72,8 @@ typedef enum  {
 		WRONG_CHANNEL_MODE =3U,
 } PDM_INPUT_CONFIG_ERROR;
 
-PDM_INPUT_CONFIG_ERROR inputConfig(uint8_t channel, LOGIC_STATE ls);
+void vDINconfig( void );
+PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls, uint32_t hfront, uint32_t lfront);
 void vDinTask(void *argument);
 void SystemDinTimer(void);
 uint8_t uDinGet(PDM_INPUT_NAME channel);
