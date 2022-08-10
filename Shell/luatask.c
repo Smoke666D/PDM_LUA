@@ -42,7 +42,7 @@ void vLUArunPDM()
 void vLUAstopPDM()
 {
 	xEventGroupClearBits(xPDMstatusEvent,RUN_STATE);
-	state = LUA_RESTART;
+	state = LUA_STOP;
 }
 
 void vLUArestartPDM()

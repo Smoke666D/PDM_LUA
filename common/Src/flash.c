@@ -125,7 +125,7 @@ FLASH_STATE eFLASHendWriting ( void )
   {
     res = FLASH_ERROR_LOCK;
   } else {
-    vLUArunPDM();
+    vLUArestartPDM();
   }
   return res;
 }
