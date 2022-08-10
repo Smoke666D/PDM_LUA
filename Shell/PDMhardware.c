@@ -59,8 +59,11 @@ void vDataConvertToFloat(void);
 void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
 
 uint16_t system_timer = 0;
+uint16_t system_timer1 = 0;
 uint16_t timer = 0;
+uint16_t timer1 = 0;
 uint8_t overload =0;
+uint8_t overload1 =0;
 void SystemTimer(void)
 {
 	system_timer ++;
@@ -68,6 +71,12 @@ void SystemTimer(void)
 	{
 	 system_timer = 0;
 	 overload = 1;
+	}
+	system_timer1 ++;
+	if (system_timer1  >= 65000)
+	{
+	 system_timer1 = 0;
+	 overload1 = 1;
 	}
 }
 uint16_t GetTimer(void)
@@ -83,6 +92,22 @@ uint16_t GetTimer(void)
 	 delay = system_timer-timer;
  }
  timer = system_timer;
+ return delay;
+}
+
+uint16_t GetSysTimer(void)
+{
+ uint16_t delay =0;
+ if (overload1)
+ {
+	 overload1 = 0;
+	 delay = 65000 - timer1 + system_timer1;
+ }
+ else
+ {
+	 delay = system_timer1-timer1;
+ }
+ timer1 = system_timer1;
  return delay;
 }
 
@@ -301,7 +326,7 @@ void vADCTask(void * argument)
   /* Infinite loop */
   for(;;)
   {
-	  osDelay(1);
+	vTaskDelay(1 );
 	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
     HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
@@ -310,6 +335,7 @@ void vADCTask(void * argument)
 	HAL_ADC_Stop_DMA(&hadc2);
 	HAL_ADC_Stop_DMA(&hadc3);
 	vDataConvertToFloat();
+	xEventGroupSetBits( xADCEvent, ADC_DATA_READY );
   }
   /* USER CODE END vADCTask */
 }
@@ -397,7 +423,7 @@ void vOutContolTask(void * argument)
 	vOutInit();
 	for(;;)
 	{
-		   vTaskDelay(1);
+		   xEventGroupWaitBits( xADCEvent, ADC_DATA_READY, pdTRUE, pdTRUE, portMAX_DELAY );
 		   config_state = xEventGroupGetBits (xOutEvent); //Получаем состоние конфигурационных флагов
 			for (uint8_t i=0; i<OUT_COUNT;i++)
 			{

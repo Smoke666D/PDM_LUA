@@ -16,10 +16,11 @@
 #define  TASK_RAM_SECTION                RAM_SECTION_CCMRAM
 
 #define  DEFAULT_TASK_PRIORITY          osPriorityNormal
-#define  LUA_TASK_PRIORITY              osPriorityLow
+#define  LUA_TASK_PRIORITY              osPriorityAboveNormal
 #define  ADC_TASK_PRIORITY              osPriorityHigh
 #define  DOUT_TASK_PRIORITY             osPriorityHigh
-#define  CAN_TASK_PRIORITY              osPriorityLow
+#define  CAN_RX_TASK_PRIORITY           osPriorityHigh
+#define  CAN_TX_TASK_PRIORITY           osPriorityHigh
 #define  SERIAL_TX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
@@ -30,7 +31,8 @@
 #define  LUA_TASK_STACK_SIZE            2000U
 #define  ADC_TASK_STACK_SIZE            128U
 #define  DOUT_TASK_STACK_SIZE           128U
-#define  CAN_TASK_STACK_SIZE            128U
+#define  CAN_RX_TASK_STACK_SIZE         128U
+#define  CAN_TX_TASK_STACK_SIZE         128U
 #define  DIN_TASK_STACK_SIZE            128U
 #define  SERIAL_TX_TSAK_STACK_SIZE      256U
 #define  SERIAL_RX_TSAK_STACK_SIZE      128U
@@ -41,7 +43,8 @@
 #define  LUA_TASK_NAME                  "luaTask"
 #define  ADC_TASK_NAME                  "adcTask"
 #define  DOUT_TASK_NAME                 "doutTask"
-#define  CAN_TASK_NAME                  "canTask"
+#define  CAN_RX_TASK_NAME               "canRXTask"
+#define  CAN_TX_TASK_NAME               "canTXTask"
 #define  SERIAL_TX_TASK_NAME            "serialTxTask"
 #define  SERIAL_RX_TASK_NAME            "serialRxTask"
 #define  SERIAL_PROTECT_TASK_NAME       "serialProtectTask"

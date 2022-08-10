@@ -80,13 +80,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for luaTask */
-osThreadId_t luaTaskHandle;
-const osThreadAttr_t luaTask_attributes = {
-  .name = "luaTask",
-  .stack_size = 2000 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* USER CODE BEGIN PV */
 const PIN_TYPE usbDet = {
   .pin = USB_VBAT_DET_Pin,
@@ -117,7 +110,6 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM10_Init(void);
 void StartDefaultTask(void *argument);
-extern void vLuaTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -174,6 +166,7 @@ int main(void)
   vSERIALinit( &huart2 );
   vUSBinit( &usbDet, &usbPullup );
   vDINconfig( );
+  vCANinit();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -199,9 +192,6 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  /* creation of luaTask */
-  luaTaskHandle = osThreadNew(vLuaTask, NULL, &luaTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   vSYStaskInit();

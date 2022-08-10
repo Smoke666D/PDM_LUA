@@ -311,32 +311,47 @@ int  OutSetPWM( lua_State *L )
 
 const char * err = NULL;
 int res = 0;
+int pdm_time_process = 0;
 
+/****************
+ *
+ */
+LUA_STATE xLUAgetSTATE()
+{
+	return state;
+}
+/*
+ *
+ */
+const char * xLUAgetError()
+{
+	return err;
+}
+/*
+ *
+ */
+int xLUAgetTime()
+{
+	return pdm_time_process;
+}
 
 void vLuaTask(void *argument)
 {
 	 uint8_t default_script = 0;
 	 EventBits_t config_state;
+	 uint16_t system_timer = 0;
      uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
 
 	 lua_State *L;// = luaL_newstate();
 	 lua_State *L1;
-//     if (L == NULL)
- //    {
-//    	 while(1)
- //   		{
-//    			 vTaskDelay(1 );
-//    		}
-//    }
-
-
 
     // Загружаем библиотеки PDM
 
    while(1)
 	{
+	   system_timer = GetSysTimer();
 	   vTaskDelay(1 );
 	   switch (state)
 	   {
@@ -377,12 +392,13 @@ void vLuaTask(void *argument)
 	   	   		  }
 	   	   		  break;
 	   	   	  case LUA_RUN:
+
 	   	   		   if (init == 0)
 	   	   		    	 lua_getglobal(L1, "init");
 	   	   		    else
 	   	   		    	 lua_getglobal(L1, "main");
-	   	   		  	  temp =GetTimer();
-	   	   		     lua_pushinteger(L1,temp);
+	   	   		     pdm_time_process =GetTimer();
+	   	   		     lua_pushinteger(L1,pdm_time_process);
 	   	   			 for (i=0;i< DIN_CHANNEL;i++)
 	   	   			 {
 	   	   				 lua_pushboolean(L1,uDinGet(i));
@@ -426,9 +442,7 @@ void vLuaTask(void *argument)
 
 
 	   }
-	     		 //if ((res == LUA_OK) || (res == LUA_YIELD))
-
-
+	       system_timer = GetSysTimer();
 	 }
 
 }

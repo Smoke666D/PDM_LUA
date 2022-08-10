@@ -35,6 +35,7 @@
 #define ADC2_READY         0x02
 #define ADC3_READY         0x04
 #define OUT_BUSY		   0x08
+#define ADC_DATA_READY     0x10
 #define ADC1_CHANNELS      8U
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
@@ -151,7 +152,7 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
-
+uint16_t GetSysTimer(void);
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);

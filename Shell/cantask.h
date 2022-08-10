@@ -38,6 +38,7 @@ typedef struct {
     uint16_t filter_id;
 } CAN_FRAME_TYPE;
 
+void vCANinit();
 QueueHandle_t* pCANRXgetQueue ( void );
 QueueHandle_t* pCANTXgetQueue ( void );
 uint8_t CheckAnswer( void );
@@ -46,7 +47,8 @@ uint8_t vCanChekMessage(uint32_t id);
 uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket);
 void SetMailboxFilter(uint32_t id);
 void SetWaitFilter(uint32_t id);
-void vCanTask(void *argument);
+void vCanRXTask(void *argument);
+void vCanTXTask(void *argument);
 void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len );
 void vCanInsertToRXQueue(CAN_FRAME_TYPE * data);
 #endif /* CANTASK_H_ */

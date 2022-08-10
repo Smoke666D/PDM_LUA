@@ -199,54 +199,39 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 
 }
 
-/*
- * Процесс для обработки can сообщений
- */
-void vCanTask(void *argument)
+
+void vCANinit()
 {
-	uint8_t size;
-	//Инициализация модуля CAN
-	xPDMstatusEvent = osLUAetPDMstatusHandle();
-	CAN_TX_FRAME_TYPE TXPacket;
-	CAN_FRAME_TYPE RXPacket;
 	InitMailBoxBuffer();
 	vConfigCAN(&hcan1);
 	CO_CANsetConfigurationMode();
 	CO_CANmodule_disable();
 	CO_CANmodule_init(1000);
 	CO_CANsetNormalMode();
+}
+/*
+ * Процесс для обработки can сообщений
+ */
+
+void vCanTXTask(void *argument)
+{
+	CAN_TX_FRAME_TYPE TXPacket;
 	while(1)
 	{
-		 xEventGroupWaitBits(* xPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-         //Проверяем исходящую очередь
-		 size = uxQueueMessagesWaiting( CanTXHandle);
-		 if (size!=0)
-		 {
-			for (int i=0;i<size;i++)
-			{
-				 if (getCanFifoFree())
-				 {
-					 xQueueReceive( CanTXHandle, &TXPacket, 0U );
-					 uPDMCanSend(&TXPacket);
-				 }
-				 else
-				 {
-					 break;
-				 }
+		xQueueReceive( CanTXHandle, &TXPacket, portMAX_DELAY);
+		uPDMCanSend(&TXPacket);
 
-			}
-		 }
-		 //Проверяем входящую очередь
-		 size = uxQueueMessagesWaiting( CanRXHandle);
-		 if (size!=0)
-		 {
-			  for (int i=0;i<size;i++)
-			  {
-					xQueueReceive( CanRXHandle, &RXPacket, 0U );
-					vCanInsertRXData(&RXPacket);
-			  }
-		 }
-		 vTaskDelay(1);
+	}
+}
+
+
+void vCanRXTask(void *argument)
+{
+	CAN_FRAME_TYPE RXPacket;
+	while(1)
+	{
+		xQueueReceive( CanRXHandle, &RXPacket,  portMAX_DELAY );
+		vCanInsertRXData(&RXPacket);
 	}
 
 }
