@@ -16,6 +16,7 @@
 #include "script.c"
 #include "pdm_input.h"
 #include "flash.h"
+#include "string.h"
 /*
  * С функция для конфигурации входов из LUA
  *
@@ -28,6 +29,19 @@
 #define SEND_REQUEST_ARGUMENT_COUNT 3
 static LUA_STATE state = LUA_INIT;
 static   EventGroupHandle_t xPDMstatusEvent;
+
+
+extern TIM_HandleTypeDef htim11;
+uint32_t RestartTimer()
+{
+	uint32_t data;
+
+	data = htim11.Instance->CNT;
+	htim11.Instance->CNT= 0;
+//	HAL_TIM_Base_Start(&htim11);
+	return data;
+}
+
 /*---------------------------------------------------------------------------------------------------*/
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
 {
@@ -312,7 +326,7 @@ int  OutSetPWM( lua_State *L )
 const char * err = NULL;
 int res = 0;
 int pdm_time_process = 0;
-
+uint32_t time_S = 0;
 /****************
  *
  */
@@ -332,14 +346,13 @@ const char * xLUAgetError()
  */
 int xLUAgetTime()
 {
-	return pdm_time_process;
+	return time_S;
 }
 
 void vLuaTask(void *argument)
 {
 	 uint8_t default_script = 0;
-	 EventBits_t config_state;
-	 uint16_t system_timer = 0;
+
      uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
@@ -348,10 +361,10 @@ void vLuaTask(void *argument)
 	 lua_State *L1;
 
     // Загружаем библиотеки PDM
-
+	 HAL_TIM_Base_Start(&htim11);
    while(1)
 	{
-	   system_timer = GetSysTimer();
+
 	   vTaskDelay(1 );
 	   switch (state)
 	   {
@@ -398,6 +411,7 @@ void vLuaTask(void *argument)
 	   	   		    else
 	   	   		    	 lua_getglobal(L1, "main");
 	   	   		     pdm_time_process =GetTimer();
+	   	   		     time_S =RestartTimer();
 	   	   		     lua_pushinteger(L1,pdm_time_process);
 	   	   			 for (i=0;i< DIN_CHANNEL;i++)
 	   	   			 {
@@ -442,7 +456,6 @@ void vLuaTask(void *argument)
 
 
 	   }
-	       system_timer = GetSysTimer();
 	 }
 
 }

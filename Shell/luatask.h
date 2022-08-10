@@ -27,6 +27,9 @@ typedef enum {
 } LUA_STATE;
 
 
+LUA_STATE xLUAgetSTATE();
+const char * xLUAgetError();
+int xLUAgetTime();
 void vLUArunPDM();
 void vLUAstopPDM();
 void vLUArestartPDM();
