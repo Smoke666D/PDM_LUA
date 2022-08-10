@@ -125,7 +125,7 @@ DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length )
       *length = uDATAfloatToByte( fAinGetState( AIN_4 ), out );;
       break;
     case DATA_ADR_DIN:
-      *length = uDATAgetArray( DIN_CHANNEL, out, uDinGet );
+      *length = uDATAgetArray( DIN_CHANNEL, out, ucDinGet );
       break;
     case DATA_ADR_DOUT:
       *length = uDATAgetArray( OUT_COUNT, out, uOutGetState );

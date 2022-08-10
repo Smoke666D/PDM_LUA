@@ -253,7 +253,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	  if (__HAL_TIM_GET_FLAG(&htim10, TIM_FLAG_UPDATE) != RESET)
 	  {
 		  SystemTimer();
-		  SystemDinTimer();
+		  vSystemDinTimer();
 	  }
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */

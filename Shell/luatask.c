@@ -21,15 +21,10 @@
  * С функция для конфигурации входов из LUA
  *
  */
-#define CONFIG_ARGUMENT_COUNT 4
-#define RESET_ARGUMENT_COUNT 3
-#define PWM_ARGUMENT_COUNT 2
-#define CANSEND_ARGUMENT_COUNT 2
-#define CANREQSEND_ARGUMENT_COUNT 3
-#define SEND_REQUEST_ARGUMENT_COUNT 3
-static LUA_STATE state = LUA_INIT;
-static   EventGroupHandle_t xPDMstatusEvent;
 
+static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM)= LUA_INIT;
+static EventGroupHandle_t xPDMstatusEvent;
+static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
 
 extern TIM_HandleTypeDef htim11;
 uint32_t RestartTimer()
@@ -38,7 +33,7 @@ uint32_t RestartTimer()
 
 	data = htim11.Instance->CNT;
 	htim11.Instance->CNT= 0;
-//	HAL_TIM_Base_Start(&htim11);
+
 	return data;
 }
 
@@ -74,9 +69,9 @@ int DinConfig(lua_State *L )
 		uint8_t in_number = 0;
 		int arg_number = lua_gettop(L);
 		LOGIC_STATE state;
-		if (arg_number >= 2)  //Проверяем, что при вызове нам передали нужное число аргументов
+		if (arg_number >= 2)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
 		{
-			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; //Первым аргументом дожен передоваться номер канала
+			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
 			if ( arg_number > 2)
 			{
@@ -86,10 +81,10 @@ int DinConfig(lua_State *L )
 			{
 				lf = lua_tointeger(L,-arg_number-3);
 			}
-			inputConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
+			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
 
 		}
-		return 0;
+		return ( 0U);
 
 }
 
@@ -204,18 +199,18 @@ int CanSendPDM( lua_State *L )
 	uint8_t DATA[8];
 	uint8_t size;
 
-		if (arg_number >= CANSEND_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+		if (arg_number >= CANSEND_ARGUMENT_COUNT)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
 		{
-			ID = (uint32_t) lua_tointeger(L,-arg_number) ; //Первым аргументом дожен передоваться ID пакета
+			ID = (uint32_t) lua_tointeger(L,-arg_number) ; /*Первым аргументом дожен передоваться ID пакета*/
 
 			size  = arg_number -1;
 			for (int i=0;i<size;i++)
 			{
-				DATA[i]= (uint8_t) lua_tointeger(L,-(arg_number-1-i)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
+				DATA[i]= (uint8_t) lua_tointeger(L,-(arg_number-1-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
 			}
 			vCanInsertTXData(ID, &DATA[0], size);
 		}
-		return 0;
+		return (0);
 }
 
 
@@ -239,7 +234,7 @@ int CanSendTable( lua_State *L )
 			}
 			vCanInsertTXData(ID, &DATA[0], size);
 		}
-		return 0;
+		return (0);
 }
 
 
@@ -323,30 +318,30 @@ int  OutSetPWM( lua_State *L )
 
 
 
-const char * err = NULL;
+const char * pcLuaErrorString = NULL;
 int res = 0;
 int pdm_time_process = 0;
-uint32_t time_S = 0;
+uint32_t ulWorkCicleIn10us= 0;
 /****************
  *
  */
-LUA_STATE xLUAgetSTATE()
+uint8_t ucLUAgetErrorCount()
 {
-	return state;
+	return ( ucErrorCount );
 }
 /*
  *
  */
-const char * xLUAgetError()
+const char * pcLUAgetErrorString()
 {
-	return err;
+	return ( pcLuaErrorString );
 }
 /*
  *
  */
-int xLUAgetTime()
+uint32_t ulLUAgetWorkCicle()
 {
-	return time_S;
+	return ( ulWorkCicleIn10us );
 }
 
 void vLuaTask(void *argument)
@@ -411,11 +406,11 @@ void vLuaTask(void *argument)
 	   	   		    else
 	   	   		    	 lua_getglobal(L1, "main");
 	   	   		     pdm_time_process =GetTimer();
-	   	   		     time_S =RestartTimer();
+	   	   		     ulWorkCicleIn10us  =RestartTimer();
 	   	   		     lua_pushinteger(L1,pdm_time_process);
 	   	   			 for (i=0;i< DIN_CHANNEL;i++)
 	   	   			 {
-	   	   				 lua_pushboolean(L1,uDinGet(i));
+	   	   				 lua_pushboolean(L1,ucDinGet(i));
 	   	   			 }
 
 	   	   			 for (i=0;i< OUT_COUNT ;i++)
@@ -437,8 +432,10 @@ void vLuaTask(void *argument)
 	   	   					}
 	   	   					break;
 	   	   				 default:
-	   	   				   err =  lua_tostring(L1, -1);
+	   	   				   pcLuaErrorString =  lua_tostring(L1, -1);
+	   	   				   ucErrorCount++;
 	   	   				   state  = LUA_ERROR;
+	   	   				   break;
 	   	   			  }
 	   	   			  lua_pop(L1, temp);
 	   	   			  break;

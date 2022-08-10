@@ -9,19 +9,21 @@
 #define PDM_INPUT_H_
 
 
-
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "event_groups.h"
 #include "luatask.h"
 #include "system.h"
+#include "task.h"
+#include "semphr.h"
+#include "stm32f4xx_hal.h"
 
-#define DIN_CHANNEL 11
-#define DIN_VALID   3
-
-#define DEF_H_FRONT 10
-#define DEF_L_FRONT 10
+#define DIN_CHANNEL 11U
+#define DIN_VALID   3U
+#define MAX_VAL 65000U
+#define DEF_H_FRONT 10U
+#define DEF_L_FRONT 10U
 
 
 typedef struct {
@@ -29,41 +31,24 @@ typedef struct {
 	GPIO_TypeDef * GPIOx;
 } PIN_CONFIG;
 
-
 typedef enum {
-	POSITIVE_STATE = 0,
-	NEGATIVE_STATE = 1,
+	POSITIVE_STATE = 0U,
+	NEGATIVE_STATE = 1U,
 } LOGIC_STATE;
 
-typedef struct
-{
-uint32_t counter;
-uint8_t data;
-uint32_t low_counter;
-uint32_t high_counter;
-uint8_t temp_data;
-LOGIC_STATE state;
-} DoutCinfig;
-
 typedef enum {
-		INPUT1 = 0,
-		INPUT2 = 1,
-		INPUT3 = 2,
-		INPUT4 = 3,
-		INPUT5 = 4,
-		INPUT6 = 5,
-		INPUT7 = 6,
-		INPUT8 = 7,
-		INPUT9 = 8,
-		INPUT10 = 9,
-		INPUT11 = 10
+		INPUT_1 = 0U,
+		INPUT_2 = 1U,
+		INPUT_3 = 2U,
+		INPUT_4 = 3U,
+		INPUT_5 = 4U,
+		INPUT_6 = 5U,
+		INPUT_7 = 6U,
+		INPUT_8 = 7U,
+		INPUT_9 = 8U,
+		INPUT_10 = 9U,
+		INPUT_11 = 10U
 } PDM_INPUT_NAME;
-typedef struct {
-	PDM_INPUT_NAME channel;
-	uint32_t data;
-} CAPTURE_DATA_TYPE;
-
-
 
 typedef enum  {
 		CONFIG_OK = 0,
@@ -72,9 +57,20 @@ typedef enum  {
 		WRONG_CHANNEL_MODE =3U,
 } PDM_INPUT_CONFIG_ERROR;
 
-void vDINconfig( void );
-PDM_INPUT_CONFIG_ERROR inputConfig( uint8_t channel, LOGIC_STATE ls, uint32_t hfront, uint32_t lfront);
+typedef struct DinConfigDef_t
+{
+uint32_t      ulCounter;
+uint8_t 	  ucValue;
+uint32_t 	  ulLowCounter;
+uint32_t 	  ulHighCounter;
+uint8_t 	  ucTempValue;
+LOGIC_STATE   eState;
+} DinConfig_t;
+
+
+void vDinInit( void );
 void vDinTask(void *argument);
-void SystemDinTimer(void);
-uint8_t uDinGet(PDM_INPUT_NAME channel);
+PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, uint32_t ulHFront, uint32_t ulLFront);
+void vSystemDinTimer(void);
+uint8_t ucDinGet(PDM_INPUT_NAME channel);
 #endif /* PDM_INPUT_H_ */

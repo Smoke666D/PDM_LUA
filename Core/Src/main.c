@@ -168,8 +168,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   vSERIALinit( &huart2 );
   vUSBinit( &usbDet, &usbPullup );
-  vDINconfig( );
-  vCANinit();
+  vDinInit( );
+  vCANinit( );
   /* USER CODE END 2 */
 
   /* Init scheduler */
