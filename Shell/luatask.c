@@ -419,7 +419,6 @@ void vLuaTask(void *argument)
 	   	   		     case LUA_STOP:
 	   	   		    	 break;
 	   	   		     case LUA_RESTART:
-	   	   		    //	 lua_close(L1);
 	   	   		         lua_close(L);
 	   	   		    	 state = LUA_INIT;
 	   	   		    	 break;

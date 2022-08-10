@@ -52,6 +52,8 @@
 #define  SYS_BAR_LENGTH                 10U
 
 #define  SERIAL_QUEUE_SIZE              16U
+#define  CANRX_QUEUE_SIZE 				16U
+#define  CANTX_QUEUE_SIZE 				16U
 /*------------------------ Macros --------------------------------------*/
 #ifndef   __SECTION
   #define __SECTION(x) __attribute__((section(x)))

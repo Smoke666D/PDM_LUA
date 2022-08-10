@@ -26,6 +26,10 @@ typedef enum {
 	LUA_RESTART = 4,
 } LUA_STATE;
 
+
+void vLUArunPDM();
+void vLUAstopPDM();
+void vLUArestartPDM();
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void );
 void vLUArunPDM();
 void vLUAstopPDM();

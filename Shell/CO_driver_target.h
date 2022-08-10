@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "CO_driver_ST32F4xx.h"
 #include "cmsis_gcc.h"
 
 

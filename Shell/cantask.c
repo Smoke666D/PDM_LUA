@@ -6,25 +6,29 @@
  */
 
 #include "cantask.h"
-#include "cmsis_os.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "semphr.h"
 #include "system.h"
 #include "event_groups.h"
-#include "CO_driver_ST32F4xx.h"
 #include "luatask.h"
-
+#include "CO_driver_ST32F4xx.h"
 
 
 extern CAN_HandleTypeDef hcan1;
-extern osMessageQueueId_t CanRXHandle;
-extern osMessageQueueId_t CanTXHandle;
+QueueHandle_t CanRXHandle;
+QueueHandle_t CanTXHandle;
 
 
 
 
+QueueHandle_t* pCANRXgetQueue ( void )
+{
+  return &CanRXHandle;
+}
 
+QueueHandle_t* pCANTXgetQueue ( void )
+{
+  return &CanTXHandle;
+}
 
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t  * xPDMstatusEvent __SECTION(RAM_SECTION_CCMRAM) = NULL;
@@ -184,7 +188,7 @@ uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket)
 
 void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 {
-	CO_CANtx_t data_to_send;
+	CAN_TX_FRAME_TYPE data_to_send;
 	data_to_send.ident = CanID;
 	data_to_send.DLC = data_len;
 	for (uint8_t i=0; i<data_len;i++)
@@ -203,7 +207,7 @@ void vCanTask(void *argument)
 	uint8_t size;
 	//Инициализация модуля CAN
 	xPDMstatusEvent = osLUAetPDMstatusHandle();
-	CO_CANtx_t TXPacket;
+	CAN_TX_FRAME_TYPE TXPacket;
 	CAN_FRAME_TYPE RXPacket;
 	InitMailBoxBuffer();
 	vConfigCAN(&hcan1);
