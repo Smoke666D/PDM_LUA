@@ -11,7 +11,7 @@
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      15U
+#define CLI_TARGETS_NUMBER      16U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -41,7 +41,9 @@
 #define CLI_TARGET_USB_STR        "usb"
 #define CLI_TARGET_VOLTAGE_STR    "voltage"
 #define CLI_TARGET_LUA_STATUS_STR "status"
-#define CLI_TARGET_LUA_ERROR_STR  "time"
+#define CLI_TARGET_LUA_ERROR_STR  "error"
+#define CLI_TARGET_LUA_TIME_STR   "time"
+#define CLI_TARGET_LUA_ERROR_COUNTER_STR "counter"
 
 
 #define CLI_DIO_ON_STR          "on"
@@ -103,7 +105,8 @@ typedef enum
   CLI_TARGET_VOLTAGE,
   CLI_TARGET_LUA_STATUS,
   CLI_TARGET_LUA_ERROR,
-  CLI_TARGET_LUA_TIME
+  CLI_TARGET_LUA_TIME,
+  CLI_TARGET_LUA_ERROR_COUNTER
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

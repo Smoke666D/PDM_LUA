@@ -37,14 +37,15 @@ typedef enum {
 
 
 LUA_STATE_t eLUAgetSTATE();
-const char * pcLUAgetErrorString( void );
-uint32_t ulLUAgetWorkCicle( void );
-void vLUArunPDM( void );
-void vLUAstopPDM( void );
-void vLUArestartPDM( void );
+const char* pcLUAgetErrorString( void );
+uint8_t     ucLUAgetErrorCount ( void );
+uint32_t    ulLUAgetWorkCicle( void );
+void        vLUArunPDM( void );
+void        vLUAstopPDM( void );
+void        vLUArestartPDM( void );
+void        vLUArunPDM( void );
+void        vLUAstopPDM( void );
+void        vLuaTask(void *argument);
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void );
-void vLUArunPDM( void );
-void vLUAstopPDM( void );
-void vLuaTask(void *argument);
 
 #endif /* LUATASK_H_ */

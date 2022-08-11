@@ -443,7 +443,8 @@ void vLuaTask(void *argument)
 	   	   lua_close(L);
 	   	   state = LUA_INIT;
 	   	   break;
-	    break;
+	   	 default:
+	   	   break;
 	  }
   }
 }

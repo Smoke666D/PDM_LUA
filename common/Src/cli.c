@@ -40,7 +40,8 @@ static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
   CLI_TARGET_VOLTAGE_STR,
   CLI_TARGET_LUA_STATUS_STR,
   CLI_TARGET_LUA_ERROR_STR,
-  CLI_TARGET_LUA_ERROR_STR
+  CLI_TARGET_LUA_TIME_STR,
+  CLI_TARGET_LUA_ERROR_COUNTER_STR
 };
 
 static const char* const luaStateDic[LUA_STATE_SIZE] = {
@@ -309,6 +310,7 @@ CLI_STATUS eCLIprocessGet ( void )
 {
   CLI_STATUS res = CLI_STATUS_OK;
   uint16_t   id[UNIQUE_ID_LENGTH] = { 0U };
+  uint8_t    length = CLI_MESSAGE_OUT_LENGTH;
   switch ( message.target )
   {
     case CLI_TARGET_DOUT:
@@ -408,13 +410,22 @@ CLI_STATUS eCLIprocessGet ( void )
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_ERROR:
-      strcpy( message.out, pcLUAgetErrorString() );
+      if ( CLI_MESSAGE_OUT_LENGTH > strlen( pcLUAgetErrorString() ) )
+      {
+        length = strlen( pcLUAgetErrorString() );
+      }
+      memcpy( message.out, pcLUAgetErrorString(), length );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_TIME:
-      itoa( ulLUAgetWorkCicle(), message.out, 10U );
+      itoa( ( ulLUAgetWorkCicle() * 10U ), message.out, 10U );
       strcat( message.out, " ms" );
+      strcat( message.out, CLI_LINE_END );
+      message.length = strlen( message.out );
+      break;
+    case CLI_TARGET_LUA_ERROR_COUNTER:
+      itoa( ucLUAgetErrorCount(), message.out, 10U );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;
