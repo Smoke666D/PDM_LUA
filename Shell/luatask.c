@@ -402,7 +402,7 @@ void vLuaTask(void *argument)
 	   	     lua_getglobal(L1, "main");
 	   	   pdm_time_process =GetTimer();
 	   	   ulWorkCicleIn10us  =RestartTimer();
-	   	   lua_pushinteger(L1,pdm_time_process);
+	   	   lua_pushinteger(L1,ulWorkCicleIn10us);
 	   	   for (i=0;i< DIN_CHANNEL;i++)
 	   	   {
 	   	     lua_pushboolean(L1,ucDinGet(i));
@@ -438,6 +438,7 @@ void vLuaTask(void *argument)
 	   	   state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
+	   		default_script = 0;
 	   	   break;
 	   	 case LUA_RESTART:
 	   	   lua_close(L);
