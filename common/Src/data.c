@@ -11,6 +11,7 @@
 #include <math.h>
 #include "PDMhardware.h"
 #include "pdm_input.h"
+#include "luatask.h"
 
 uint8_t uDATAfloatToByte ( float input, uint8_t* out )
 {
@@ -134,9 +135,15 @@ DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length )
       *length = 1U;
       ( void )memset( out, 0U, *length );
       break;
-    case DATA_ADR_LUA:
+    case DATA_ADR_LUA_STATE:
+      out[0U] = xLUAgetSTATE();
       *length = 1U;
-      ( void )memset( out, 0U, *length );
+      break;
+    case DATA_ADR_LUA_ERROR:
+
+      break;
+    case DATA_ADR_LUA_TIME:
+
       break;
     default:
       res = DATA_ERROR_ADR;

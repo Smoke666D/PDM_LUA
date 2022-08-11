@@ -11,7 +11,7 @@
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
 #define CLI_COMMANDS_NUMBER     3U
-#define CLI_TARGETS_NUMBER      12U
+#define CLI_TARGETS_NUMBER      15U
 #define CLI_MESSAGE_OUT_LENGTH  40U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
@@ -28,18 +28,20 @@
 #define CLI_RESET_COMMAND_STR   "reset"
 #define CLI_GET_COMMAND_STR     "get"
 
-#define CLI_TARGET_VERSION_STR  "version"
-#define CLI_TARGET_UNIQUE_STR   "unique"
-#define CLI_TARGET_DOUT_STR     "dout"
-#define CLI_TARGET_DIN_STR      "din"
-#define CLI_TARGET_CURRENT_STR  "current"
-#define CLI_TARGET_BAT_STR      "bat"
-#define CLI_TARGET_FLASH_STR    "flash"
-#define CLI_TARGET_SCRIPT_STR   "script"
-#define CLI_TARGET_LUA_STR      "lua"
-#define CLI_TARGET_VUSB_STR     "vusb"
-#define CLI_TARGET_USB_STR      "usb"
-#define CLI_TARGET_VOLTAGE_STR  "voltage"
+#define CLI_TARGET_VERSION_STR    "version"
+#define CLI_TARGET_UNIQUE_STR     "unique"
+#define CLI_TARGET_DOUT_STR       "dout"
+#define CLI_TARGET_DIN_STR        "din"
+#define CLI_TARGET_CURRENT_STR    "current"
+#define CLI_TARGET_BAT_STR        "bat"
+#define CLI_TARGET_FLASH_STR      "flash"
+#define CLI_TARGET_SCRIPT_STR     "script"
+#define CLI_TARGET_LUA_STR        "lua"
+#define CLI_TARGET_VUSB_STR       "vusb"
+#define CLI_TARGET_USB_STR        "usb"
+#define CLI_TARGET_VOLTAGE_STR    "voltage"
+#define CLI_TARGET_LUA_STATUS_STR "status"
+#define CLI_TARGET_LUA_ERROR_STR  "time"
 
 
 #define CLI_DIO_ON_STR          "on"
@@ -50,6 +52,13 @@
 #define CLI_ERROR_DATA_STR      "Wrong data"
 #define CLI_ERROR_EXECUTING_STR "Executing error"
 #define CLI_ERROR_UNKNOWN       "Unknown error"
+
+
+#define LUA_STATE_INIT_STR    "init"
+#define LUA_STATE_RUN_STR     "run"
+#define LUA_STATE_ERROR_STR   "error"
+#define LUA_STATE_STOP_STR    "stop"
+#define LUA_STATE_RESTART_STR "restart"
 /*------------------------- Macros -------------------------------------*/
 /*-------------------------- ENUM --------------------------------------*/
 typedef enum
@@ -91,7 +100,10 @@ typedef enum
   CLI_TARGET_LAU,     /* +  09 get */
   CLI_TARGET_VUSB,    /* +  10 get */
   CLI_TARGET_USB,     /* +  11 get */
-  CLI_TARGET_VOLTAGE
+  CLI_TARGET_VOLTAGE,
+  CLI_TARGET_LUA_STATUS,
+  CLI_TARGET_LUA_ERROR,
+  CLI_TARGET_LUA_TIME
 } CLI_TARGET;
 /*----------------------- Structures -----------------------------------*/
 typedef struct

@@ -16,6 +16,7 @@
 #include "usbhid.h"
 #include "PDMhardware.h"
 #include "pdm_input.h"
+#include "luatask.h"
 /*------------------------- Define ------------------------------------------------------------------*/
 /*----------------------- Structures ----------------------------------------------------------------*/
 /*----------------------- Constant ------------------------------------------------------------------*/
@@ -36,7 +37,18 @@ static const char* const targetStrings[CLI_TARGETS_NUMBER] = {
   CLI_TARGET_LUA_STR,
   CLI_TARGET_VUSB_STR,
   CLI_TARGET_USB_STR,
-  CLI_TARGET_VOLTAGE_STR
+  CLI_TARGET_VOLTAGE_STR,
+  CLI_TARGET_LUA_STATUS_STR,
+  CLI_TARGET_LUA_ERROR_STR,
+  CLI_TARGET_LUA_ERROR_STR
+};
+
+static const char* const luaStateDic[LUA_STATE_SIZE] = {
+  LUA_STATE_INIT_STR,
+  LUA_STATE_RUN_STR,
+  LUA_STATE_ERROR_STR,
+  LUA_STATE_STOP_STR,
+  LUA_STATE_RESTART_STR
 };
 /*----------------------- Variables -----------------------------------------------------------------*/
 static TEST_TYPE message   = { 0U };
@@ -352,7 +364,7 @@ CLI_STATUS eCLIprocessGet ( void )
       message.length = uCLIdioToStr( ( eFLASHgetLockState() == FLASH_LOCKED?1U:0U ), message.out );
       break;
     case CLI_TARGET_LAU:
-      res = CLI_STATUS_ERROR_DATA;
+      res = CLI_STATUS_ERROR_TARGET;
       break;
     case CLI_TARGET_UNIQUE:
       vSYSgetUniqueID16( id );
@@ -389,6 +401,22 @@ CLI_STATUS eCLIprocessGet ( void )
       {
         res = CLI_STATUS_ERROR_DATA;
       }
+      break;
+    case CLI_TARGET_LUA_STATUS:
+      strcpy( message.out, luaStateDic[xLUAgetSTATE()] );
+      strcat( message.out, CLI_LINE_END );
+      message.length = strlen( message.out );
+      break;
+    case CLI_TARGET_LUA_ERROR:
+      strcpy( message.out, xLUAgetError() );
+      strcat( message.out, CLI_LINE_END );
+      message.length = strlen( message.out );
+      break;
+    case CLI_TARGET_LUA_TIME:
+      itoa( xLUAgetTime(), message.out, 10U );
+      strcat( message.out, " ms" );
+      strcat( message.out, CLI_LINE_END );
+      message.length = strlen( message.out );
       break;
     default:
       res = CLI_STATUS_ERROR_TARGET;
