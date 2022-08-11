@@ -403,17 +403,17 @@ CLI_STATUS eCLIprocessGet ( void )
       }
       break;
     case CLI_TARGET_LUA_STATUS:
-      strcpy( message.out, luaStateDic[xLUAgetSTATE()] );
+      strcpy( message.out, luaStateDic[eLUAgetSTATE()] );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_ERROR:
-      strcpy( message.out, xLUAgetError() );
+      strcpy( message.out, pcLUAgetErrorString() );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_TIME:
-      itoa( xLUAgetTime(), message.out, 10U );
+      itoa( ulLUAgetWorkCicle(), message.out, 10U );
       strcat( message.out, " ms" );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );

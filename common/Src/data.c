@@ -31,9 +31,10 @@ uint8_t uDATAgetArray ( uint8_t size, uint8_t* out, uint8_t ( *get )( uint8_t ad
   return length;
 }
 
-DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length )
+DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length, uint8_t size )
 {
   DATA_ERROR res = DATA_OK;
+  char* pointer = NULL;
   *length = 0U;
   switch ( adr )
   {
@@ -136,14 +137,15 @@ DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length )
       ( void )memset( out, 0U, *length );
       break;
     case DATA_ADR_LUA_STATE:
-      out[0U] = xLUAgetSTATE();
+      out[0U] = eLUAgetSTATE();
       *length = 1U;
       break;
     case DATA_ADR_LUA_ERROR:
+      //pointer = pcLUAgetErrorString();
 
       break;
     case DATA_ADR_LUA_TIME:
-
+      ulLUAgetWorkCicle();
       break;
     default:
       res = DATA_ERROR_ADR;

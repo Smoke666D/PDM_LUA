@@ -33,11 +33,11 @@ typedef enum {
 	LUA_STOP,
 	LUA_RESTART,
 	LUA_STATE_SIZE
-} LUA_STATE;
+} LUA_STATE_t;
 
 
 LUA_STATE_t eLUAgetSTATE();
-const char * pcLUAgetError( void );
+const char * pcLUAgetErrorString( void );
 uint32_t ulLUAgetWorkCicle( void );
 void vLUArunPDM( void );
 void vLUAstopPDM( void );

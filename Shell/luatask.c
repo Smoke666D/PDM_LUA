@@ -82,10 +82,8 @@ int DinConfig(lua_State *L )
 				lf = lua_tointeger(L,-arg_number-3);
 			}
 			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
-
 		}
-		return ( 0U);
-
+		return ( 0U );
 }
 
 /*
@@ -109,13 +107,13 @@ int CanCheckData(lua_State *L )
 	uint32_t res;
 	switch (lua_gettop(L))
 	{
-	   case 0:
-		   res = CheckAnswer();
-		   break;
-	   case 1:
-		   luaL_checktype(L, 1, LUA_TNUMBER);
-		   res = vCanChekMessage(lua_tointeger(L,-1));
-		   break;
+	  case 0:
+		  res = CheckAnswer();
+		  break;
+	  case 1:
+		  luaL_checktype(L, 1, LUA_TNUMBER);
+		  res = vCanChekMessage(lua_tointeger(L,-1));
+		  break;
 	}
 	lua_pushnumber(L,res );
 	return 1;
@@ -155,37 +153,37 @@ int CanGetResivedData(lua_State *L )
 	CAN_FRAME_TYPE  RXPacket;
 	switch (lua_gettop(L))
 	{
-	    case 1:
-	    	luaL_checktype(L, 1, LUA_TTABLE);
-	    	if  (vCanGetRequest(&RXPacket)!=0)
+	  case 1:
+	    luaL_checktype(L, 1, LUA_TTABLE);
+	    if  (vCanGetRequest(&RXPacket)!=0)
+	    {
+	      n = luaL_len(L, 1);
+	    	for (int i = 1; i<(n+1);i++)
 	    	{
-	    		n = luaL_len(L, 1);
-	    		for (int i = 1; i<(n+1);i++)
-	    		{
-	      			lua_pushnumber(L,RXPacket.data[i-1]);
-	      			lua_seti(L, 1, i);
-	       		}
-	       	    lua_pushnumber(L,1U );
-	       	}
-	    	break;
-	    case 2:
-	    	luaL_checktype(L, -1, LUA_TTABLE);
-	    	RXPacket.ident = (uint32_t) lua_tointeger(L,-2);
-	    	if ( vCanGetMessage(&RXPacket) == 1)
+	        lua_pushnumber(L,RXPacket.data[i-1]);
+	      	lua_seti(L, 1, i);
+	      }
+	      lua_pushnumber(L,1U );
+	    }
+	    break;
+	  case 2:
+	    luaL_checktype(L, -1, LUA_TTABLE);
+	    RXPacket.ident = (uint32_t) lua_tointeger(L,-2);
+	    if ( vCanGetMessage(&RXPacket) == 1)
+	    {
+	      n = luaL_len(L, -1);
+	    	for (int i = 1; i<(n+1);i++)
 	    	{
-	    		n = luaL_len(L, -1);
-	    		for (int i = 1; i<(n+1);i++)
-	    		{
-	    			lua_pushnumber(L,RXPacket.data[i-1]);
-	    			lua_seti(L, -2, i);
-	    		}
-	    	    lua_pushnumber(L,1U );
-	    	}
-	    	else
-	    	{
-	    	  lua_pushnumber(L,0U );
-	    	}
-	    	break;
+	    	  lua_pushnumber(L,RXPacket.data[i-1]);
+	    		lua_seti(L, -2, i);
+	      }
+	    	lua_pushnumber(L,1U );
+	    }
+	    else
+	    {
+	      lua_pushnumber(L,0U );
+	    }
+	    break;
 	}
 	return 1;
 }
@@ -198,19 +196,17 @@ int CanSendPDM( lua_State *L )
 	uint32_t ID;
 	uint8_t DATA[8];
 	uint8_t size;
-
-		if (arg_number >= CANSEND_ARGUMENT_COUNT)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
+	if (arg_number >= CANSEND_ARGUMENT_COUNT)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
+	{
+	  ID = (uint32_t) lua_tointeger(L,-arg_number) ; /*Первым аргументом дожен передоваться ID пакета*/
+		size  = arg_number -1;
+		for (int i=0;i<size;i++)
 		{
-			ID = (uint32_t) lua_tointeger(L,-arg_number) ; /*Первым аргументом дожен передоваться ID пакета*/
-
-			size  = arg_number -1;
-			for (int i=0;i<size;i++)
-			{
-				DATA[i]= (uint8_t) lua_tointeger(L,-(arg_number-1-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
-			}
-			vCanInsertTXData(ID, &DATA[0], size);
+		  DATA[i]= (uint8_t) lua_tointeger(L,-(arg_number-1-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
 		}
-		return (0);
+		vCanInsertTXData(ID, &DATA[0], size);
+	}
+	return (0);
 }
 
 
@@ -220,21 +216,20 @@ int CanSendTable( lua_State *L )
 	uint32_t ID;
 	uint8_t DATA[8];
 	uint8_t size;
-
-		if (arg_number >= 3)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if (arg_number >= 3)  //Проверяем, что при вызове нам передали нужное число аргументов
+	{
+	  ID = (uint32_t) lua_tointeger(L,1) ; //Первым аргументом дожен передоваться ID пакета
+		size  = (uint32_t) lua_tointeger(L,2);
+		luaL_checktype(L, 3, LUA_TTABLE);
+		for (int i=0;i<size;i++)
 		{
-			ID = (uint32_t) lua_tointeger(L,1) ; //Первым аргументом дожен передоваться ID пакета
-			size  = (uint32_t) lua_tointeger(L,2);
-		    luaL_checktype(L, 3, LUA_TTABLE);
-			for (int i=0;i<size;i++)
-			{
-				lua_geti(L, 3, i + 1);
-				DATA[i]= lua_tointeger(L,-1);
-				lua_pop(L,1);
-			}
-			vCanInsertTXData(ID, &DATA[0], size);
+		  lua_geti(L, 3, i + 1);
+			DATA[i]= lua_tointeger(L,-1);
+			lua_pop(L,1);
 		}
-		return (0);
+		vCanInsertTXData(ID, &DATA[0], size);
+	}
+	return (0);
 }
 
 
@@ -302,21 +297,19 @@ int  OutSetPWM( lua_State *L )
 	int out_number = 0;
 	int temp_i, pwm = 100;
 	int arg_number = lua_gettop(L);
-		if (arg_number >= PWM_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if (arg_number >= PWM_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+	{
+		out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
+		if (out_number < OUT_COUNT) //Проверяем, что номер канала задан верно
 		{
-			out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
-			if (out_number < OUT_COUNT) //Проверяем, что номер канала задан верно
-			{
-				pwm = DEFAULT_PWM;
-				temp_i = lua_tointeger(L,-(arg_number-1)); //Вторам агрументом должна передоватьс мощность канала в процентах 0-100.
-				if (temp_i < pwm) pwm = temp_i; //Если аргумент коректный
-				vOutSetPWM(out_number, pwm);
-			}
+			pwm = DEFAULT_PWM;
+			temp_i = lua_tointeger(L,-(arg_number-1)); //Вторам агрументом должна передоватьс мощность канала в процентах 0-100.
+			if (temp_i < pwm) pwm = temp_i; //Если аргумент коректный
+			vOutSetPWM(out_number, pwm);
 		}
+	}
 	return 0;
 }
-
-
 
 const char * pcLuaErrorString = NULL;
 int res = 0;
@@ -325,30 +318,34 @@ uint32_t ulWorkCicleIn10us= 0;
 /****************
  *
  */
-uint8_t ucLUAgetErrorCount()
+uint8_t ucLUAgetErrorCount ( void )
 {
 	return ( ucErrorCount );
 }
 /*
  *
  */
-const char * pcLUAgetErrorString()
+const char * pcLUAgetErrorString ( void )
 {
 	return ( pcLuaErrorString );
 }
 /*
  *
  */
-uint32_t ulLUAgetWorkCicle()
+uint32_t ulLUAgetWorkCicle ( void )
 {
 	return ( ulWorkCicleIn10us );
+}
+
+LUA_STATE_t eLUAgetSTATE ( void )
+{
+  return state;
 }
 
 void vLuaTask(void *argument)
 {
 	 uint8_t default_script = 0;
-
-     uint8_t init = 0;
+   uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
 	 state = LUA_INIT;
@@ -358,101 +355,95 @@ void vLuaTask(void *argument)
     // Загружаем библиотеки PDM
 	 HAL_TIM_Base_Start(&htim11);
    while(1)
-	{
-
-	   vTaskDelay(1 );
+	 {
+	   vTaskDelay( 1 );
 	   switch (state)
 	   {
-	   	   	  case LUA_INIT:
-	   	   		  init = 0;
-	   	   		  L  = luaL_newstate();
-	   	   		  L1 = lua_newthread(L);
-	   	   		  luaL_openlibs(L1); // open standard libraries
-	   	   		  lua_register(L1,"CanTable",CanSendTable);
-	   	   		  lua_register(L1,"setDINConfig",DinConfig);
-	   	   		  lua_register(L1,"setOutConfig", OutConfig);
-	   	   		  lua_register(L1,"OutResetConfig", OutResetConfig);
-	   	   		  lua_register(L1,"OutSetPWM", OutSetPWM);
-	   	   		  lua_register(L1,"CanSend", CanSendPDM);
-	   	   		  lua_register(L1,"setCanFilter", CanSetResiveFilter);
-	   	   		  lua_register(L1,"CheckCanId", CanCheckData);
-	   	   		  lua_register(L1,"GetCanMessage",CanGetMessage);
-	   	   		  lua_register(L1,"GetCanToTable",CanGetResivedData);
-	   	   		  lua_register(L1,"sendCandRequest",CanSendRequest);
-	   	   		  lua_register(L1,"CheckAnswer", CanCheckData);
-	   	   		  lua_register(L1,"GetRequest",CanGetMessage);
-	   	   		  lua_register(L1,"GetRequestToTable",CanGetResivedData);
-	   	   		  vLUArunPDM();
-	   	   		  if ( default_script == 0)
-	   	   		  {
-	   	   			  const char*  datastring =  (const char*) FLASH_STORAGE_ADR;
-	   	   			  uint32_t t = strlen(datastring);
-	   	   			  if (t > 0)
-	   	   			  {
-	   	   				  res = luaL_dostring(L1,uFLASHgetScript());
-	   	   			  }
-	   	   			  else
-	   	   				  default_script = 1;
-	   	   		  }
-	   	   		  if (default_script ==1)
-	   	   		  {
-	   	   	       	   res = luaL_dostring(L1,defaultLuaScript);
-	   	   		  }
-	   	   		  break;
-	   	   	  case LUA_RUN:
-
-	   	   		   if (init == 0)
-	   	   		    	 lua_getglobal(L1, "init");
-	   	   		    else
-	   	   		    	 lua_getglobal(L1, "main");
-	   	   		     pdm_time_process =GetTimer();
-	   	   		     ulWorkCicleIn10us  =RestartTimer();
-	   	   		     lua_pushinteger(L1,pdm_time_process);
-	   	   			 for (i=0;i< DIN_CHANNEL;i++)
-	   	   			 {
-	   	   				 lua_pushboolean(L1,ucDinGet(i));
-	   	   			 }
-
-	   	   			 for (i=0;i< OUT_COUNT ;i++)
-	   	   			 {
-	   	   				 lua_pushnumber(L1,fOutGetCurrent(i));
-	   	   			 }
-	   	   			 switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp) )
-	   	   			 {
-	   	   			    case  LUA_OK:
-	   	   				if (init == 0)
-	   	   				{
-	   	   				   init = 1;
-	   	   				}
-	   	   				case LUA_YIELD:
-	   	   					for (i=0;i<OUT_COUNT;i++)
-	   	   					{
-	   	   					 	 out[i] =lua_toboolean(L1,-(i+1));
-	   	   					  	 vOutSetState(i,(uint8_t)out[i]);
-	   	   					}
-	   	   					break;
-	   	   				 default:
-	   	   				   pcLuaErrorString =  lua_tostring(L1, -1);
-	   	   				   ucErrorCount++;
-	   	   				   state  = LUA_ERROR;
-	   	   				   break;
-	   	   			  }
-	   	   			  lua_pop(L1, temp);
-	   	   			  break;
-	   	   		     case LUA_ERROR:
-	   	   		    	 default_script = 1;
-	   	   		    	 state = LUA_RESTART;
-	   	   		    	 break;
-	   	   		     case LUA_STOP:
-	   	   		    	 break;
-	   	   		     case LUA_RESTART:
-	   	   		         lua_close(L);
-	   	   		    	 state = LUA_INIT;
-	   	   		    	 break;
-	   	   		  break;
-
-
-	   }
-	 }
-
+       case LUA_INIT:
+	   	   init = 0;
+	   	   L  = luaL_newstate();
+	   	   L1 = lua_newthread(L);
+	   	   luaL_openlibs(L1); // open standard libraries
+	   	   lua_register(L1,"CanTable",CanSendTable);
+	   	   lua_register(L1,"setDINConfig",DinConfig);
+	   	   lua_register(L1,"setOutConfig", OutConfig);
+	   	   lua_register(L1,"OutResetConfig", OutResetConfig);
+	   	   lua_register(L1,"OutSetPWM", OutSetPWM);
+	   	   lua_register(L1,"CanSend", CanSendPDM);
+	   	   lua_register(L1,"setCanFilter", CanSetResiveFilter);
+	   	   lua_register(L1,"CheckCanId", CanCheckData);
+	   	   lua_register(L1,"GetCanMessage",CanGetMessage);
+	   	   lua_register(L1,"GetCanToTable",CanGetResivedData);
+	   	   lua_register(L1,"sendCandRequest",CanSendRequest);
+	   	   lua_register(L1,"CheckAnswer", CanCheckData);
+	   	   lua_register(L1,"GetRequest",CanGetMessage);
+	   	   lua_register(L1,"GetRequestToTable",CanGetResivedData);
+	   	   vLUArunPDM();
+	   	   if ( default_script == 0)
+	   	   {
+	   	     const char*  datastring =  (const char*) FLASH_STORAGE_ADR;
+	   	   	 uint32_t t = strlen(datastring);
+	   	   	 if (t > 0)
+	   	   	 {
+	   	   	   res = luaL_dostring(L1,uFLASHgetScript());
+	   	   	 }
+	   	   	 else
+	   	   	 default_script = 1;
+	   	   }
+	   	   if (default_script ==1)
+	   	   {
+	   	     res = luaL_dostring(L1,defaultLuaScript);
+	   	   }
+	   	   break;
+	   	 case LUA_RUN:
+	   	   if (init == 0)
+	   	     lua_getglobal(L1, "init");
+	   	   else
+	   	     lua_getglobal(L1, "main");
+	   	   pdm_time_process =GetTimer();
+	   	   ulWorkCicleIn10us  =RestartTimer();
+	   	   lua_pushinteger(L1,pdm_time_process);
+	   	   for (i=0;i< DIN_CHANNEL;i++)
+	   	   {
+	   	     lua_pushboolean(L1,ucDinGet(i));
+	   	   }
+         for (i=0;i< OUT_COUNT ;i++)
+	   	   {
+	   	     lua_pushnumber(L1,fOutGetCurrent(i));
+	   	   }
+	   	   switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp) )
+	   	   {
+	   	     case  LUA_OK:
+	   	   	   if (init == 0)
+	   	   		 {
+	   	   		   init = 1;
+	   	   		 }
+	   	   	 case LUA_YIELD:
+	   	   		 for (i=0;i<OUT_COUNT;i++)
+	   	   		 {
+	   	   		   out[i] =lua_toboolean(L1,-(i+1));
+	   	   			 vOutSetState(i,(uint8_t)out[i]);
+	   	   		 }
+	   	   		 break;
+	   	   	 default:
+	   	   	   pcLuaErrorString =  lua_tostring(L1, -1);
+	   	   		 ucErrorCount++;
+	   	   	   state  = LUA_ERROR;
+	   	   		 break;
+	   	   }
+	   	   lua_pop(L1, temp);
+	   	   break;
+	   	 case LUA_ERROR:
+	   	   default_script = 1;
+	   	   state = LUA_RESTART;
+	   	   break;
+	   	 case LUA_STOP:
+	   	   break;
+	   	 case LUA_RESTART:
+	   	   lua_close(L);
+	   	   state = LUA_INIT;
+	   	   break;
+	    break;
+	  }
+  }
 }

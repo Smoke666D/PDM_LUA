@@ -178,7 +178,7 @@ void vUSBscriptToReport ( USB_REPORT* report )
 /*---------------------------------------------------------------------------------------------------*/
 void eUSBdataToReport ( USB_REPORT* report )
 {
-  switch ( eDATAget( ( DATA_ADR )report->adr, report->data, &report->length ) )
+  switch ( eDATAget( ( DATA_ADR )report->adr, report->data, &report->length, USB_REPORT_SIZE ) )
   {
     case DATA_OK:
       report->stat = USB_REPORT_STATE_OK;
