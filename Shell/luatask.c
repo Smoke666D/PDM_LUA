@@ -22,7 +22,7 @@
  *
  */
 
-static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM)= LUA_INIT;
+static LUA_STATE_t state 					 __SECTION(RAM_SECTION_CCMRAM) = 0U;
 static EventGroupHandle_t xPDMstatusEvent;
 static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
 
@@ -351,7 +351,7 @@ void vLuaTask(void *argument)
      uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
-
+	 state = LUA_INIT;
 	 lua_State *L;// = luaL_newstate();
 	 lua_State *L1;
 
