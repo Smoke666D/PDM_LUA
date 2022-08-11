@@ -105,8 +105,8 @@ void ResetMailboxFilter(uint32_t id)
 	{
 		if (MailBoxBuffer[i].ident == 0U)
 		{
-			 MailBoxBuffer[i].ident = 0;
-			 MailBoxBuffer[i].new_data = 0;
+			 MailBoxBuffer[i].ident = 0U;
+			 MailBoxBuffer[i].new_data = 0U;
 			 break;
 		}
 	}
@@ -132,17 +132,17 @@ void vCanInsertRXData(CAN_FRAME_TYPE * RXPacket)
 
 uint8_t vCanChekMessage(uint32_t id)
 {
-	uint8_t res = 0;
+	uint8_t ucRes = 0;
 	uint8_t max_data =MAILBOXSIZE;
 	for (int k=0;k < max_data;k++)
 	{
 		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident = id))
 		{
-				res = 1;
+				ucRes = 1;
 				break;
 		}
 	}
-	return res;
+	return ( ucRes );
 }
 
 uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket)

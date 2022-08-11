@@ -324,7 +324,7 @@ CLI_STATUS eCLIprocessGet ( void )
     case CLI_TARGET_DIN:
       if ( ( message.dataFlag > 0U ) && ( message.data[0U] < DIN_CHANNEL ) )
       {
-        message.length = uCLIdioToStr( uDinGet( message.data[0U] ), message.out );
+        message.length = uCLIdioToStr( ucDinGet( message.data[0U] ), message.out );
       }
       else
       {
