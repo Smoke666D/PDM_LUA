@@ -17,48 +17,71 @@
 #include "pdm_input.h"
 #include "flash.h"
 #include "string.h"
-/*
- * С функция для конфигурации входов из LUA
- *
- */
 
-static LUA_STATE_t state 					 __SECTION(RAM_SECTION_CCMRAM) = 0U;
-static EventGroupHandle_t xPDMstatusEvent;
-static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
 
 extern TIM_HandleTypeDef htim11;
-uint32_t RestartTimer()
+
+static LUA_STATE_t state 					 __SECTION(RAM_SECTION_CCMRAM) = 0U;
+uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
+static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
+static EventGroupHandle_t xPDMstatusEvent;
+
+const char * pcLuaErrorString = NULL;
+int res = 0;
+
+/*
+ * Переменные, размещенные в секции CCMRAM не инициализиурются при объявлении,
+ * для коректности работы необходима явная инициалиазция
+ */
+static void vCCMRAVarInir()
+{
+
+	state = LUA_INIT;
+    ucErrorCount 	  = 0U;
+    ulWorkCicleIn10us = 0U;
+	return;
+}
+
+
+/*
+ *
+ */
+static uint32_t ulRestartTimer()
 {
 	uint32_t data;
-
 	data = htim11.Instance->CNT;
 	htim11.Instance->CNT= 0;
-
-	return data;
+	return ( data );
 }
 
 /*---------------------------------------------------------------------------------------------------*/
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
 {
-  return &xPDMstatusEvent;
+  return ( &xPDMstatusEvent );
 }
+/*
+ *
+ */
 void vLUArunPDM()
 {
 	xEventGroupSetBits(xPDMstatusEvent,RUN_STATE);
 	state = LUA_RUN;
 }
-
+/*
+ *
+ */
 void vLUAstopPDM()
 {
 	xEventGroupClearBits(xPDMstatusEvent,RUN_STATE);
 	state = LUA_STOP;
 }
-
+/*
+ *
+ */
 void vLUArestartPDM()
 {
 	state = LUA_RESTART;
 }
-
 
 /*
  * Устанавливаем конфигурацию дискрнтого входа
@@ -144,7 +167,7 @@ int CanGetMessage(lua_State *L )
 			lua_pushnumber(L,RXPacket.data[i]);
 		}
 	}
-	return n;
+	return ( n );
 }
 
 int CanGetResivedData(lua_State *L )
@@ -236,8 +259,6 @@ int CanSendTable( lua_State *L )
 
 
 
-
-
 int CanSendRequest( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
@@ -311,10 +332,7 @@ int  OutSetPWM( lua_State *L )
 	return 0;
 }
 
-const char * pcLuaErrorString = NULL;
-int res = 0;
-int pdm_time_process = 0;
-uint32_t ulWorkCicleIn10us= 0;
+
 /****************
  *
  */
@@ -336,25 +354,43 @@ uint32_t ulLUAgetWorkCicle ( void )
 {
 	return ( ulWorkCicleIn10us );
 }
-
+/*
+ *
+ */
 LUA_STATE_t eLUAgetSTATE ( void )
 {
-  return state;
+  return ( state );
+}
+/*
+ *
+ */
+static RESULT_t eIsLuaSkriptValid(const char* pcData)
+{
+	uint8_t ucRes = RESULT_FALSE;
+	uint32_t ulIndex;
+	for (ulIndex = 0;ulIndex < MAX_SCRIPT_SIZE; ulIndex++)
+	{
+		if ( pcData[ulIndex] == 0U)
+		{
+			ucRes = RESULT_TRUE;
+			break;
+		}
+	}
+	return ( ucRes );
 }
 
 void vLuaTask(void *argument)
 {
-	 uint8_t default_script = 0;
-   uint8_t init = 0;
+	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
+     uint8_t init = 0;
 	 int temp;
 	 uint8_t i,out[20];
-	 state = LUA_INIT;
-	 lua_State *L;// = luaL_newstate();
+	 lua_State *L;
 	 lua_State *L1;
-
+	 vCCMRAVarInir();
     // Загружаем библиотеки PDM
 	 HAL_TIM_Base_Start(&htim11);
-   while(1)
+     while(1)
 	 {
 	   vTaskDelay( 1 );
 	   switch (state)
@@ -379,18 +415,16 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"GetRequest",CanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",CanGetResivedData);
 	   	   vLUArunPDM();
-	   	   if ( default_script == 0)
+	   	   if ( eDefaultScriptRun == RUN_USER_SCRIPT)
 	   	   {
-	   	     const char*  datastring =  (const char*) FLASH_STORAGE_ADR;
-	   	   	 uint32_t t = strlen(datastring);
-	   	   	 if (t > 0)
+	   	     if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR) == RESULT_TRUE )
 	   	   	 {
 	   	   	   res = luaL_dostring(L1,uFLASHgetScript());
 	   	   	 }
 	   	   	 else
-	   	   	 default_script = 1;
+	   	   	 eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
 	   	   }
-	   	   if (default_script ==1)
+	   	   if (eDefaultScriptRun ==RUN_DEFAULT_SCRIPT)
 	   	   {
 	   	     res = luaL_dostring(L1,defaultLuaScript);
 	   	   }
@@ -400,8 +434,8 @@ void vLuaTask(void *argument)
 	   	     lua_getglobal(L1, "init");
 	   	   else
 	   	     lua_getglobal(L1, "main");
-	   	   pdm_time_process =GetTimer();
-	   	   ulWorkCicleIn10us  =RestartTimer();
+
+	   	   ulWorkCicleIn10us  =ulRestartTimer();
 	   	   lua_pushinteger(L1,ulWorkCicleIn10us);
 	   	   for (i=0;i< DIN_CHANNEL;i++)
 	   	   {
@@ -427,18 +461,18 @@ void vLuaTask(void *argument)
 	   	   		 break;
 	   	   	 default:
 	   	   	   pcLuaErrorString =  lua_tostring(L1, -1);
-	   	   		 ucErrorCount++;
+	   	   	   ucErrorCount++;
 	   	   	   state  = LUA_ERROR;
 	   	   		 break;
 	   	   }
 	   	   lua_pop(L1, temp);
 	   	   break;
 	   	 case LUA_ERROR:
-	   	   default_script = 1;
+	   	   eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
 	   	   state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
-	   		default_script = 0;
+	   		eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:
 	   	   lua_close(L);

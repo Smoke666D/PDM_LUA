@@ -28,7 +28,7 @@ static float mfVData[4] ={};
 
 static uint32_t out_register;
 
-static KAL_DATA CurSensData[20][5] __attribute__((section(".ccmram")))={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+static KAL_DATA CurSensData[20][5] ={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
@@ -278,9 +278,9 @@ uint8_t uOutGetState ( OUT_NAME_TYPE out_name )
 {
 	return out[out_name].out_state;
 }
-float fOutGetCurrent ( OUT_NAME_TYPE out_name )
+float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 {
-	return out[out_name].current;
+	return ( (eChNum < OUT_COUNT) ?  out[eChNum].current : 0U );
 }
 
 

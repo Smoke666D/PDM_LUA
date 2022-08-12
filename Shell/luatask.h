@@ -21,6 +21,7 @@
 #define CANREQSEND_ARGUMENT_COUNT 3
 #define SEND_REQUEST_ARGUMENT_COUNT 3
 
+#define MAX_SCRIPT_SIZE LUA_HEAP_SIZE
 
 #define RUN_STATE  0x01
 #define STOPR_STATE  0x02
@@ -34,6 +35,18 @@ typedef enum {
 	LUA_RESTART,
 	LUA_STATE_SIZE
 } LUA_STATE_t;
+
+typedef enum
+{
+	RESULT_TRUE = 1,
+	RESULT_FALSE =0
+} RESULT_t;
+
+typedef enum
+{
+	RUN_DEFAULT_SCRIPT = 1U,
+	RUN_USER_SCRIPT = 0U,
+} RUN_SCRIPT_t;
 
 
 LUA_STATE_t eLUAgetSTATE();
