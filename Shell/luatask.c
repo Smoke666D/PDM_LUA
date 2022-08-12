@@ -117,7 +117,7 @@ int CanSetResiveFilter(lua_State *L )
   if (lua_gettop(L) >= 1U )  //Проверяем, что при вызове нам передали нужное число аргументов
   {
 	  luaL_checktype(L, 1, LUA_TNUMBER);
-	  SetMailboxFilter( lua_tointeger(L,-1));
+	  vMailboxFilterSet( lua_tointeger(L,-1));
   }
   return 0U;
 }
@@ -384,7 +384,8 @@ void vLuaTask(void *argument)
 	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
      uint8_t init = 0;
 	 int temp;
-	 uint8_t i,out[20];
+	 uint8_t i;
+	// ,out[20];
 	 lua_State *L;
 	 lua_State *L1;
 	 vCCMRAVarInir();
@@ -455,8 +456,7 @@ void vLuaTask(void *argument)
 	   	   	 case LUA_YIELD:
 	   	   		 for (i=0;i<OUT_COUNT;i++)
 	   	   		 {
-	   	   		   out[i] =lua_toboolean(L1,-(i+1));
-	   	   			 vOutSetState(i,(uint8_t)out[i]);
+	   	   			 vOutSetState( i, (uint8_t) lua_toboolean(L1,-(i+1)) );
 	   	   		 }
 	   	   		 break;
 	   	   	 default:

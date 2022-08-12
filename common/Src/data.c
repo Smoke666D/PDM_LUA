@@ -129,7 +129,7 @@ DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length, uint8_t size 
       *length = uDATAgetArray( DIN_CHANNEL, out, ucDinGet );
       break;
     case DATA_ADR_DOUT:
-      *length = uDATAgetArray( OUT_COUNT, out, uOutGetState );
+      *length = uDATAgetArray( OUT_COUNT, out, eOutGetState );
       break;
     case DATA_ADR_LUA_STATUS:
       out[0U] = eLUAgetSTATE();

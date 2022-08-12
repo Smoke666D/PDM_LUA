@@ -47,13 +47,23 @@
 #define COOF  R1 / ( R1 + R2 ) * K
 
 //Состония конечного автомата обработки входов
-#define 	STATE_OUT_OFF 			  0x00
+/*#define 	STATE_OUT_OFF 			  0x00
 #define		STATE_OUT_ON_PROCESS      0x01
 #define		STATE_OUT_ON			  0x02
 #define		STATE_OUT_ERROR			  0x04
 #define		STATE_OUT_ERROR_PROCESS   0x08
-#define		STATE_OUT_RESTART_PROCESS 0x10
+#define		STATE_OUT_RESTART_PROCESS 0x10*/
 #define		STATE_OUT_CONFIG		  0x20
+
+
+typedef enum {
+STATE_OUT_OFF  			   = 0U,
+STATE_OUT_ON_PROCESS       = 1U,
+STATE_OUT_ON			   = 2U,
+STATE_OUT_ERROR			   = 4U,
+STATE_OUT_ERROR_PROCESS    = 8U,
+STATE_OUT_RESTART_PROCESS  = 16U
+} PDM_OUT_STATE_t;
 
 #define START_POWER	30U //Мощность при начала плавного пуска
 
@@ -94,7 +104,7 @@ typedef struct
    uint32_t  channel;
    TIM_HandleTypeDef * ptim;
    OUT_STATE out_logic_state;
-   uint8_t out_state;
+   PDM_OUT_STATE_t out_state;
    float power;
    float overload_power;
    uint8_t PWM;
@@ -166,7 +176,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 void SystemTimer(void);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 uint16_t GetTimer(void);
-uint8_t uOutGetState(OUT_NAME_TYPE out_name);
-float fOutGetCurrent(OUT_NAME_TYPE out_name);
+PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
+float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState(AIN_NAME_TYPE channel);
 #endif /* PDMHARDWARE_H_ */

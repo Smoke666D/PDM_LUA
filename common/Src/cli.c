@@ -316,7 +316,7 @@ CLI_STATUS eCLIprocessGet ( void )
     case CLI_TARGET_DOUT:
       if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
       {
-        message.length = uCLIdioToStr( uOutGetState( message.data[0U] ), message.out );
+        message.length = uCLIdioToStr( eOutGetState( message.data[0U] ), message.out );
       }
       else
       {

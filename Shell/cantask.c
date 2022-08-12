@@ -86,7 +86,7 @@ uint8_t CheckAnswer( void )
 	 return MailBoxBuffer[0].new_data;
 }
 
-void SetMailboxFilter(uint32_t id)
+void vMailboxFilterSet(uint32_t id)
 {
 	for (int i=1;i<MAILBOXSIZE;i++)
 	{

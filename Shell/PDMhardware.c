@@ -59,11 +59,9 @@ void vDataConvertToFloat(void);
 void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
 
 uint16_t system_timer = 0;
-uint16_t system_timer1 = 0;
 uint16_t timer = 0;
-uint16_t timer1 = 0;
 uint8_t overload =0;
-uint8_t overload1 =0;
+
 void SystemTimer(void)
 {
 	system_timer ++;
@@ -72,12 +70,7 @@ void SystemTimer(void)
 	 system_timer = 0;
 	 overload = 1;
 	}
-	system_timer1 ++;
-	if (system_timer1  >= 65000)
-	{
-	 system_timer1 = 0;
-	 overload1 = 1;
-	}
+
 }
 uint16_t GetTimer(void)
 {
@@ -95,31 +88,17 @@ uint16_t GetTimer(void)
  return delay;
 }
 
-uint16_t GetSysTimer(void)
-{
- uint16_t delay =0;
- if (overload1)
- {
-	 overload1 = 0;
-	 delay = 65000 - timer1 + system_timer1;
- }
- else
- {
-	 delay = system_timer1-timer1;
- }
- timer1 = system_timer1;
- return delay;
-}
+
 
 
 void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM)
 {
 	if ( (out_name) < OUT_COUNT )
 	{
-		out[out_name].ptim = ptim;
-		out[out_name].channel = channel;
-		out[out_name].out_logic_state =OUT_OFF;
-		out[out_name].out_state		 =	STATE_OUT_OFF;
+		out[out_name].ptim 			  = ptim;
+		out[out_name].channel 		  = channel;
+		out[out_name].out_logic_state = OUT_OFF;
+		out[out_name].out_state		  =	STATE_OUT_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
@@ -254,13 +233,13 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
    out_register |= 0x1<< out_name;
 }
 
-
+/*
+ *
+ */
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 {
-	if (!state)
-		out[out_name].out_logic_state = OUT_OFF;
-	else
-		out[out_name].out_logic_state = OUT_ON;
+	out[out_name].out_logic_state = (state != 0U) ? OUT_ON : OUT_OFF;
+	return;
 
 }
 
@@ -273,11 +252,16 @@ void vOutReset(OUT_NAME_TYPE out_name)
 	out[out_name].out_logic_state = OUT_OFF;
 }
 
-
-uint8_t uOutGetState ( OUT_NAME_TYPE out_name )
+/*
+ *
+ */
+PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  )
 {
-	return out[out_name].out_state;
+	return ( (eChNum < OUT_COUNT) ? out[eChNum ].out_state : 0U );
 }
+/*
+ *
+ */
 float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 {
 	return ( (eChNum < OUT_COUNT) ?  out[eChNum].current : 0U );
@@ -299,20 +283,20 @@ void vOutInit()
 	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, DEFAULT_PWM	 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2,   DEFAULT_PWM	 );
 	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,   DEFAULT_PWM	 );
 	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4,  DEFAULT_PWM  );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,  DEFAULT_PWM  );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1,   DEFAULT_PWM	 );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, DEFAULT_PWM  );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, DEFAULT_PWM  );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1,  DEFAULT_PWM	 );
 	 HAL_TIM_Base_Start_IT(&htim2);
 //
 }
@@ -385,7 +369,7 @@ void vDataConvertToFloat( void)
 		 mfVData[ i ] = muRawVData[ i ] * COOF;
 	 }
 	 //Преобразвоание во float данных тока каналов 1-20
-	 for ( i =0; i < 20U ; i++)
+	 for ( i =0; i < OUT_COUNT; i++)
 	{
 		 if  (muRawCurData[ i ] == 0xFFF)
 		 {
@@ -394,14 +378,13 @@ void vDataConvertToFloat( void)
 		 else
 		 {
 			 out[i].error_flag  = ERROR_OFF;
+			 float temp = (float) muRawCurData [ i ] *K;
 			 for (uint8_t r = 0; r < 4U; r++)
 			 {
-				 float temp = (float) muRawCurData [ i ]*K;
 				 if ( temp < out[i].CSC[r].data )
 				 {
-
 					 out[i].current =  temp * out[i].CSC[r].k;
-					 out[i].current =  out[i].current + out[i].CSC[r].b ;
+					 out[i].current += out[i].CSC[r].b ;
 					 out[i].current =  out[i].current* temp/RR;
 					 if (out[i].current > out[i].power )
 					 {
@@ -450,7 +433,7 @@ void vOutContolTask(void * argument)
 							if  ( out[i].overload_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
 							{
 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
-									cur_power = 100;
+									cur_power = 100U;
 							}
 							else
 							{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
@@ -491,6 +474,7 @@ void vOutContolTask(void * argument)
 							out[i].restart_timer++;
 							if  ( out[i].restart_timer >= out[i].restart_config_timer )
 							{
+								out[i].restart_timer = 0;
 								if (out[i].error_count > 1)
 								{
 									out[i].out_state = STATE_OUT_OFF;
@@ -507,12 +491,9 @@ void vOutContolTask(void * argument)
 
 }
 
-
-
  void vADC_Ready ( uint8_t adc_number )
  {
    static portBASE_TYPE xHigherPriorityTaskWoken;
-
    xHigherPriorityTaskWoken = pdFALSE;
    switch ( adc_number )
    {
@@ -538,14 +519,7 @@ void vOutContolTask(void * argument)
  */
  float fAinGetState(AIN_NAME_TYPE channel)
  {
-	 float res = 0;
-	 if (channel < AIN_COUNT)
-	 {
-		 res = mfVData[channel];
-	 }
-	 return res;
-
-
+	 return  ( (channel < AIN_COUNT) ? mfVData[channel] : 0U ) ;
  }
  /*
   * Дискретные входа
