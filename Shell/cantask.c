@@ -14,46 +14,41 @@
 
 
 extern CAN_HandleTypeDef hcan1;
-QueueHandle_t CanRXHandle;
-QueueHandle_t CanTXHandle;
-
-
-
-
-QueueHandle_t* pCANRXgetQueue ( void )
-{
-  return &CanRXHandle;
-}
-
-QueueHandle_t* pCANTXgetQueue ( void )
-{
-  return &CanTXHandle;
-}
+QueueHandle_t pCanRXHandle  __SECTION(RAM_SECTION_CCMRAM);
+QueueHandle_t pCanTXHandle  __SECTION(RAM_SECTION_CCMRAM);
 
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
-static   EventGroupHandle_t  * xPDMstatusEvent __SECTION(RAM_SECTION_CCMRAM) = NULL;
+
+/*
+ *
+ */
+QueueHandle_t* pCANRXgetQueue ( void )
+{
+  return ( &pCanRXHandle );
+}
+/*
+ *
+ */
+QueueHandle_t* pCANTXgetQueue ( void )
+{
+  return ( &pCanTXHandle );
+}
 
 
 void setFilter(uint16_t mailboxindex)
 {
-	  CAN_FilterTypeDef  sFilterConfig;
-	  uint16_t index = mailboxindex / 4;
+	 CAN_FilterTypeDef  sFilterConfig;
+	 uint16_t index = mailboxindex / 4;
 	 sFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
      sFilterConfig.FilterBank = index;
      sFilterConfig.FilterFIFOAssignment =0;
-     sFilterConfig.FilterIdHigh =  MailBoxBuffer[index*4 +2 ].ident<<5 ;
-     sFilterConfig.FilterIdLow  =MailBoxBuffer[index*4  ].ident<<5 ;
-     sFilterConfig.FilterMaskIdHigh = MailBoxBuffer[index*4 +3 ].ident<<5 ;
-     sFilterConfig.FilterMaskIdLow  =  MailBoxBuffer[index*4 +1 ].ident<<5 ;
+     sFilterConfig.FilterIdHigh 	= (MailBoxBuffer[index*4U +2U ].ident) <<5U ;
+     sFilterConfig.FilterIdLow  	= (MailBoxBuffer[index*4U  ].ident)    <<5U ;
+     sFilterConfig.FilterMaskIdHigh = (MailBoxBuffer[index*4U +3U ].ident) <<5U ;
+     sFilterConfig.FilterMaskIdLow  = (MailBoxBuffer[index*4U +1U ].ident) <<5U ;
      sFilterConfig.FilterMode = CAN_FILTERMODE_IDLIST;
      sFilterConfig.FilterScale =CAN_FILTERSCALE_16BIT;
-
-
-     if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK)
-     {
-         Error_Handler();
-     }
-
+     HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
 }
 
 
@@ -61,7 +56,7 @@ void vCanInsertToRXQueue(CAN_FRAME_TYPE * data)
 {
 	static portBASE_TYPE xHigherPriorityTaskWoken;
 	xHigherPriorityTaskWoken = pdFALSE;
-	xQueueSendFromISR( CanRXHandle, data, &xHigherPriorityTaskWoken );
+	xQueueSendFromISR( pCanRXHandle, data, &xHigherPriorityTaskWoken );
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 	return;
 }
@@ -195,7 +190,7 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 	{
 		data_to_send.data[i] = data[i];
 	}
-	 xQueueSend(CanTXHandle,&data_to_send, portMAX_DELAY);
+	 xQueueSend(pCanTXHandle,&data_to_send, portMAX_DELAY);
 
 }
 
@@ -218,7 +213,7 @@ void vCanTXTask(void *argument)
 	CAN_TX_FRAME_TYPE TXPacket;
 	while(1)
 	{
-		xQueueReceive( CanTXHandle, &TXPacket, portMAX_DELAY);
+		xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		uPDMCanSend(&TXPacket);
 
 	}
@@ -230,7 +225,7 @@ void vCanRXTask(void *argument)
 	CAN_FRAME_TYPE RXPacket;
 	while(1)
 	{
-		xQueueReceive( CanRXHandle, &RXPacket,  portMAX_DELAY );
+		xQueueReceive( pCanRXHandle, &RXPacket,  portMAX_DELAY );
 		vCanInsertRXData(&RXPacket);
 	}
 
