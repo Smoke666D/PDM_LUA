@@ -13,6 +13,7 @@
 #define CLI_COMMANDS_NUMBER     3U
 #define CLI_TARGETS_NUMBER      16U
 #define CLI_MESSAGE_OUT_LENGTH  40U
+#define CLI_DOUT_STATE_SIZE     7U
 #define CLI_FIX_DECIMALS        2U
 #define CLI_SYSTEM_FILDS_NUMBER 2U
 #define CLI_DATA_FILDS_NUMBER   3U
@@ -20,6 +21,10 @@
 #define CLI_RELEASED_SIZE       3U
 #define CLI_COMMAND_STR_SIZE    5U
 #define CLI_TARGET_STR_SIZE     8U
+#define CLI_DEC_BASE            10U
+#define CLI_HEX_BASE            16U
+#define CLI_VERSION_BUFFER_SIZE 5U
+#define CLI_HEX_BUFFER_SIZE     3U
 
 #define CLI_FILD_SEPORATOR      " "
 #define CLI_LINE_END            "\n"
@@ -53,8 +58,15 @@
 #define CLI_ERROR_TARGET_STR    "Wrong target"
 #define CLI_ERROR_DATA_STR      "Wrong data"
 #define CLI_ERROR_EXECUTING_STR "Executing error"
-#define CLI_ERROR_UNKNOWN       "Unknown error"
+#define CLI_ERROR_UNKNOWN_STR   "Unknown error"
 
+#define CLI_DOUT_STATE_OFF_STR            "off"
+#define CLI_DOUT_STATE_PROCESS_STR        "process"
+#define CLI_DOUT_STATE_ON_STR             "on"
+#define CLI_DOUT_STATE_ERROR_STR          "error"
+#define CLI_DOUT_STATE_PROCESS_ERROR_STR  "error"
+#define CLI_DOUT_STATE_RESTART_ERROR_STR  "restart"
+#define CLI_DOUT_STATE_UNKNOWN_STATE_STR  "unknown"
 
 #define LUA_STATE_INIT_STR    "init"
 #define LUA_STATE_RUN_STR     "run"

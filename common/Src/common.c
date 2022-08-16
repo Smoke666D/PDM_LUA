@@ -13,12 +13,12 @@ void vSYSgetUniqueID32 ( uint32_t* id )
 /*---------------------------------------------------------------------------------------------------*/
 void vSYSgetUniqueID16 ( uint16_t* id )
 {
-  id[0U] = ( uint16_t )( HAL_GetUIDw0() & 0xFFFF );
-  id[1U] = ( uint16_t )( ( HAL_GetUIDw0() >> 16U ) & 0xFFFF );
+  id[0U] = ( uint16_t )( HAL_GetUIDw0() & 0xFFFFU );
+  id[1U] = ( uint16_t )( ( HAL_GetUIDw0() >> 16U ) & 0xFFFFU );
   id[2U] = ( uint16_t )( HAL_GetUIDw1() & 0xFFFF );
-  id[3U] = ( uint16_t )( ( HAL_GetUIDw1() >> 16U ) & 0xFFFF );
-  id[4U] = ( uint16_t )( HAL_GetUIDw2() & 0xFFFF );
-  id[5U] = ( uint16_t )( ( HAL_GetUIDw2() >> 16U ) & 0xFFFF );
+  id[3U] = ( uint16_t )( ( HAL_GetUIDw1() >> 16U ) & 0xFFFFU );
+  id[4U] = ( uint16_t )( HAL_GetUIDw2() & 0xFFFFU );
+  id[5U] = ( uint16_t )( ( HAL_GetUIDw2() >> 16U ) & 0xFFFFU );
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
