@@ -51,6 +51,16 @@ static const char* const luaStateDic[LUA_STATE_SIZE] = {
   LUA_STATE_STOP_STR,
   LUA_STATE_RESTART_STR
 };
+
+static const char* const luaDoutStatesDic[CLI_DOUT_STATE_SIZE] = {
+  CLI_DOUT_STATE_OFF_STR,
+  CLI_DOUT_STATE_PROCESS_STR,
+  CLI_DOUT_STATE_ON_STR,
+  CLI_DOUT_STATE_ERROR_STR,
+  CLI_DOUT_STATE_PROCESS_ERROR_STR,
+  CLI_DOUT_STATE_RESTART_ERROR_STR,
+  CLI_DOUT_STATE_UNKNOWN_STATE_STR
+};
 /*----------------------- Variables -----------------------------------------------------------------*/
 static TEST_TYPE message   = { 0U };
 static uint32_t  scriptAdr = 0U;
@@ -158,9 +168,9 @@ uint8_t uCLIstatusToString ( CLI_STATUS status, char* buf )
       res = ( uint8_t )strlen( CLI_ERROR_EXECUTING_STR ) + 1U;
       break;
     default:
-      ( void )strcpy( buf, CLI_ERROR_UNKNOWN );
+      ( void )strcpy( buf, CLI_ERROR_UNKNOWN_STR );
       ( void )strcat( buf, CLI_LINE_END );
-      res = ( uint8_t )strlen( CLI_ERROR_UNKNOWN ) + 1U;
+      res = ( uint8_t )strlen( CLI_ERROR_UNKNOWN_STR ) + 1U;
       break;
   }
   return res;
@@ -184,13 +194,25 @@ uint8_t uCLIdioToStr ( uint8_t state, char* buf )
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
+uint8_t uCLIdoutToStr ( uint8_t state, char* buf )
+{
+  uint8_t n = state;
+  if ( state >= CLI_DOUT_STATE_SIZE )
+  {
+    n = CLI_DOUT_STATE_SIZE - 1U;
+  }
+  ( void )strcpy( buf, luaDoutStatesDic[ n ] );
+  ( void )strcat( buf, CLI_LINE_END );
+  return ( ( uint8_t )strlen( CLI_DIO_OFF_STR ) + 1U );
+}
+/*---------------------------------------------------------------------------------------------------*/
 uint8_t uCLIhexToStr ( uint8_t* data, uint8_t length, char* buf )
 {
-  uint8_t i       = 0U;
-  char    sub[3U] = { 0U };
+  uint8_t i = 0U;
+  char    sub[CLI_HEX_BUFFER_SIZE] = { 0U };
   for ( i=0U; i<length; i++ )
   {
-    ( void )itoa( data[i], sub, 16U );
+    ( void )itoa( data[i], sub, CLI_HEX_BASE );
    if ( sub[1U] == 0U )
    {
      sub[1U] = '0';
@@ -202,19 +224,19 @@ uint8_t uCLIhexToStr ( uint8_t* data, uint8_t length, char* buf )
    }
   }
   ( void )strcat( buf, CLI_LINE_END );
-  return ( ( length * 2U ) + length );
+  return ( length * 2U ) + length;
 }
 /*---------------------------------------------------------------------------------------------------*/
 uint8_t uCLIversionToStr ( uint8_t major, uint8_t minor, uint8_t patch, char* buf )
 {
-  char sub[5U] = { 0U };
-  ( void )itoa( ( uint8_t )( major ), sub, 10U );
+  char sub[CLI_VERSION_BUFFER_SIZE] = { 0U };
+  ( void )itoa( ( uint8_t )( major ), sub, CLI_DEC_BASE );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, "." );
-  ( void )itoa( ( uint8_t )( minor ), sub, 10U );
+  ( void )itoa( ( uint8_t )( minor ), sub, CLI_DEC_BASE );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, "." );
-  ( void )itoa( ( uint8_t )( patch ), sub, 10U );
+  ( void )itoa( ( uint8_t )( patch ), sub, CLI_DEC_BASE );
   ( void )strcat( buf, sub );
   ( void )strcat( buf, CLI_LINE_END );
   return ( uint8_t )strlen( buf );
@@ -222,7 +244,7 @@ uint8_t uCLIversionToStr ( uint8_t major, uint8_t minor, uint8_t patch, char* bu
 /*---------------------------------------------------------------------------------------------------*/
 uint8_t uCLIserialToStr ( const uint16_t* data, char* buf )
 {
-  ( void )itoa( ( data[0] | ( ( uint32_t )( data[1U] ) << 16U ) ), buf, 10U );
+  ( void )itoa( ( data[0] | ( ( uint32_t )( data[1U] ) << CLI_HEX_BASE ) ), buf, CLI_DEC_BASE );
   return ( uint8_t )strlen( buf );
 }
 /*---------------------------------------------------------------------------------------------------*/
@@ -316,7 +338,7 @@ CLI_STATUS eCLIprocessGet ( void )
     case CLI_TARGET_DOUT:
       if ( ( message.dataFlag > 0U ) && ( message.data[0U] < OUT_COUNT ) )
       {
-        message.length = uCLIdioToStr( eOutGetState( message.data[0U] ), message.out );
+        message.length = uCLIdoutToStr( eOutGetState( message.data[0U] ), message.out );
       }
       else
       {
@@ -419,13 +441,13 @@ CLI_STATUS eCLIprocessGet ( void )
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_TIME:
-      itoa( ( ulLUAgetWorkCicle() * 10U ), message.out, 10U );
+      itoa( ( ulLUAgetWorkCicle() * CLI_DEC_BASE ), message.out, CLI_DEC_BASE );
       strcat( message.out, " ms" );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;
     case CLI_TARGET_LUA_ERROR_COUNTER:
-      itoa( ucLUAgetErrorCount(), message.out, 10U );
+      itoa( ucLUAgetErrorCount(), message.out, CLI_DEC_BASE );
       strcat( message.out, CLI_LINE_END );
       message.length = strlen( message.out );
       break;

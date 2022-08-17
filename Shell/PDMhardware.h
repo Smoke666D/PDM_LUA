@@ -45,24 +45,16 @@
 #define RR  1000.0
 #define K   ( 3.3 / 0xFFF )
 #define COOF  R1 / ( R1 + R2 ) * K
-
-//Состония конечного автомата обработки входов
-/*#define 	STATE_OUT_OFF 			  0x00
-#define		STATE_OUT_ON_PROCESS      0x01
-#define		STATE_OUT_ON			  0x02
-#define		STATE_OUT_ERROR			  0x04
-#define		STATE_OUT_ERROR_PROCESS   0x08
-#define		STATE_OUT_RESTART_PROCESS 0x10*/
-#define		STATE_OUT_CONFIG		  0x20
+#define STATE_OUT_CONFIG		  0x20
 
 
 typedef enum {
-STATE_OUT_OFF  			   = 0U,
-STATE_OUT_ON_PROCESS       = 1U,
-STATE_OUT_ON			   = 2U,
-STATE_OUT_ERROR			   = 4U,
-STATE_OUT_ERROR_PROCESS    = 8U,
-STATE_OUT_RESTART_PROCESS  = 16U
+  STATE_OUT_OFF,
+  STATE_OUT_ON_PROCESS,
+  STATE_OUT_ON,
+  STATE_OUT_ERROR,
+  STATE_OUT_ERROR_PROCESS,
+  STATE_OUT_RESTART_PROCESS
 } PDM_OUT_STATE_t;
 
 #define START_POWER	30U //Мощность при начала плавного пуска
@@ -87,9 +79,6 @@ typedef enum {
 	OUT_RESTART,
 } OUT_STATE;
 
-
-
-
 //Коофиценты для расчета функции зависимости тока на выходе ISENSE ключей
 typedef struct
 {
@@ -97,7 +86,6 @@ typedef struct
 	float k;
 	float b;
 }   LIN_COOF;
-
 
 typedef struct
 {
@@ -108,9 +96,9 @@ typedef struct
    float power;
    float overload_power;
    uint8_t PWM;
+   uint8_t error_count; //Кол-во попыток рестарта
    uint16_t overload_config_timer;
    uint16_t overload_timer;
-   uint8_t error_count; //Кол-во попыток рестарта
    uint16_t restart_timer;
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;
@@ -118,17 +106,11 @@ typedef struct
    float current;
 } PDM_OUTPUT_TYPE;
 
-
-
-
 typedef struct
 {
 	uint16_t KOOF;
 	float Data;
 } KAL_DATA;
-
-
-
 
 typedef enum {
 	OUT_1 = 0,
@@ -151,9 +133,7 @@ typedef enum {
 	OUT_18 = 17,
 	OUT_19 = 18,
 	OUT_20 = 19,
-
 } OUT_NAME_TYPE;
-
 
 typedef enum {
 	AIN_1 = 0,
