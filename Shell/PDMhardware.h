@@ -58,6 +58,7 @@ typedef enum {
 } PDM_OUT_STATE_t;
 
 #define START_POWER	30U //Мощность при начала плавного пуска
+#define MAX_POWER	100U //Мощность при начала плавного пуска
 
 //Результаты выполнения функций
 typedef enum {
@@ -142,7 +143,7 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
-uint16_t GetSysTimer(void);
+
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
@@ -153,7 +154,6 @@ void vHWOutInit( OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  cha
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
-void SystemTimer(void);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 uint16_t GetTimer(void);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );

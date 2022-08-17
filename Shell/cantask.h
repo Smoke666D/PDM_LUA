@@ -13,6 +13,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "luatask.h"
 
 #define MAILBOXSIZE  14*4
 
@@ -45,7 +46,7 @@ uint8_t CheckAnswer( void );
 uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket);
 uint8_t vCanChekMessage(uint32_t id);
 uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket);
-void vMailboxFilterSet(uint32_t id);
+ERROR_TYPE_t eMailboxFilterSet(uint32_t id);
 void SetWaitFilter(uint32_t id);
 void vCanRXTask(void *argument);
 void vCanTXTask(void *argument);

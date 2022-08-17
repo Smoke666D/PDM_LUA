@@ -9,7 +9,7 @@
 #include "semphr.h"
 #include "system.h"
 #include "event_groups.h"
-#include "luatask.h"
+
 #include "CO_driver_ST32F4xx.h"
 
 
@@ -81,17 +81,20 @@ uint8_t CheckAnswer( void )
 	 return MailBoxBuffer[0].new_data;
 }
 
-void vMailboxFilterSet(uint32_t id)
+ERROR_TYPE_t eMailboxFilterSet(uint32_t id)
 {
+	ERROR_TYPE_t eRes = BUFFER_FULL;
 	for (int i=1;i<MAILBOXSIZE;i++)
 	{
 		if (MailBoxBuffer[i].ident == 0U)
 		{
 			 MailBoxBuffer[i].ident = id;
 			 setFilter(i);
+			 eRes = ERROR_NO;
 			 break;
 		}
 	}
+	return (eRes);
 }
 
 void ResetMailboxFilter(uint32_t id)

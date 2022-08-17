@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "event_groups.h"
+#include "system.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -20,15 +21,15 @@ volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U 
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 
-PDM_OUTPUT_TYPE out[OUT_COUNT];
+PDM_OUTPUT_TYPE out[OUT_COUNT]  __SECTION(RAM_SECTION_CCMRAM);
 
-static uint16_t muRawCurData[20];
+static uint16_t muRawCurData[20] ;
 static uint16_t muRawVData[4];
 static float mfVData[4] ={};
 
 static uint32_t out_register;
 
-static KAL_DATA CurSensData[20][5] ={    {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
+static KAL_DATA CurSensData[20][5] ={   {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
 										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
@@ -55,41 +56,6 @@ static   EventGroupHandle_t xADCEvent;
 static   StaticEventGroup_t xADCCreatedEventGroup;
 static   EventGroupHandle_t xOutEvent;
 static   StaticEventGroup_t xOutCreatedEventGroup;
-void vDataConvertToFloat(void);
-void vGetAverDataFromRAW(uint16_t * Indata, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize);
-
-uint16_t system_timer = 0;
-uint16_t timer = 0;
-uint8_t overload =0;
-
-void SystemTimer(void)
-{
-	system_timer ++;
-	if (system_timer  >= 65000)
-	{
-	 system_timer = 0;
-	 overload = 1;
-	}
-
-}
-uint16_t GetTimer(void)
-{
- uint16_t delay =0;
- if (overload)
- {
-	 overload = 0;
-	 delay = 65000 - timer + system_timer;
- }
- else
- {
-	 delay = system_timer-timer;
- }
- timer = system_timer;
- return delay;
-}
-
-
-
 
 void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  channel,  uint8_t PWM)
 {
@@ -176,7 +142,7 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	{
 		xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
 		out[out_name].error_count = restart_count;
-		out[out_name].restart_timer =0;
+		out[out_name].restart_timer =0U;
 		out[out_name].restart_config_timer =timer;
 		res = ERROR_OK;
 		xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
@@ -224,7 +190,7 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   sConfigOC.Pulse = (uint32_t )((float)power/100 * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100 ));
+   sConfigOC.Pulse = (uint32_t )((float)power/100U * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/100U ));
    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
    HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
@@ -271,64 +237,44 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 
 void vOutInit()
 {
+
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(Cs_Dis20_6_GPIO_Port, Cs_Dis20_6_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
 
 	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3,  DEFAULT_PWM	);
 	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,   DEFAULT_PWM	 );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, DEFAULT_PWM	 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, DEFAULT_PWM	 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, DEFAULT_PWM	 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, DEFAULT_PWM	 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, DEFAULT_PWM	 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, DEFAULT_PWM	 );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, DEFAULT_PWM	 );
 	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3,  DEFAULT_PWM	 );
 	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, DEFAULT_PWM  );
 	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, DEFAULT_PWM  );
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1,  DEFAULT_PWM	 );
-	 HAL_TIM_Base_Start_IT(&htim2);
+	HAL_TIM_Base_Start_IT(&htim2);
 //
 }
 
 
 
-void vADCTask(void * argument)
-{
-  /* USER CODE BEGIN vADCTask */
-  xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
-  /* Infinite loop */
-  for(;;)
-  {
-	vTaskDelay(1 );
-	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
-	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
-    HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-	xEventGroupWaitBits( xADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, portMAX_DELAY );
-	HAL_ADC_Stop_DMA(&hadc1);
-	HAL_ADC_Stop_DMA(&hadc2);
-	HAL_ADC_Stop_DMA(&hadc3);
-	vDataConvertToFloat();
-	xEventGroupSetBits( xADCEvent, ADC_DATA_READY );
-  }
-  /* USER CODE END vADCTask */
-}
-
 /*
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
  */
-void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize)
+static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize)
 {
 	uint32_t temp;
 	for (uint8_t i=0;i<Size;i++)
@@ -336,17 +282,18 @@ void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex,
 		temp = 0;
 		for (uint8_t j=0;j<FrameSize;j++)
 		{
-		  temp = temp + InData[InIndex+i+j*BufferSize];
+		  temp += InData[InIndex+i+j*BufferSize];
 		}
 		OutData[OutIndex+i] = temp / FrameSize;
 	}
+	return;
 }
 
 
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
-void vDataConvertToFloat( void)
+static void vDataConvertToFloat( void)
 {
 	uint8_t i;
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
@@ -364,7 +311,7 @@ void vDataConvertToFloat( void)
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 5U ,ADC_FRAME_SIZE,ADC3_CHANNELS);
 	 //Преобразование во флоат данных AIN
-	 for ( i = 0; i < 4U; i++ )
+	 for ( i = 0; i < AIN_COUNT; i++ )
 	 {
 		 mfVData[ i ] = muRawVData[ i ] * COOF;
 	 }
@@ -395,12 +342,37 @@ void vDataConvertToFloat( void)
 			 }
 		 }
 	}
+	return;
+}
+
+
+/*
+ *
+ */
+void vADCTask(void * argument)
+{
+  /* USER CODE BEGIN vADCTask */
+  xADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+  /* Infinite loop */
+  for(;;)
+  {
+	vTaskDelay(1 );
+	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+    HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	xEventGroupWaitBits( xADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, portMAX_DELAY );
+	HAL_ADC_Stop_DMA(&hadc1);
+	HAL_ADC_Stop_DMA(&hadc2);
+	HAL_ADC_Stop_DMA(&hadc3);
+	vDataConvertToFloat();
+	xEventGroupSetBits( xADCEvent, ADC_DATA_READY );
+  }
+  /* USER CODE END vADCTask */
 }
 
 
 void vOutContolTask(void * argument)
 {
-	uint8_t temp_power,cur_power;
 	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
 	EventBits_t config_state;
 	vOutInit();
@@ -419,7 +391,6 @@ void vOutContolTask(void * argument)
 							{
 								out[i].out_state = STATE_OUT_ON_PROCESS;
 								out[i].overload_timer = 0U;
-								cur_power = START_POWER;
 							}
 							break;
 					case STATE_OUT_ON_PROCESS: //Состояния влючения
@@ -430,20 +401,20 @@ void vOutContolTask(void * argument)
 								out[i].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
 								break;
 							}
+							uint8_t ucCurrentPower = MAX_POWER;
 							if  ( out[i].overload_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
 							{
 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
-									cur_power = 100U;
 							}
 							else
 							{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
-								temp_power =(uint8_t) (float)out[i].overload_timer/out[i].overload_config_timer*100;
-								if (temp_power > START_POWER)
+								ucCurrentPower =(uint8_t) (float)out[i].overload_timer/out[i].overload_config_timer*MAX_POWER;
+								if (ucCurrentPower < START_POWER)
 								{
-									cur_power = temp_power;
+									ucCurrentPower = START_POWER;
 								}
 							}
-							vHWOutSet(i,cur_power);
+							vHWOutSet(i,ucCurrentPower);
 							break;
 						case STATE_OUT_ON:  // Состояние входа - включен
 								//Если система обнаружила ошибку ключа или ток больше номинального
@@ -498,7 +469,6 @@ void vOutContolTask(void * argument)
    switch ( adc_number )
    {
      case ADC3_READY:
-     //  __HAL_TIM_DISABLE(&htim3);
        xEventGroupSetBitsFromISR( xADCEvent, ADC3_READY, &xHigherPriorityTaskWoken );
        break;
      case ADC2_READY:

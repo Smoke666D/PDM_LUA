@@ -20,7 +20,6 @@
 
 
 extern TIM_HandleTypeDef htim11;
-
 static LUA_STATE_t state 					 __SECTION(RAM_SECTION_CCMRAM) = 0U;
 uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
@@ -41,8 +40,6 @@ static void vCCMRAVarInir()
     ulWorkCicleIn10us = 0U;
 	return;
 }
-
-
 /*
  *
  */
@@ -96,23 +93,29 @@ void vLUArestartPDM()
 /*
  * Устанавливаем конфигурацию дискрнтого входа
  */
-int DinConfig(lua_State *L )
+#define FULL_DIN_CONFIG_ARG  4U
+#define MIN_DIN_CONFIG_ARG   2U
+
+static int iDinConfig(lua_State *L )
 {
-		uint32_t lf = DEF_L_FRONT, hf = DEF_H_FRONT;
+		uint32_t lf;
+		uint32_t hf;
 		uint8_t in_number = 0;
 		int arg_number = lua_gettop(L);
 		LOGIC_STATE state;
-		if (arg_number >= 2)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
+		if (arg_number >= MIN_DIN_CONFIG_ARG )  /*Проверяем, что при вызове нам передали нужное число аргументов*/
 		{
 			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-			if ( arg_number > 2)
+			if (arg_number == FULL_DIN_CONFIG_ARG )
 			{
-				lf = lua_tointeger(L,-arg_number-2);
+					lf = lua_tointeger(L,-arg_number-2);
+					hf = lua_tointeger(L,-arg_number-3);
 			}
-			if ( arg_number > 3)
+			else
 			{
-				lf = lua_tointeger(L,-arg_number-3);
+					lf = DEF_L_FRONT;
+					hf = DEF_H_FRONT;
 			}
 			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
 		}
@@ -122,34 +125,51 @@ int DinConfig(lua_State *L )
 /*
  * Устанавливаем новый фильтр, позволяющий принимать пакеты с нужным ID
  */
-int CanSetResiveFilter(lua_State *L )
+int iCanSetResiveFilter(lua_State *L )
 {
-  if (lua_gettop(L) >= 1U )  //Проверяем, что при вызове нам передали нужное число аргументов
+  uint8_t ucResNumber = 0;
+  if (lua_gettop(L) == 1U )  /*Проверяем, что при вызове нам передали нужное число аргументов*/
   {
-	  luaL_checktype(L, 1, LUA_TNUMBER);
-	  vMailboxFilterSet( lua_tointeger(L,-1));
+	  if( lua_isinteger(L, -1) == 1) /*Проверяем что аргумент нужного типа*/
+	  {
+		  switch (eMailboxFilterSet( lua_tointeger(L,-1)))  /*Пытамеся настроить mailbox.*/
+		  {
+		  	  case BUFFER_FULL:   /*Если все mailbox заняты*/
+		  		  lua_pushnumber(L, 1U );
+		  		  ucResNumber = 1;
+		  		  break;
+		  	  case ERROR_NO:  /*Если id успешно зарегестрирован*/
+		  		  lua_pushnumber(L, 0U );
+		  		  ucResNumber = 1;
+		  		  break;
+		  	  default:
+		  		  break;
+		  }
+	  }
   }
-  return 0U;
+  return ( ucResNumber );
 }
 
 /*
  * Проверка пакета с нужным id
  */
-int CanCheckData(lua_State *L )
+int iCanCheckData(lua_State *L )
 {
-	uint32_t res;
+	uint32_t uiRes = 0U;
 	switch (lua_gettop(L))
 	{
-	  case 0:
-		  res = CheckAnswer();
+	  case 0U:
+		  uiRes = CheckAnswer();
 		  break;
-	  case 1:
+	  case 1U:
 		  luaL_checktype(L, 1, LUA_TNUMBER);
-		  res = vCanChekMessage(lua_tointeger(L,-1));
+		  uiRes = vCanChekMessage(lua_tointeger(L,-1));
+		  break;
+	  default:
 		  break;
 	}
-	lua_pushnumber(L,res );
-	return 1;
+	lua_pushnumber(L, uiRes );
+	return ( 1U );
 }
 
 int CanGetMessage(lua_State *L )
@@ -291,11 +311,12 @@ int CanSendRequest( lua_State *L )
 
 
 
-int  OutConfig( lua_State *L )
+int  iOutConfig( lua_State *L )
 {
-	int out_number = 0;
+	int out_number;
 	int arg_number = lua_gettop(L);
-	float power, overload_power;
+	float power;
+	float overload_power;
 	uint16_t overload_timer;
 	if (arg_number >= CONFIG_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
@@ -305,9 +326,9 @@ int  OutConfig( lua_State *L )
 		overload_power= (float) lua_tonumber(L,-(arg_number-3));
 		vHWOutOverloadConfig(out_number,power, overload_timer, overload_power);
 	}
-	return 0;
+	return (0U);
 }
-int  OutResetConfig( lua_State *L )
+int  iOutResetConfig( lua_State *L )
 {
 	int out_number = 0;
 	int arg_number = lua_gettop(L);
@@ -320,7 +341,7 @@ int  OutResetConfig( lua_State *L )
 		timer = (uint16_t) lua_tointeger(L,-(arg_number-2));
 		vHWOutResetConfig(out_number, reset_count, timer);
 	}
-	return 0;
+	return (0U);
 }
 
 int  OutSetPWM( lua_State *L )
@@ -392,10 +413,9 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData)
 void vLuaTask(void *argument)
 {
 	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
-     uint8_t init = 0;
-	 int temp;
+	 ENABLE_t eSafeModeIsEnable = IS_DISABLE;
+	 ENABLE_t eMainLoopIsEnable = IS_DISABLE;;
 	 uint8_t i;
-	// ,out[20];
 	 lua_State *L;
 	 lua_State *L1;
 	 vCCMRAVarInir();
@@ -407,22 +427,23 @@ void vLuaTask(void *argument)
 	   switch (state)
 	   {
        case LUA_INIT:
-	   	   init = 0;
+    	   eMainLoopIsEnable  = IS_DISABLE;
+	   	   eSafeModeIsEnable = IS_DISABLE;
 	   	   L  = luaL_newstate();
 	   	   L1 = lua_newthread(L);
 	   	   luaL_openlibs(L1); // open standard libraries
 	   	   lua_register(L1,"CanTable",CanSendTable);
-	   	   lua_register(L1,"setDINConfig",DinConfig);
-	   	   lua_register(L1,"setOutConfig", OutConfig);
-	   	   lua_register(L1,"OutResetConfig", OutResetConfig);
+	   	   lua_register(L1,"setDINConfig",iDinConfig);
+	   	   lua_register(L1,"setOutConfig", iOutConfig);
+	   	   lua_register(L1,"iOutResetConfig", iOutResetConfig);
 	   	   lua_register(L1,"OutSetPWM", OutSetPWM);
 	   	   lua_register(L1,"CanSend", CanSendPDM);
-	   	   lua_register(L1,"setCanFilter", CanSetResiveFilter);
-	   	   lua_register(L1,"CheckCanId", CanCheckData);
+	   	   lua_register(L1,"setCanFilter", iCanSetResiveFilter);
+	   	   lua_register(L1,"CheckCanId", iCanCheckData);
 	   	   lua_register(L1,"GetCanMessage",CanGetMessage);
 	   	   lua_register(L1,"GetCanToTable",CanGetResivedData);
 	   	   lua_register(L1,"sendCandRequest",CanSendRequest);
-	   	   lua_register(L1,"CheckAnswer", CanCheckData);
+	   	   lua_register(L1,"CheckAnswer", iCanCheckData);
 	   	   lua_register(L1,"GetRequest",CanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",CanGetResivedData);
 	   	   vLUArunPDM();
@@ -441,30 +462,31 @@ void vLuaTask(void *argument)
 	   	   }
 	   	   break;
 	   	 case LUA_RUN:
-	   	   if (init == 0)
+	   	   if (eMainLoopIsEnable == IS_DISABLE)
 	   	     lua_getglobal(L1, "init");
 	   	   else
 	   	     lua_getglobal(L1, "main");
 
 	   	   ulWorkCicleIn10us  =ulRestartTimer();
 	   	   lua_pushinteger(L1,ulWorkCicleIn10us);
-	   	   for (i=0;i< DIN_CHANNEL;i++)
+	   	   for ( i = 0U; i < DIN_CHANNEL; i++ )
 	   	   {
-	   	     lua_pushboolean(L1,ucDinGet(i));
+	   		   lua_pushboolean( L1, ucDinGet( i ) );
 	   	   }
-         for (i=0;i< OUT_COUNT ;i++)
+           for ( i = 0U; i < OUT_COUNT ; i++)
 	   	   {
-	   	     lua_pushnumber(L1,fOutGetCurrent(i));
+        	   lua_pushnumber(L1,fOutGetCurrent(i));
 	   	   }
+           int temp;
 	   	   switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp) )
 	   	   {
 	   	     case  LUA_OK:
-	   	   	   if (init == 0)
-	   	   		 {
-	   	   		   init = 1;
-	   	   		 }
+	   	   	   if (eMainLoopIsEnable == IS_DISABLE)
+	   	   	   {
+	   	   		   eMainLoopIsEnable = IS_ENABLE;
+	   	   	   }
 	   	   	 case LUA_YIELD:
-	   	   		 for (i=0;i<OUT_COUNT;i++)
+	   	   		 for ( i = 0; i < OUT_COUNT; i++)
 	   	   		 {
 	   	   			 vOutSetState( i, (uint8_t) lua_toboolean(L1,-(i+1)) );
 	   	   		 }
@@ -473,7 +495,7 @@ void vLuaTask(void *argument)
 	   	   	   pcLuaErrorString =  lua_tostring(L1, -1);
 	   	   	   ucErrorCount++;
 	   	   	   state  = LUA_ERROR;
-	   	   		 break;
+	   	   	   break;
 	   	   }
 	   	   lua_pop(L1, temp);
 	   	   break;
@@ -482,7 +504,11 @@ void vLuaTask(void *argument)
 	   	   state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
-	   		vSafeModeOutState();
+	   		if (eSafeModeIsEnable == IS_DISABLE)
+			{
+	   			vSafeModeOutState();
+	   			eSafeModeIsEnable = IS_ENABLE;
+			}
 	   		eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:

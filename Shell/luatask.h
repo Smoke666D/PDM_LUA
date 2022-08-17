@@ -23,6 +23,9 @@
 
 #define MAX_SCRIPT_SIZE LUA_HEAP_SIZE
 
+
+
+
 #define RUN_STATE  0x01
 #define STOPR_STATE  0x02
 #define RESTART_STATE  0x04
@@ -36,6 +39,11 @@ typedef enum {
 	LUA_STATE_SIZE
 } LUA_STATE_t;
 
+typedef enum {
+	IS_ENABLE  =0,
+	IS_DISABLE  =1
+} ENABLE_t;
+
 typedef enum
 {
 	RESULT_TRUE = 1,
@@ -48,6 +56,11 @@ typedef enum
 	RUN_USER_SCRIPT = 0U,
 } RUN_SCRIPT_t;
 
+typedef enum
+{
+  ERROR_NO  = 0,
+  BUFFER_FULL = 1
+} ERROR_TYPE_t;
 
 LUA_STATE_t eLUAgetSTATE();
 const char* pcLUAgetErrorString( void );
