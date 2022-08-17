@@ -88,7 +88,7 @@ static void vSYSprintLoadBar ( uint8_t procents )
   {
     vSYSserial( "▒", 1U );
   }
-  ( void )sprintf( buf, " %u", procents );
+  ( void )sprintf( buf, " %d", procents );
   vSYSserial( buf, strlen( buf ) );
   vSYSserial( "% ", 2U );
   return;

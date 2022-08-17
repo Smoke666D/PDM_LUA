@@ -49,7 +49,7 @@ void vUint16ToBytes ( uint16_t input, uint8_t* output )
   return;
 }
 /*---------------------------------------------------------------------------------------------------*/
-uint16_t uByteToUnit16 ( const uint8_t* data )
+uint16_t uByteToUint16 ( const uint8_t* data )
 {
   return ( ( uint16_t )data[0U] ) | ( ( ( uint16_t )data[1U] ) << 8U );
 }
@@ -130,7 +130,7 @@ void vUSBmakeReport ( USB_REPORT* report )
   report->buf[USB_CMD_BYTE]  = report->cmd;
   report->buf[USB_STAT_BYTE] = report->stat;
   report->buf[USB_LEN0_BYTE] = report->length;
-  vUint32ToBytes( report->adr, &report->buf[USB_ADR0_BYTE] );
+  vUint16ToBytes( report->adr, &report->buf[USB_ADR0_BYTE] );
 
   if ( report->length < USB_DATA_SIZE )
   {
@@ -153,7 +153,7 @@ void vUSBparseReport ( USB_REPORT* report )
   report->dir    = USB_GET_DIR( report->buf[USB_DIR_BYTE] );
   report->cmd    = ( USB_REPORT_CMD )report->buf[USB_CMD_BYTE];
   report->stat   = ( USB_REPORT_STATE )report->buf[USB_STAT_BYTE];
-  report->adr    = uByteToUint32( &report->buf[USB_ADR0_BYTE] );
+  report->adr    = uByteToUint16( &report->buf[USB_ADR0_BYTE] );
   report->length = report->buf[USB_LEN0_BYTE];
   report->data   = &( report->buf[USB_DATA_BYTE] );
   return;

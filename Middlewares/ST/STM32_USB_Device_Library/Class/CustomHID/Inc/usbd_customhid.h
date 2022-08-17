@@ -27,6 +27,8 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
 
+
+#define  REPORT_COUNT  40U
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */
@@ -45,7 +47,7 @@ extern "C" {
 #endif /* CUSTOM_HID_EPIN_ADDR */
 
 #ifndef CUSTOM_HID_EPIN_SIZE
-#define CUSTOM_HID_EPIN_SIZE                         0x02U
+#define CUSTOM_HID_EPIN_SIZE                         REPORT_COUNT
 #endif /* CUSTOM_HID_EPIN_SIZE */
 
 #ifndef CUSTOM_HID_EPOUT_ADDR
@@ -53,7 +55,7 @@ extern "C" {
 #endif /* CUSTOM_HID_EPOUT_ADDR */
 
 #ifndef CUSTOM_HID_EPOUT_SIZE
-#define CUSTOM_HID_EPOUT_SIZE                        0x02U
+#define CUSTOM_HID_EPOUT_SIZE                        REPORT_COUNT
 #endif /* CUSTOM_HID_EPOUT_SIZE*/
 
 #define USB_CUSTOM_HID_CONFIG_DESC_SIZ               41U
