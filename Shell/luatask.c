@@ -393,6 +393,7 @@ void vLuaTask(void *argument)
 {
 	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
      uint8_t init = 0;
+     uint8_t ucSafeModeEnable = 0U;
 	 int temp;
 	 uint8_t i;
 	// ,out[20];
@@ -408,6 +409,7 @@ void vLuaTask(void *argument)
 	   {
        case LUA_INIT:
 	   	   init = 0;
+	   	   ucSafeModeEnable = 0U;
 	   	   L  = luaL_newstate();
 	   	   L1 = lua_newthread(L);
 	   	   luaL_openlibs(L1); // open standard libraries
@@ -482,7 +484,11 @@ void vLuaTask(void *argument)
 	   	   state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
-	   		vSafeModeOutState();
+	   		if (ucSafeModeEnable == 0)
+	   		{
+	   			vSafeModeOutState();
+	   			ucSafeModeEnable = 1U;
+	   		}
 	   		eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:
