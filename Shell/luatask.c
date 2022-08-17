@@ -54,6 +54,16 @@ static uint32_t ulRestartTimer()
 	return ( data );
 }
 
+/*
+ *
+ */
+static void vSafeModeOutState()
+{
+	 for (uint8_t i=0;i<OUT_COUNT;i++)
+	 {
+		 vOutSetState( i, 0U);
+     }
+}
 /*---------------------------------------------------------------------------------------------------*/
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
 {
@@ -472,6 +482,7 @@ void vLuaTask(void *argument)
 	   	   state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
+	   		vSafeModeOutState();
 	   		eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:
