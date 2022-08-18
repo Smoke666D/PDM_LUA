@@ -398,13 +398,21 @@ LUA_STATE_t eLUAgetSTATE ( void )
 static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
 {
 	uint8_t ucRes = RESULT_FALSE;
+	uint8_t ucEND = 0x00;
 	uint32_t ulIndex;
 	for (ulIndex = 0;ulIndex < MAX_SCRIPT_SIZE; ulIndex++)
 	{
-		if ( pcData[ulIndex] == END_OF_FILE_BYTE)
+		if ( pcData[ulIndex] == ucEND )
 		{
-			ucRes = RESULT_TRUE;
-			*size =ulIndex;
+			if ( ( pcData[0] == LUA_SIGNATURE[0] ) && ( pcData[1] == LUA_SIGNATURE[1] ) && ( pcData[2] == LUA_SIGNATURE[2] ) && (pcData[3] == LUA_SIGNATURE[3]))
+			{
+				ucEND = 0xFF;
+			}
+			else
+			{
+				ucRes = RESULT_TRUE;
+				*size =ulIndex;
+			}
 			break;
 		}
 	}
