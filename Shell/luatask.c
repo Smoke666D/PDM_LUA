@@ -404,18 +404,29 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
 	{
 		if ( pcData[ulIndex] == ucEND )
 		{
-			if ( ( pcData[0] == LUA_SIGNATURE[0] ) && ( pcData[1] == LUA_SIGNATURE[1] ) && ( pcData[2] == LUA_SIGNATURE[2] ) && (pcData[3] == LUA_SIGNATURE[3]))
+			if (ucEND == 0x00)
 			{
-				ucEND = 0xFF;
+				if ( ( pcData[0] == LUA_SIGNATURE[0] ) && ( pcData[1] == LUA_SIGNATURE[1] ) && ( pcData[2] == LUA_SIGNATURE[2] ) && (pcData[3] == LUA_SIGNATURE[3]) )
+				{
+					ucEND = 0xFF;
+				}
+				else
+				{
+					ucRes = RESULT_TRUE;
+					*size =ulIndex;
+					break;
+				}
 			}
 			else
 			{
 				ucRes = RESULT_TRUE;
 				*size =ulIndex;
+				break;
 			}
-			break;
+
 		}
 	}
+	*size =ulIndex;
 	return ( ucRes );
 }
 
@@ -424,7 +435,7 @@ void vLuaTask(void *argument)
 	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
 	 ENABLE_t eSafeModeIsEnable = IS_DISABLE;
 	 ENABLE_t eMainLoopIsEnable = IS_DISABLE;;
-	 uint32_t uiScriptSize = 0;
+	 volatile uint32_t uiScriptSize = 0;
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
