@@ -395,15 +395,16 @@ LUA_STATE_t eLUAgetSTATE ( void )
 /*
  *
  */
-static RESULT_t eIsLuaSkriptValid(const char* pcData)
+static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
 {
 	uint8_t ucRes = RESULT_FALSE;
 	uint32_t ulIndex;
 	for (ulIndex = 0;ulIndex < MAX_SCRIPT_SIZE; ulIndex++)
 	{
-		if ( pcData[ulIndex] == 0U)
+		if ( pcData[ulIndex] == END_OF_FILE_BYTE)
 		{
 			ucRes = RESULT_TRUE;
+			*size =ulIndex;
 			break;
 		}
 	}
@@ -415,6 +416,7 @@ void vLuaTask(void *argument)
 	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
 	 ENABLE_t eSafeModeIsEnable = IS_DISABLE;
 	 ENABLE_t eMainLoopIsEnable = IS_DISABLE;;
+	 uint32_t uiScriptSize = 0;
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
@@ -447,19 +449,23 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"GetRequest",CanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",CanGetResivedData);
 	   	   vLUArunPDM();
-	   	   if ( eDefaultScriptRun == RUN_USER_SCRIPT)
-	   	   {
-	   	     if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR) == RESULT_TRUE )
+	   	   //if ( eDefaultScriptRun == RUN_USER_SCRIPT)
+	   	 //  {
+	   	     if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR, &uiScriptSize) == RESULT_TRUE )
 	   	   	 {
-	   	   	   res = luaL_dostring(L1,uFLASHgetScript());
+	   	    	 res =(luaL_loadbuffer(L1, uFLASHgetScript(), uiScriptSize, uFLASHgetScript())  || lua_pcall(L1, 0, LUA_MULTRET, 0));
+	   	   	 //  res = luaL_dostring(L1,uFLASHgetScript());
 	   	   	 }
 	   	   	 else
-	   	   	 eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
-	   	   }
-	   	   if (eDefaultScriptRun ==RUN_DEFAULT_SCRIPT)
-	   	   {
-	   	     res = luaL_dostring(L1,defaultLuaScript);
-	   	   }
+	   	   	 {
+	   	   		 state = LUA_ERROR;
+	   	   	 }
+	   	  // 	 eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
+	   	  // }
+	   	 //  if (eDefaultScriptRun ==RUN_DEFAULT_SCRIPT)
+	   	//   {
+	   	//     res = luaL_dostring(L1,defaultLuaScript);
+	   	//   }
 	   	   break;
 	   	 case LUA_RUN:
 	   	   if (eMainLoopIsEnable == IS_DISABLE)
@@ -500,8 +506,13 @@ void vLuaTask(void *argument)
 	   	   lua_pop(L1, temp);
 	   	   break;
 	   	 case LUA_ERROR:
-	   	   eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
-	   	   state = LUA_RESTART;
+	   		if (eSafeModeIsEnable == IS_DISABLE)
+	   		{
+	   			vSafeModeOutState();
+	   			eSafeModeIsEnable = IS_ENABLE;
+	   		}
+	   	  // eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
+	   	 //  state = LUA_RESTART;
 	   	   break;
 	   	 case LUA_STOP:
 	   		if (eSafeModeIsEnable == IS_DISABLE)
@@ -509,7 +520,7 @@ void vLuaTask(void *argument)
 	   			vSafeModeOutState();
 	   			eSafeModeIsEnable = IS_ENABLE;
 			}
-	   		eDefaultScriptRun = RUN_USER_SCRIPT;
+	   		//eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:
 	   	   lua_close(L);

@@ -23,7 +23,7 @@
 
 #define MAX_SCRIPT_SIZE LUA_HEAP_SIZE
 
-
+#define END_OF_FILE_BYTE  0xFF
 
 
 #define RUN_STATE  0x01
