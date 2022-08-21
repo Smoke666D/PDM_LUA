@@ -33,9 +33,10 @@ QueueHandle_t* pCANTXgetQueue ( void )
 {
   return ( &pCanTXHandle );
 }
-
-
-void setFilter(uint16_t mailboxindex)
+/*
+ *
+ */
+void vFilterSet(uint16_t mailboxindex)
 {
 	 CAN_FilterTypeDef  sFilterConfig;
 	 uint16_t index = mailboxindex / 4;
@@ -49,9 +50,12 @@ void setFilter(uint16_t mailboxindex)
      sFilterConfig.FilterMode = CAN_FILTERMODE_IDLIST;
      sFilterConfig.FilterScale =CAN_FILTERSCALE_16BIT;
      HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
+     return;
 }
 
-
+/*
+ *
+ */
 void vCanInsertToRXQueue(CAN_FRAME_TYPE * data)
 {
 	static portBASE_TYPE xHigherPriorityTaskWoken;
@@ -61,26 +65,37 @@ void vCanInsertToRXQueue(CAN_FRAME_TYPE * data)
 	return;
 }
 
-
-void InitMailBoxBuffer()
+/*
+ *
+ */
+static void vInitMailBoxBuffer( void )
 {
 	for (int i=0;i<MAILBOXSIZE;i++)
 	{
 		 MailBoxBuffer[i].ident = 0U;
 		 MailBoxBuffer[i].new_data = 0U;
 	}
+	return;
 }
-
-void SetWaitFilter(uint32_t id)
+/*
+ *
+ */
+void vSetWaitFilter(uint32_t id)
 {
 	 MailBoxBuffer[0].ident = id;
-	 setFilter(0);
+	 vFilterSet(0);
+	 return;
 }
-uint8_t CheckAnswer( void )
+/*
+ *
+ */
+uint8_t vCheckAnswer( void )
 {
 	 return MailBoxBuffer[0].new_data;
 }
-
+/*
+ *
+ */
 ERROR_TYPE_t eMailboxFilterSet(uint32_t id)
 {
 	ERROR_TYPE_t eRes = BUFFER_FULL;
@@ -89,29 +104,32 @@ ERROR_TYPE_t eMailboxFilterSet(uint32_t id)
 		if (MailBoxBuffer[i].ident == 0U)
 		{
 			 MailBoxBuffer[i].ident = id;
-			 setFilter(i);
+			 vFilterSet(i);
 			 eRes = ERROR_NO;
 			 break;
 		}
 	}
 	return (eRes);
 }
-
-void ResetMailboxFilter(uint32_t id)
+/*
+ *
+ */
+void vResetMailboxFilter(uint32_t id)
 {
 	for (int i=1;i<MAILBOXSIZE;i++)
 	{
-		if (MailBoxBuffer[i].ident == 0U)
+		if (MailBoxBuffer[i].ident == id)
 		{
 			 MailBoxBuffer[i].ident = 0U;
 			 MailBoxBuffer[i].new_data = 0U;
 			 break;
 		}
 	}
+	return;
 }
-
-
-
+/*
+ *
+ */
 void vCanInsertRXData(CAN_FRAME_TYPE * RXPacket)
 {
 	uint16_t id = RXPacket->filter_id;
@@ -131,40 +149,43 @@ void vCanInsertRXData(CAN_FRAME_TYPE * RXPacket)
 uint8_t vCanChekMessage(uint32_t id)
 {
 	uint8_t ucRes = 0;
-	uint8_t max_data =MAILBOXSIZE;
+	uint8_t max_data = MAILBOXSIZE;
 	for (int k=0;k < max_data;k++)
 	{
 		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident = id))
 		{
-				ucRes = 1;
+				ucRes = 1U;
 				break;
 		}
 	}
 	return ( ucRes );
 }
-
+/*
+ *
+ */
 uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket)
 {
-	uint8_t res =0;
-	res = CheckAnswer();
-	if (res!=0)
+	uint8_t res = 0U;
+	res = vCheckAnswer();
+	if ( res != 0U )
 	{
 		RXPacket->ident = MailBoxBuffer[0].ident;
 		RXPacket->DLC = MailBoxBuffer[0].DLC;
 		for (int i =0; i < RXPacket->DLC;i++)
 		{
-			RXPacket->data[i] = MailBoxBuffer[0].data[i];
+			RXPacket->data[i] = MailBoxBuffer[ 0U ].data[i];
 		}
-		MailBoxBuffer[0].new_data = 0;
-		MailBoxBuffer[0].ident  =0;
+		MailBoxBuffer[0].new_data 	= 0U;
+		MailBoxBuffer[0].ident 		= 0U;
 	}
-	return res;
+	return ( res );
 }
-
-
+/*
+ *
+ */
 uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket)
 {
-	uint8_t res = 0;
+	uint8_t res = 0U;
 	for (int k=0;k < MAILBOXSIZE;k++)
 	{
 		if ((MailBoxBuffer[k].new_data == 1) && (MailBoxBuffer[k].ident == RXPacket->ident))
@@ -175,37 +196,41 @@ uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket)
 				RXPacket->data[i] = MailBoxBuffer[k].data[i];
 			}
 			MailBoxBuffer[k].new_data = 0;
-			res = 1;
+			res = 1U;
 			break;
 		}
 	}
-	return res;
+	return ( res );
 }
 
-
-
+/*
+ *
+ */
 void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 {
 	CAN_TX_FRAME_TYPE data_to_send;
 	data_to_send.ident = CanID;
-	data_to_send.DLC = data_len;
+	data_to_send.DLC   = data_len;
 	for (uint8_t i=0; i<data_len;i++)
 	{
 		data_to_send.data[i] = data[i];
 	}
-	 xQueueSend(pCanTXHandle,&data_to_send, portMAX_DELAY);
-
+	xQueueSend(pCanTXHandle, &data_to_send, portMAX_DELAY);
+	return;
 }
 
-
+/*
+ *
+ */
 void vCANinit()
 {
-	InitMailBoxBuffer();
+	vInitMailBoxBuffer();
 	vConfigCAN(&hcan1);
 	CO_CANsetConfigurationMode();
 	CO_CANmodule_disable();
-	CO_CANmodule_init(1000);
+	CO_CANmodule_init(1000U);
 	CO_CANsetNormalMode();
+	return;
 }
 /*
  * Процесс для обработки can сообщений
@@ -218,11 +243,11 @@ void vCanTXTask(void *argument)
 	{
 		xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		uPDMCanSend(&TXPacket);
-
 	}
 }
-
-
+/*
+ *
+ */
 void vCanRXTask(void *argument)
 {
 	CAN_FRAME_TYPE RXPacket;
@@ -231,6 +256,4 @@ void vCanRXTask(void *argument)
 		xQueueReceive( pCanRXHandle, &RXPacket,  portMAX_DELAY );
 		vCanInsertRXData(&RXPacket);
 	}
-
 }
-

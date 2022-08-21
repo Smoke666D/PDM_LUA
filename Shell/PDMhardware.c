@@ -395,8 +395,8 @@ void vOutContolTask(void * argument)
 						case STATE_OUT_OFF: //Состония входа - выключен
 							if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
 							{
-								out[i].out_state = STATE_OUT_ON_PROCESS;
-								out[i].overload_timer = 0U;
+								out[i].out_state 		= STATE_OUT_ON_PROCESS;
+								out[i].overload_timer   = 0U;
 							}
 							break;
 						case STATE_OUT_ON_PROCESS: //Состояния влючения

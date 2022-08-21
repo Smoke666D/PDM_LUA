@@ -158,7 +158,7 @@ int iCanCheckData(lua_State *L )
 	switch (lua_gettop(L))
 	{
 	  case 0U:
-		  uiRes = CheckAnswer();
+		  uiRes = vCheckAnswer();
 		  break;
 	  case 1U:
 		  if ( lua_isinteger( L, CAN_ID_POS ) )
@@ -307,7 +307,7 @@ int iCanSendRequest( lua_State *L )
 	if (arg_number >= SEND_REQUEST_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
 		ID = (uint32_t) lua_tointeger(L,-arg_number) ; //Первым аргументом дожен передоваться ID пакета
-		SetWaitFilter(lua_tointeger(L,-(arg_number-1)) );//Второй агрумент - id ответного пакета
+		vSetWaitFilter(lua_tointeger(L,-(arg_number-1)) );//Второй агрумент - id ответного пакета
 		size  = arg_number -2;
 		for (int i=0;i<size;i++)
 		{
