@@ -13,6 +13,13 @@
 #include "cmsis_os.h"
 #include "event_groups.h"
 
+#define MAX_SCRIPT_SIZE LUA_HEAP_SIZE
+
+
+#define CAN_FRAME_SIZE  				8U
+#define CAN_ID_POS					    1U
+#define FRAME_SIZE_POS					2U
+#define CAN_TABLE_POS					3U
 
 #define CONFIG_ARGUMENT_COUNT 4
 #define RESET_ARGUMENT_COUNT 3
@@ -20,8 +27,8 @@
 #define CANSEND_ARGUMENT_COUNT 2
 #define CANREQSEND_ARGUMENT_COUNT 3
 #define SEND_REQUEST_ARGUMENT_COUNT 3
+#define CAN_SEND_TABLE_ARGUMENT_COUNT 	3U
 
-#define MAX_SCRIPT_SIZE LUA_HEAP_SIZE
 
 #define END_OF_FILE_BYTE  0xFF
 
@@ -50,11 +57,7 @@ typedef enum
 	RESULT_FALSE =0
 } RESULT_t;
 
-typedef enum
-{
-	RUN_DEFAULT_SCRIPT = 1U,
-	RUN_USER_SCRIPT = 0U,
-} RUN_SCRIPT_t;
+
 
 typedef enum
 {

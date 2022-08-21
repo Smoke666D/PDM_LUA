@@ -50,7 +50,6 @@ static uint32_t ulRestartTimer()
 	htim11.Instance->CNT= 0;
 	return ( data );
 }
-
 /*
  *
  */
@@ -162,8 +161,10 @@ int iCanCheckData(lua_State *L )
 		  uiRes = CheckAnswer();
 		  break;
 	  case 1U:
-		  luaL_checktype(L, 1, LUA_TNUMBER);
-		  uiRes = vCanChekMessage(lua_tointeger(L,-1));
+		  if ( lua_isinteger( L, CAN_ID_POS ) )
+		  {
+			  uiRes = vCanChekMessage(lua_tointeger(L, CAN_ID_POS) );
+		  }
 		  break;
 	  default:
 		  break;
@@ -172,7 +173,7 @@ int iCanCheckData(lua_State *L )
 	return ( 1U );
 }
 
-int CanGetMessage(lua_State *L )
+int iCanGetMessage(lua_State *L )
 {
 	uint8_t n = 0;
 	CAN_FRAME_TYPE  RXPacket;
@@ -200,7 +201,7 @@ int CanGetMessage(lua_State *L )
 	return ( n );
 }
 
-int CanGetResivedData(lua_State *L )
+int iCanGetResivedData(lua_State *L )
 {
 	uint8_t n;
 	CAN_FRAME_TYPE  RXPacket;
@@ -237,25 +238,27 @@ int CanGetResivedData(lua_State *L )
 	      lua_pushnumber(L,0U );
 	    }
 	    break;
+	  default:
+		  break;
 	}
-	return 1;
+	return ( 1U );
 }
 
-
-
-int CanSendPDM( lua_State *L )
+/*
+ *
+ */
+int iCanSendPDM( lua_State *L )
 {
-	int arg_number = lua_gettop(L);
 	uint32_t ID;
-	uint8_t DATA[8];
-	uint8_t size;
-	if (arg_number >= CANSEND_ARGUMENT_COUNT)  /*Проверяем, что при вызове нам передали нужное число аргументов*/
+	uint8_t  DATA[CAN_FRAME_SIZE];
+	uint8_t  size = lua_gettop(L);
+	if ((size >= CANSEND_ARGUMENT_COUNT)&& lua_isinteger(L, CAN_ID_POS ) )    /*Проверяем, что при вызове нам передали нужное число аргументов*/
 	{
-	  ID = (uint32_t) lua_tointeger(L,-arg_number) ; /*Первым аргументом дожен передоваться ID пакета*/
-		size  = arg_number -1;
-		for (int i=0;i<size;i++)
+	    ID = (uint32_t) lua_tointeger(L, CAN_ID_POS) ; /*Первым аргументом дожен передоваться ID пакета*/
+		size--;
+		for (int i=0;i< size ;i++)
 		{
-		  DATA[i]= (uint8_t) lua_tointeger(L,-(arg_number-1-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
+		  DATA[i]= (uint8_t) lua_tointeger(L,-( size-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
 		}
 		vCanInsertTXData(ID, &DATA[0], size);
 	}
@@ -263,37 +266,43 @@ int CanSendPDM( lua_State *L )
 }
 
 
-int CanSendTable( lua_State *L )
+/*
+ *
+ */
+int iCanSendTable( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
 	uint32_t ID;
-	uint8_t DATA[8];
+	uint8_t DATA[ CAN_FRAME_SIZE ];
 	uint8_t size;
-	if (arg_number >= 3)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if (arg_number == CAN_SEND_TABLE_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-	  ID = (uint32_t) lua_tointeger(L,1) ; //Первым аргументом дожен передоваться ID пакета
-		size  = (uint32_t) lua_tointeger(L,2);
-		luaL_checktype(L, 3, LUA_TTABLE);
-		for (int i=0;i<size;i++)
+		if ( lua_istable(L, CAN_TABLE_POS ) &&  lua_isinteger(L,FRAME_SIZE_POS) && lua_isinteger(L, CAN_ID_POS) )
 		{
-		  lua_geti(L, 3, i + 1);
-			DATA[i]= lua_tointeger(L,-1);
-			lua_pop(L,1);
+			ID 	  = (uint32_t) lua_tointeger(L, CAN_ID_POS ); //Первым аргументом дожен передоваться ID пакета
+			size  = (uint8_t) lua_tointeger(L, FRAME_SIZE_POS);
+			if  (size < CAN_FRAME_SIZE )
+			{
+				for (uint8_t i = 0; i < size; i++)
+				{
+					lua_geti(L, CAN_TABLE_POS , i + 1);
+					DATA[i]= lua_tointeger(L,-1);
+					lua_pop(L,1);
+				}
+				vCanInsertTXData(ID, &DATA[0], size);
+			}
 		}
-		vCanInsertTXData(ID, &DATA[0], size);
 	}
-	return (0);
+	return (0U);
 }
-
-
-
-
-
-int CanSendRequest( lua_State *L )
+/*
+ *
+ */
+int iCanSendRequest( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
 	uint32_t ID;
-	uint8_t DATA[8];
+	uint8_t DATA[CAN_FRAME_SIZE];
 	uint8_t size;
 	if (arg_number >= SEND_REQUEST_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
@@ -310,7 +319,9 @@ int CanSendRequest( lua_State *L )
 }
 
 
-
+/*
+ *
+ */
 int  iOutConfig( lua_State *L )
 {
 	int out_number;
@@ -328,6 +339,9 @@ int  iOutConfig( lua_State *L )
 	}
 	return (0U);
 }
+/*
+ *
+ */
 int  iOutResetConfig( lua_State *L )
 {
 	int out_number = 0;
@@ -343,26 +357,25 @@ int  iOutResetConfig( lua_State *L )
 	}
 	return (0U);
 }
-
-int  OutSetPWM( lua_State *L )
+/*
+ *
+ */
+int  iOutSetPWM( lua_State *L )
 {
-	int out_number = 0;
-	int temp_i, pwm = 100;
+	uint16_t out_number = 0;
+    uint16_t pwm;
 	int arg_number = lua_gettop(L);
 	if (arg_number >= PWM_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
+		out_number = ( uint16_t ) lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
 		if (out_number < OUT_COUNT) //Проверяем, что номер канала задан верно
 		{
-			pwm = DEFAULT_PWM;
-			temp_i = lua_tointeger(L,-(arg_number-1)); //Вторам агрументом должна передоватьс мощность канала в процентах 0-100.
-			if (temp_i < pwm) pwm = temp_i; //Если аргумент коректный
-			vOutSetPWM(out_number, pwm);
+			pwm = ( uint16_t) lua_tointeger(L,-(arg_number-1)); //Вторам агрументом должна передоватьс мощность канала в процентах 0-100.
+			vOutSetPWM(out_number, ( pwm <= MAX_PWM )? pwm : MAX_PWM);
 		}
 	}
-	return 0;
+	return ( 0U );
 }
-
 
 /****************
  *
@@ -423,16 +436,16 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
 				*size =ulIndex;
 				break;
 			}
-
 		}
 	}
 	*size =ulIndex;
 	return ( ucRes );
 }
-
+/*
+ *
+ */
 void vLuaTask(void *argument)
 {
-	 RUN_SCRIPT_t eDefaultScriptRun = RUN_USER_SCRIPT;
 	 ENABLE_t eSafeModeIsEnable = IS_DISABLE;
 	 ENABLE_t eMainLoopIsEnable = IS_DISABLE;;
 	 volatile uint32_t uiScriptSize = 0;
@@ -453,54 +466,44 @@ void vLuaTask(void *argument)
 	   	   L  = luaL_newstate();
 	   	   L1 = lua_newthread(L);
 	   	   luaL_openlibs(L1); // open standard libraries
-	   	   lua_register(L1,"CanTable",CanSendTable);
+	   	   lua_register(L1,"CanTable",iCanSendTable);
 	   	   lua_register(L1,"setDINConfig",iDinConfig);
 	   	   lua_register(L1,"setOutConfig", iOutConfig);
 	   	   lua_register(L1,"iOutResetConfig", iOutResetConfig);
-	   	   lua_register(L1,"OutSetPWM", OutSetPWM);
-	   	   lua_register(L1,"CanSend", CanSendPDM);
+	   	   lua_register(L1,"OutSetPWM", iOutSetPWM);
+	   	   lua_register(L1,"CanSend", iCanSendPDM);
 	   	   lua_register(L1,"setCanFilter", iCanSetResiveFilter);
 	   	   lua_register(L1,"CheckCanId", iCanCheckData);
-	   	   lua_register(L1,"GetCanMessage",CanGetMessage);
-	   	   lua_register(L1,"GetCanToTable",CanGetResivedData);
-	   	   lua_register(L1,"sendCandRequest",CanSendRequest);
+	   	   lua_register(L1,"GetCanMessage",iCanGetMessage);
+	   	   lua_register(L1,"GetCanToTable",iCanGetResivedData);
+	   	   lua_register(L1,"sendCandRequest",iCanSendRequest);
 	   	   lua_register(L1,"CheckAnswer", iCanCheckData);
-	   	   lua_register(L1,"GetRequest",CanGetMessage);
-	   	   lua_register(L1,"GetRequestToTable",CanGetResivedData);
+	   	   lua_register(L1,"GetRequest",iCanGetMessage);
+	   	   lua_register(L1,"GetRequestToTable",iCanGetResivedData);
 	   	   vLUArunPDM();
-	   	   //if ( eDefaultScriptRun == RUN_USER_SCRIPT)
-	   	 //  {
-	   	     if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR, &uiScriptSize) == RESULT_TRUE )
-	   	   	 {
-	   	    	 res =(luaL_loadbuffer(L1, uFLASHgetScript(), uiScriptSize, uFLASHgetScript())  || lua_pcall(L1, 0, LUA_MULTRET, 0));
-	   	   	 //  res = luaL_dostring(L1,uFLASHgetScript());
-	   	   	 }
-	   	   	 else
-	   	   	 {
+	   	   if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR, &uiScriptSize) == RESULT_TRUE )
+	   	   {
+	   	    	res =(luaL_loadbuffer(L1, uFLASHgetScript(), uiScriptSize, uFLASHgetScript())  || lua_pcall(L1, 0, LUA_MULTRET, 0));
+	   	   }
+	   	   else
+	   	   {
 	   	   		 state = LUA_ERROR;
-	   	   	 }
-	   	  // 	 eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
-	   	  // }
-	   	 //  if (eDefaultScriptRun ==RUN_DEFAULT_SCRIPT)
-	   	//   {
-	   	//     res = luaL_dostring(L1,defaultLuaScript);
-	   	//   }
+	   	   }
 	   	   break;
 	   	 case LUA_RUN:
 	   	   if (eMainLoopIsEnable == IS_DISABLE)
 	   	     lua_getglobal(L1, "init");
 	   	   else
 	   	     lua_getglobal(L1, "main");
-
-	   	   ulWorkCicleIn10us  =ulRestartTimer();
-	   	   lua_pushinteger(L1,ulWorkCicleIn10us);
+	   	   ulWorkCicleIn10us  = ulRestartTimer();
+	   	   lua_pushinteger(L1, ulWorkCicleIn10us );
 	   	   for ( i = 0U; i < DIN_CHANNEL; i++ )
 	   	   {
 	   		   lua_pushboolean( L1, ucDinGet( i ) );
 	   	   }
-           for ( i = 0U; i < OUT_COUNT ; i++)
+           for ( i = 0U; i < OUT_COUNT ; i++ )
 	   	   {
-        	   lua_pushnumber(L1,fOutGetCurrent(i));
+        	   lua_pushnumber( L1, fOutGetCurrent(i));
 	   	   }
            int temp;
 	   	   switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp) )
@@ -530,8 +533,7 @@ void vLuaTask(void *argument)
 	   			vSafeModeOutState();
 	   			eSafeModeIsEnable = IS_ENABLE;
 	   		}
-	   	  // eDefaultScriptRun = RUN_DEFAULT_SCRIPT;
-	   	 //  state = LUA_RESTART;
+
 	   	   break;
 	   	 case LUA_STOP:
 	   		if (eSafeModeIsEnable == IS_DISABLE)
@@ -539,7 +541,6 @@ void vLuaTask(void *argument)
 	   			vSafeModeOutState();
 	   			eSafeModeIsEnable = IS_ENABLE;
 			}
-	   		//eDefaultScriptRun = RUN_USER_SCRIPT;
 	   	   break;
 	   	 case LUA_RESTART:
 	   	   lua_close(L);
