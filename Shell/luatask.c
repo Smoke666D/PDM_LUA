@@ -20,13 +20,16 @@
 
 
 extern TIM_HandleTypeDef htim11;
-static LUA_STATE_t state 					 __SECTION(RAM_SECTION_CCMRAM) = 0U;
+static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 static uint8_t ucErrorCount 				__SECTION(RAM_SECTION_CCMRAM)= 0U;
-static EventGroupHandle_t xPDMstatusEvent;
+static ENABLE_t eSafeModeIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
+static ENABLE_t eMainLoopIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
 
-const char * pcLuaErrorString = NULL;
-int res = 0;
+static EventGroupHandle_t xPDMstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
+
+const char * pcLuaErrorString 				__SECTION(RAM_SECTION_CCMRAM) = NULL;
+int res 									__SECTION(RAM_SECTION_CCMRAM) = 0;
 
 /*
  * Переменные, размещенные в секции CCMRAM не инициализиурются при объявлении,
@@ -34,10 +37,13 @@ int res = 0;
  */
 static void vCCMRAVarInir()
 {
-
-	state = LUA_INIT;
-    ucErrorCount 	  = 0U;
-    ulWorkCicleIn10us = 0U;
+	state 				= LUA_INIT;
+    ucErrorCount 	  	= 0U;
+    ulWorkCicleIn10us 	= 0U;
+    eSafeModeIsEnable 	= IS_DISABLE;
+    eMainLoopIsEnable 	= IS_DISABLE;
+    pcLuaErrorString  	= NULL;
+    res 				= 0;
 	return;
 }
 /*
@@ -446,9 +452,7 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
  */
 void vLuaTask(void *argument)
 {
-	 ENABLE_t eSafeModeIsEnable = IS_DISABLE;
-	 ENABLE_t eMainLoopIsEnable = IS_DISABLE;;
-	 volatile uint32_t uiScriptSize = 0;
+	 uint32_t uiScriptSize = 0;
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
@@ -462,7 +466,7 @@ void vLuaTask(void *argument)
 	   {
        case LUA_INIT:
     	   eMainLoopIsEnable  = IS_DISABLE;
-	   	   eSafeModeIsEnable = IS_DISABLE;
+	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();
 	   	   L1 = lua_newthread(L);
 	   	   luaL_openlibs(L1); // open standard libraries

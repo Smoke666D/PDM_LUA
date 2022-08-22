@@ -91,7 +91,7 @@ void vSetWaitFilter(uint32_t id)
  */
 uint8_t vCheckAnswer( void )
 {
-	 return MailBoxBuffer[0].new_data;
+	 return ( MailBoxBuffer[0].new_data );
 }
 /*
  *
@@ -109,7 +109,7 @@ ERROR_TYPE_t eMailboxFilterSet(uint32_t id)
 			 break;
 		}
 	}
-	return (eRes);
+	return ( eRes );
 }
 /*
  *
@@ -235,7 +235,6 @@ void vCANinit()
 /*
  * Процесс для обработки can сообщений
  */
-
 void vCanTXTask(void *argument)
 {
 	CAN_TX_FRAME_TYPE TXPacket;

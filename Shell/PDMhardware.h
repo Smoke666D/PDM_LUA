@@ -26,7 +26,8 @@
 #define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
 #define MAX_OVERLOAD_LPOWER             10.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
-#define MAX_PWM				100U
+#define MAX_PWM					100U
+#define MAX_POWER				100U
 #define DEFAULT_RESET_TIMER		1000U
 #define DEFAULT_RESET_COUNTER	0U
 #define MAX_RESET_TIMER         32767U
@@ -99,7 +100,7 @@ typedef struct
    uint8_t PWM;
    uint8_t error_count; //Кол-во попыток рестарта
    uint16_t overload_config_timer;
-   uint16_t overload_timer;
+ // uint16_t overload_timer;
    uint16_t restart_timer;
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;

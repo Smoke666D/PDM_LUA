@@ -44,7 +44,6 @@ QueueHandle_t* pCANRXgetQueue ( void );
 QueueHandle_t* pCANTXgetQueue ( void );
 uint8_t vCheckAnswer( void );
 uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket);
-uint8_t vCanChekMessage(uint32_t id);
 uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket);
 ERROR_TYPE_t eMailboxFilterSet(uint32_t id);
 void vSetWaitFilter(uint32_t id);
