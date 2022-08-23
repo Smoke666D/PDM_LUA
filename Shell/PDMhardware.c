@@ -170,7 +170,7 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) );
+   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
    HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
@@ -305,7 +305,7 @@ static void vDataConvertToFloat( void)
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U ,ADC_FRAME_SIZE, ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 5U ,ADC_FRAME_SIZE, ADC3_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U ,ADC_FRAME_SIZE, ADC3_CHANNELS);
 	 //Преобразование во флоат данных AIN
 	 for ( i = 0; i < AIN_COUNT; i++ )
 	 {
