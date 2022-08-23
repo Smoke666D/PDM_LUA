@@ -30,6 +30,8 @@ reports/
 *.tmp_save
 *.ftl_save
 tmp/
+# CUBA IDE
+/.settings
 # Visual studio
 /.vscode
 launch.json
