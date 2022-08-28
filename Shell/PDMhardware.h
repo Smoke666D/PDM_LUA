@@ -43,8 +43,30 @@
 #define ADC_FRAME_SIZE     3U
 #define R2  10000
 #define R1  140000
-#define RR  1000.0
+
 #define K   ( 3.3 / 0xFFF )
+#define RR  1000.0
+#define K25O20   6420U
+#define V25O20   (float)(25.0/K25O20*RR)
+#define K10O20   6570U
+#define V10O20	 (float)(10.0/K10O20*RR)
+#define K06O20    6749U
+#define V06O20	 (float)(6.0/K10O20*RR)
+#define K0025O20  7410U
+#define V0025O20  (float)(0.25/K0025O20*RR)
+#define K10O08  2850U
+#define V10O08	(float)(10.0/K10O08*RR)
+#define K03O08  3000U
+#define V03O08	(float)(3.0/K03O08*RR)
+#define K02O08  3100U
+#define V02O08	(float)(2.0/K02O08*RR)
+#define K005O08  3150U
+#define V005O08	(float)(0.5/K005O08*RR)
+#define K0005O08  3350U
+#define V0005O08	(float)(0.05/K0005O08*RR)
+#define ERROR_CURRENT  (0.09*RR)*K
+
+
 #define COOF  R1 / ( R1 + R2 ) * K
 #define STATE_OUT_CONFIG		  0x20
 

@@ -169,7 +169,7 @@ int iCanCheckData(lua_State *L )
 	  case 1U:
 		  if ( lua_isinteger( L, CAN_ID_POS ) )
 		  {
-			  uiRes = vCanChekMessage(lua_tointeger(L, CAN_ID_POS) );
+			  uiRes = vCanChekMessage( lua_tointeger(L, CAN_ID_POS) );
 		  }
 		  break;
 	  default:

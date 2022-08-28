@@ -47,6 +47,7 @@ uint8_t vCanGetRequest(CAN_FRAME_TYPE * RXPacket);
 uint8_t vCanGetMessage(CAN_FRAME_TYPE * RXPacket);
 ERROR_TYPE_t eMailboxFilterSet(uint32_t id);
 void vSetWaitFilter(uint32_t id);
+uint8_t vCanChekMessage(uint32_t id);
 void vCanRXTask(void *argument);
 void vCanTXTask(void *argument);
 void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len );

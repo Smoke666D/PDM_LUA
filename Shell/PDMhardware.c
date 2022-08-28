@@ -25,26 +25,26 @@ static uint16_t muRawCurData[OUT_COUNT] __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
 static float mfVData[AIN_COUNT] 		__SECTION(RAM_SECTION_CCMRAM);
 
-static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{0U,0.0}      ,{7410U,0.0337},{6749U,0.8902},{6570U,1.522},{6420U,3.115}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
-										{{3350U,0.0149},{3150U,0.1587},{3100U,0.6451},{3000U,1.0},{2850U,3.1508}},
+static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
 										};
 
 
@@ -292,6 +292,7 @@ static void vTurnOutToError( uint8_t ucChannel)
 static void vDataConvertToFloat( void)
 {
 	uint8_t i;
+	uint8_t ucOverloadFlag;
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U ,ADC_FRAME_SIZE, ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
@@ -314,7 +315,7 @@ static void vDataConvertToFloat( void)
 	 //Преобразвоание во float данных тока каналов 1-20
 	 for ( i =0; i < OUT_COUNT; i++)
 	{
-		 if  (muRawCurData[ i ] == 0xFFF)
+		 if  (muRawCurData[ i ] > ERROR_CURRENT )
 		 {
 			 out[i].error_flag  = ERROR_ON;
 			 vTurnOutToError( i );
@@ -330,10 +331,25 @@ static void vDataConvertToFloat( void)
 					 out[i].current =  temp * out[i].CSC[r].k;
 					 out[i].current += out[i].CSC[r].b ;
 					 out[i].current =  out[i].current* temp/RR;
-					 if (out[i].current > out[i].power )
+					 ucOverloadFlag = 0;
+					 switch (out[i].out_state)
+					 {
+					 	 case STATE_OUT_ON_PROCESS:
+					 		if (out[i].current > out[i].overload_power ) {
+					 			ucOverloadFlag = 1;
+					 	    }
+					 		break;
+					 	 default:
+					 		if (out[i].current > out[i].power ) {
+					 			ucOverloadFlag = 1;
+					 		}
+					 		break;
+					 }
+					 if (ucOverloadFlag == 1)
 					 {
 						 out[i].error_flag = ERROR_OVERLOAD;
 						 vTurnOutToError( i );
+						 out[i].out_state = STATE_OUT_ERROR_PROCESS;
 					 }
 					 break;
 				 }
@@ -385,7 +401,7 @@ void vOutContolTask(void * argument)
 						case STATE_OUT_OFF: //Состония входа - выключен
 							if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
 							{
-								out[i].out_state 		= STATE_OUT_ON_PROCESS;
+								out[i].out_state 	   = STATE_OUT_ON_PROCESS;
 								out[i].restart_timer   = 0U;
 							}
 							break;
