@@ -235,6 +235,13 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 {
 	return ( (eChNum < OUT_COUNT) ?  out[eChNum].current : 0U );
 }
+/*
+ *
+ */
+float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum)
+{
+	return ( (eChNum < OUT_COUNT) ?  out[eChNum].PrintCurrent : 0U );
+}
 
 /*
  *
@@ -479,6 +486,7 @@ void vOutContolTask(void * argument)
 								}
 							}
 							vHWOutSet(i,ucCurrentPower);
+							out[i].PrintCurrent = out[i].current;
 							break;
 						case STATE_OUT_ON:  // Состояние входа - включен
 								if  (out[i].out_logic_state == OUT_OFF)
@@ -487,6 +495,7 @@ void vOutContolTask(void * argument)
 									out[i].out_state = STATE_OUT_OFF;
 								}
 								break;
+								out[i].PrintCurrent = out[i].current;
 						case STATE_OUT_ERROR_PROCESS:
 							   if (out[i].error_count == 1)
 							   {

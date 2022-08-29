@@ -130,6 +130,7 @@ typedef struct
    ERROR_FLAGS_TYPE error_flag;
    LIN_COOF CSC[4];
    float current;
+   float PrintCurrent;
    GPIO_TypeDef* GPIOx;
    uint16_t GPIO_Pin;
 } PDM_OUTPUT_TYPE;
@@ -188,4 +189,5 @@ float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState(AIN_NAME_TYPE channel);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
+float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
 #endif /* PDMHARDWARE_H_ */
