@@ -45,7 +45,7 @@
 #define R1  140000
 
 #define K   ( 3.3 / 0xFFF )
-#define RR  1000.0
+#define RR  330.0
 #define K25O20   6420U
 #define V25O20   (float)(25.0/K25O20*RR)
 #define K10O20   6570U
@@ -64,7 +64,7 @@
 #define V005O08	(float)(0.5/K005O08*RR)
 #define K0005O08  3350U
 #define V0005O08	(float)(0.05/K0005O08*RR)
-#define ERROR_CURRENT  (0.09*RR)*K
+#define ERROR_CURRENT  (uint16_t)((0.009*RR)/K)
 
 
 #define COOF  R1 / ( R1 + R2 ) * K
