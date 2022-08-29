@@ -11,15 +11,11 @@
 
 static FLASH_LOCK flashLock = FLASH_LOCKED;
 
-//const char * luaScroptAtFlash = FLASH_STORAGE_ADR;//__attribute__((section(".user_data")));
-
-
 static HAL_StatusTypeDef eFLASHlock ( void )
 {
   flashLock = FLASH_LOCKED;
   return HAL_FLASH_Lock();
 }
-
 FLASH_STATE eFLASHwriteScript ( uint32_t adr, const uint8_t* data, uint32_t length )
 {
   FLASH_STATE       res       = FLASH_OK;
@@ -76,7 +72,6 @@ FLASH_STATE eFLASHwriteScript ( uint32_t adr, const uint8_t* data, uint32_t leng
   }
   return res;
 }
-
 FLASH_STATE eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length )
 {
   FLASH_STATE res = FLASH_OK;
@@ -100,7 +95,6 @@ FLASH_STATE eFLASHreadScript ( uint32_t adr, uint8_t* data, uint32_t length )
   }
   return res;
 }
-
 FLASH_STATE eFLASHstartWriting ( void )
 {
   FLASH_STATE res = FLASH_OK;
@@ -117,7 +111,6 @@ FLASH_STATE eFLASHstartWriting ( void )
   }
   return res;
 }
-
 FLASH_STATE eFLASHendWriting ( void )
 {
   FLASH_STATE res = FLASH_OK;
@@ -129,14 +122,16 @@ FLASH_STATE eFLASHendWriting ( void )
   }
   return res;
 }
-
-FLASH_LOCK eFLASHgetLockState ( void )
+FLASH_LOCK  eFLASHgetLockState ( void )
 {
   return flashLock;
 }
-
 const char* uFLASHgetScript ( void )
 {
-  return (const char*)FLASH_STORAGE_ADR;
+  return ( const char* )( FLASH_STORAGE_ADR + FLASH_STORAGE_LENGTH_SIZE );
+}
+uint32_t uFLASHgetLength ( void )
+{
+  return *( uint32_t* )( FLASH_STORAGE_ADR );
 }
 

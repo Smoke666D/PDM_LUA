@@ -414,12 +414,12 @@ LUA_STATE_t eLUAgetSTATE ( void )
 /*
  *
  */
-static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
+static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t size)
 {
 	uint8_t ucRes = RESULT_FALSE;
 	uint8_t ucEND = 0x00;
 	uint32_t ulIndex;
-	for (ulIndex = 0;ulIndex < MAX_SCRIPT_SIZE; ulIndex++)
+	for (ulIndex = 0;ulIndex < size; ulIndex++)
 	{
 		if ( pcData[ulIndex] == ucEND )
 		{
@@ -432,19 +432,16 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t* size)
 				else
 				{
 					ucRes = RESULT_TRUE;
-					*size =ulIndex;
 					break;
 				}
 			}
 			else
 			{
 				ucRes = RESULT_TRUE;
-				*size =ulIndex;
 				break;
 			}
 		}
 	}
-	*size =ulIndex;
 	return ( ucRes );
 }
 /*
@@ -485,9 +482,9 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"GetRequest",iCanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",iCanGetResivedData);
 	   	   vLUArunPDM();
-	   	   if ( eIsLuaSkriptValid((const char*) FLASH_STORAGE_ADR, &uiScriptSize) == RESULT_TRUE )
+	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
-	   	    	res =(luaL_loadbuffer(L1, uFLASHgetScript(), uiScriptSize, uFLASHgetScript())  || lua_pcall(L1, 0, LUA_MULTRET, 0));
+	   	    	res =(luaL_loadbuffer(L1, uFLASHgetScript(), uFLASHgetLength() , uFLASHgetScript())  || lua_pcall(L1, 0, LUA_MULTRET, 0));
 	   	   }
 	   	   else
 	   	   {

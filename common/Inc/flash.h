@@ -11,10 +11,11 @@
 #include "stm32f405xx.h"
 #include "stm32f4xx_hal.h"
 /*------------------------ Define --------------------------------------*/
-#define  FLASH_STORAGE_ADR     0x080E0000UL
-#define  FLASH_STORAGE_LENGTH  0x20000U /* byte */
-#define  FLASH_STORAGE_SECTOR  FLASH_SECTOR_11
-#define  FLASH_STORAGE_VOLTAGE VOLTAGE_RANGE_3
+#define  FLASH_STORAGE_ADR         0x080E0000UL
+#define  FLASH_STORAGE_LENGTH      0x20000U /* byte */
+#define  FLASH_STORAGE_SECTOR      FLASH_SECTOR_11
+#define  FLASH_STORAGE_VOLTAGE     VOLTAGE_RANGE_3
+#define  FLASH_STORAGE_LENGTH_SIZE 4U
 /*------------------------- Macros -------------------------------------*/
 #if ( ( FLASH_STORAGE_ADR + FLASH_STORAGE_LENGTH - 2U ) >= FLASH_END )
   #error "Too big sector for the script storage"
@@ -47,5 +48,6 @@ FLASH_STATE eFLASHstartWriting ( void );
 FLASH_STATE eFLASHendWriting ( void );
 FLASH_LOCK  eFLASHgetLockState ( void );
 const char* uFLASHgetScript ( void );
+uint32_t    uFLASHgetLength ( void );
 /*----------------------------------------------------------------------*/
 #endif /* INC_FLASH_H_  */
