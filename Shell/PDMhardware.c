@@ -56,12 +56,16 @@ static   StaticEventGroup_t xOutCreatedEventGroup	__SECTION(RAM_SECTION_CCMRAM);
 /*
  *
  */
-void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel,  uint8_t PWM)
+void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM)
 {
+	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
 	{
 		out[out_name].ptim 			  = ptim;
 		out[out_name].channel 		  = uiChannel;
+		out[out_name].GPIOx 		  = EnablePort;
+		out[out_name].GPIO_Pin		  = EnablePin;
+		out[out_name].out_line_state  = 0;
 		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		  =	STATE_OUT_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
@@ -75,7 +79,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
 		out[out_name].error_flag = ERROR_OFF;
-		for (uint8_t j=0; j< 4U; j++)
+		for (j=0; j< 4U; j++)
 		{
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 			if ((CurSensData[out_name][j].Data != 0.0D) || (CurSensData[out_name][j+1].Data != 0.0D ))
@@ -104,6 +108,17 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 	return;
 }
 /*
+ *
+ */
+void vOutHWEnbale(OUT_NAME_TYPE out_name)
+{
+	if (out_name < OUT_COUNT)
+	{
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_RESET);
+	}
+
+}
+/*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power)
@@ -126,6 +141,8 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	}
 	return ( res );
 }
+
+
 /*
  * Функция конфигурации режима рестарта
  */
@@ -176,6 +193,7 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
    HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
    HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
    HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+   out[out_name].out_line_state = 1;
    return;
 }
 
@@ -221,34 +239,46 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 /*
  *
  */
+ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
+{
+	return ( (eChNum < OUT_COUNT) ? out[eChNum ].error_flag : 0U );
+}
+
+float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
+{
+	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
+}
+/*
+ *
+ */
 void vOutInit( void )
 {
 
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3,  DEFAULT_PWM	);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1, DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2, DEFAULT_PWM	 );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1, DEFAULT_PWM	 );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3,  DEFAULT_PWM	 );
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, DEFAULT_PWM  );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2, DEFAULT_PWM  );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1,  DEFAULT_PWM	 );
+	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, DEFAULT_PWM	);
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin,DEFAULT_PWM	 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin,DEFAULT_PWM	 );
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin, DEFAULT_PWM  );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin, DEFAULT_PWM  );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,  DEFAULT_PWM	 );
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
@@ -274,15 +304,38 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t I
 	return;
 }
 
+
+static void vHWOutOFF( uint8_t ucChannel )
+{
+	out[ucChannel].out_line_state  = 0;
+	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+}
 /*
  *
  */
-static void vTurnOutToError( uint8_t ucChannel)
+static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 {
 	if ( ucChannel <= OUT_COUNT )
 	{
-		HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
-		out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
+		if (out[ ucChannel ].out_state == STATE_OUT_ON_PROCESS)
+		{
+			return;
+		}
+		else
+		if (out[ucChannel].out_line_state == 1)
+		{
+			vHWOutOFF(ucChannel);
+			out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
+			out[ucChannel].error_flag  = error_flag;
+
+		}
+		else
+		if ((out[ucChannel].out_line_state == 0 ) && (out[ ucChannel ].out_state != STATE_OUT_ERROR))
+		{
+			out[ucChannel].error_flag  = ERROR_CIRCUT_BREAK;
+			out[ucChannel].current 	   = 0U;
+			out[ ucChannel ].out_state = STATE_OUT_ERROR;
+		}
 	}
 	return;
 }
@@ -317,8 +370,7 @@ static void vDataConvertToFloat( void)
 	{
 		 if  (muRawCurData[ i ] > ERROR_CURRENT )
 		 {
-			 out[i].error_flag  = ERROR_ON;
-			 vTurnOutToError( i );
+			 vTurnOutToError( i, ERROR_OVERLOAD );
 		 }
 		 else
 		 {
@@ -326,7 +378,7 @@ static void vDataConvertToFloat( void)
 			 float temp = (float) muRawCurData [ i ] *K;
 			 for (uint8_t r = 0; r < 4U; r++)
 			 {
-				 if ( temp < out[i].CSC[r].data )
+				 if (( temp < out[i].CSC[r].data ) || (r ==3))
 				 {
 					 out[i].current =  temp * out[i].CSC[r].k;
 					 out[i].current += out[i].CSC[r].b ;
@@ -347,9 +399,7 @@ static void vDataConvertToFloat( void)
 					 }
 					 if (ucOverloadFlag == 1)
 					 {
-						 out[i].error_flag = ERROR_OVERLOAD;
-						 vTurnOutToError( i );
-						 out[i].out_state = STATE_OUT_ERROR_PROCESS;
+						 vTurnOutToError( i ,ERROR_OVER_LIMIT);
 					 }
 					 break;
 				 }
@@ -398,6 +448,7 @@ void vOutContolTask(void * argument)
 			   {
 					switch (out[i].out_state)
 					{
+					    case STATE_OUT_ERROR:
 						case STATE_OUT_OFF: //Состония входа - выключен
 							if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
 							{
@@ -406,6 +457,12 @@ void vOutContolTask(void * argument)
 							}
 							break;
 						case STATE_OUT_ON_PROCESS: //Состояния влючения
+							if  (out[i].out_logic_state == OUT_OFF)
+							{
+								vHWOutOFF(i);
+								out[i].out_state = STATE_OUT_OFF;
+								break;
+							}
 							out[i].restart_timer++;
 							uint8_t ucCurrentPower = MAX_POWER;
 							if  ( out[i].restart_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
@@ -426,7 +483,7 @@ void vOutContolTask(void * argument)
 						case STATE_OUT_ON:  // Состояние входа - включен
 								if  (out[i].out_logic_state == OUT_OFF)
 								{
-									HAL_TIM_PWM_Stop(out[i].ptim,  out[i].channel);
+									vHWOutOFF(i);
 									out[i].out_state = STATE_OUT_OFF;
 								}
 								break;
@@ -451,7 +508,7 @@ void vOutContolTask(void * argument)
 								}
 							}
 							break;
-						case STATE_OUT_ERROR:
+
 						default:
 							break;
 					}
