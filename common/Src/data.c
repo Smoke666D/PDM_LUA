@@ -9,207 +9,79 @@
 #include "common.h"
 #include "stm32f4xx_hal.h"
 #include <math.h>
-#include "PDMhardware.h"
-#include "pdm_input.h"
 #include "luatask.h"
 
-uint8_t uDATAfloatToByte ( float input, uint8_t* out )
+static PDM_TELEMETRY telemetry = { 0U };
+static PDM_DATA      system    = { 0U };
+
+
+void vDATAinit ( void )
 {
-  *( uint32_t* )out = *( uint32_t* )&input;
-  return sizeof( float );
+  system.uid[0U]          = HAL_GetUIDw0();
+  system.uid[1U]          = HAL_GetUIDw1();
+  system.uid[2U]          = HAL_GetUIDw2();
+  system.firmware.major   = FIRMWARE_VERSION_MAJOR;
+  system.firmware.minor   = FIRMWARE_VERSION_MINOR;
+  system.firmware.patch   = FIRMWARE_VERSION_PATCH;
+  system.hardware.major   = HARDWARE_VERSION_MAJOR;
+  system.hardware.minor   = HARDWARE_VERSION_MINOR;
+  system.hardware.patch   = HARDWARE_VERSION_PATCH;
+  system.bootloader.major = 0U;
+  system.bootloader.minor = 0U;
+  system.bootloader.patch = 0U;
+  telemetry.battery       = 0.0f;
+  return;
 }
-uint8_t uDATAgetArray ( uint8_t size, uint8_t* out, uint8_t ( *get )( uint8_t adr ) )
+
+void vDATAupdate ( void )
 {
-  uint8_t length  = ceil( size / 8U );
-  ( void )memset( out, 0U, length );
-  for ( uint8_t i=0U; i<size; i++ )
+  for ( uint8_t i=0U; i<AIN_COUNT; i++ )
   {
-    uint8_t byte = ( uint8_t )( i / 8U );
-    out[byte] |= ( get( i ) & 0x01U ) << ( ( uint8_t )( i - ( byte * 8U ) ) );
+    telemetry.voltage[i] = fAinGetState( ( AIN_NAME_TYPE )i );
   }
+  for ( uint8_t i=0U; i<DIN_CHANNEL; i++ )
+  {
+    telemetry.din[i] = ucDinGet( ( PDM_INPUT_NAME )i );
+  }
+  for ( uint8_t i=0U; i<OUT_COUNT; i++ )
+  {
+    telemetry.douts[i].current = fOutGetCurrent( i );
+    telemetry.douts[i].max     = fOutGetMaxCurrent( i );
+    telemetry.douts[i].state   = eOutGetState( i );
+    telemetry.douts[i].error   = eOutGetError( i );
+  }
+  telemetry.lua.counter = ucLUAgetErrorCount();
+  telemetry.lua.time    = ulLUAgetWorkCicle();
+  telemetry.lua.state   = eLUAgetSTATE();
+  return;
+}
+
+static uint8_t uDATAget ( uint8_t adr, uint8_t size, uint8_t* out, uint8_t* data, uint32_t dataSize )
+{
+  uint8_t* source = &( data )[adr];
+  uint32_t remain = sizeof( dataSize ) - adr;
+  uint8_t  length = ( remain > size ) ? size : ( uint8_t )remain;
+  ( void )memcpy( out, source, length );
   return length;
 }
-uint8_t uDATAdoutToBytes ( OUT_NAME_TYPE n, uint8_t* out )
+
+uint32_t ulDATAgetTelemetryLength ( void )
 {
-  *( uint32_t* )out = ( uint32_t )eOutGetState( n );
-  return sizeof( PDM_OUT_STATE_t );
+  return sizeof( PDM_TELEMETRY );
 }
-DATA_ERROR eDATAget ( DATA_ADR adr, uint8_t* out, uint8_t* length, uint8_t size )
+
+uint32_t ulDATAgetSystemLength ( void )
 {
-  DATA_ERROR res = DATA_OK;
-  *length = 0U;
-  switch ( adr )
-  {
-    case DATA_ADR_UNIQUE_0:
-      *length = sizeof( uint32_t );
-      *( uint32_t* )out = HAL_GetUIDw0();
-      break;
-    case DATA_ADR_UNIQUE_1:
-      *length = sizeof( uint32_t );
-      *( uint32_t* )out = HAL_GetUIDw1();
-      break;
-    case DATA_ADR_UNIQUE_2:
-      *length = sizeof( uint32_t );
-      *( uint32_t* )out = HAL_GetUIDw2();
-      break;
-    case DATA_ADR_CURRENT_0:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_1 ), out );
-      break;
-    case DATA_ADR_CURRENT_1:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_2 ), out );
-      break;
-    case DATA_ADR_CURRENT_2:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_3 ), out );
-      break;
-    case DATA_ADR_CURRENT_3:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_4 ), out );
-      break;
-    case DATA_ADR_CURRENT_4:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_5 ), out );
-      break;
-    case DATA_ADR_CURRENT_5:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_6 ), out );
-      break;
-    case DATA_ADR_CURRENT_6:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_7 ), out );
-      break;
-    case DATA_ADR_CURRENT_7:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_8 ), out );
-      break;
-    case DATA_ADR_CURRENT_8:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_9 ), out );
-      break;
-    case DATA_ADR_CURRENT_9:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_10 ), out );
-      break;
-    case DATA_ADR_CURRENT_10:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_11 ), out );
-      break;
-    case DATA_ADR_CURRENT_11:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_12 ), out );
-      break;
-    case DATA_ADR_CURRENT_12:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_13 ), out );
-      break;
-    case DATA_ADR_CURRENT_13:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_14 ), out );
-      break;
-    case DATA_ADR_CURRENT_14:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_15 ), out );
-      break;
-    case DATA_ADR_CURRENT_15:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_16 ), out );
-      break;
-    case DATA_ADR_CURRENT_16:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_17 ), out );
-      break;
-    case DATA_ADR_CURRENT_17:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_18 ), out );
-      break;
-    case DATA_ADR_CURRENT_18:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_19 ), out );
-      break;
-    case DATA_ADR_CURRENT_19:
-      *length = uDATAfloatToByte( fOutGetCurrent( OUT_20 ), out );
-      break;
-    case DATA_ADR_VOLTAGE_BAT:
-      *length = uDATAfloatToByte( 0.0, out );
-      break;
-    case DATA_ADR_VOLTAGE_0:
-      *length = uDATAfloatToByte( fAinGetState( AIN_1 ), out );;
-      break;
-    case DATA_ADR_VOLTAGE_1:
-      *length = uDATAfloatToByte( fAinGetState( AIN_2 ), out );;
-      break;
-    case DATA_ADR_VOLTAGE_2:
-      *length = uDATAfloatToByte( fAinGetState( AIN_3 ), out );;
-      break;
-    case DATA_ADR_VOLTAGE_3:
-      *length = uDATAfloatToByte( fAinGetState( AIN_4 ), out );;
-      break;
-    case DATA_ADR_DIN:
-      *length = uDATAgetArray( DIN_CHANNEL, out, ucDinGet );
-      break;
-    case DATA_ADR_DOUT_0:
-      *length = uDATAdoutToBytes( OUT_1, out );
-      break;
-    case DATA_ADR_DOUT_1:
-      *length = uDATAdoutToBytes( OUT_2, out );
-      break;
-    case DATA_ADR_DOUT_2:
-      *length = uDATAdoutToBytes( OUT_3, out );
-      break;
-    case DATA_ADR_DOUT_3:
-      *length = uDATAdoutToBytes( OUT_4, out );
-      break;
-    case DATA_ADR_DOUT_4:
-      *length = uDATAdoutToBytes( OUT_5, out );
-      break;
-    case DATA_ADR_DOUT_5:
-      *length = uDATAdoutToBytes( OUT_6, out );
-      break;
-    case DATA_ADR_DOUT_6:
-      *length = uDATAdoutToBytes( OUT_7, out );
-      break;
-    case DATA_ADR_DOUT_7:
-      *length = uDATAdoutToBytes( OUT_8, out );
-      break;
-    case DATA_ADR_DOUT_8:
-      *length = uDATAdoutToBytes( OUT_9, out );
-      break;
-    case DATA_ADR_DOUT_9:
-      *length = uDATAdoutToBytes( OUT_10, out );
-      break;
-    case DATA_ADR_DOUT_10:
-      *length = uDATAdoutToBytes( OUT_11, out );
-      break;
-    case DATA_ADR_DOUT_11:
-      *length = uDATAdoutToBytes( OUT_12, out );
-      break;
-    case DATA_ADR_DOUT_12:
-      *length = uDATAdoutToBytes( OUT_13, out );
-      break;
-    case DATA_ADR_DOUT_13:
-      *length = uDATAdoutToBytes( OUT_14, out );
-      break;
-    case DATA_ADR_DOUT_14:
-      *length = uDATAdoutToBytes( OUT_15, out );
-      break;
-    case DATA_ADR_DOUT_15:
-      *length = uDATAdoutToBytes( OUT_16, out );
-      break;
-    case DATA_ADR_DOUT_16:
-      *length = uDATAdoutToBytes( OUT_17, out );
-      break;
-    case DATA_ADR_DOUT_17:
-      *length = uDATAdoutToBytes( OUT_18, out );
-      break;
-    case DATA_ADR_DOUT_18:
-      *length = uDATAdoutToBytes( OUT_19, out );
-      break;
-    case DATA_ADR_DOUT_19:
-      *length = uDATAdoutToBytes( OUT_20, out );
-      break;
-    case DATA_ADR_LUA_STATUS:
-      out[0U] = eLUAgetSTATE();
-      *length = 1U;
-      break;
-    case DATA_ADR_LUA_ERROR:
-      out[0U] = 0U;
-      *length = 1U;
-      break;
-    case DATA_ADR_LUA_TIME:
-      *( uint32_t* )out = ulLUAgetWorkCicle();
-      *length = sizeof( uint32_t );
-      break;
-    case DATA_ADR_LUA_ERROR_COUNTER:
-      out[0U] = ucLUAgetErrorCount();
-      *length = 1U;
-      break;
-    default:
-      res = DATA_ERROR_ADR;
-      break;
-  }
-  return res;
+  return sizeof( PDM_DATA );
+}
+
+uint8_t uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out )
+{
+  return uDATAget( adr, size, out, ( uint8_t* )&telemetry, sizeof( PDM_TELEMETRY ) );
+}
+
+uint8_t uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out )
+{
+  return uDATAget( adr, size, out, ( uint8_t* )&system, sizeof( PDM_DATA ) );
 }
 

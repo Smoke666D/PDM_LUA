@@ -53,12 +53,14 @@ typedef enum
 
 typedef enum
 {
-  USB_REPORT_CMD_NULL          = 0x00U,
-  USB_REPORT_CMD_START_WRITING = 0x01U,
-  USB_REPORT_CMD_WRITE_SCRIPT  = 0x02U,
-  USB_REPORT_CMD_END_WRITING   = 0x03U,
-  USB_REPORT_CMD_READ_SCRIPT   = 0x04U,
-  USB_REPORT_CMD_READ_DATA     = 0x05U
+  USB_REPORT_CMD_NULL,            /* 0 */
+  USB_REPORT_CMD_START_WRITING,   /* 1 */
+  USB_REPORT_CMD_WRITE_SCRIPT,    /* 2 */
+  USB_REPORT_CMD_END_WRITING,     /* 3 */
+  USB_REPORT_CMD_READ_SCRIPT,     /* 4 */
+  USB_REPORT_CMD_READ_DATA,       /* 5 */
+  USB_REPORT_CMD_READ_TELEMETRY,  /* 6 */
+  USB_REPORT_CMD_UPDATE_TELEMETRY /* 7 */
 } USB_REPORT_CMD;
 /*
  * |  0  |  1  |  2   |  3   |  4   |  5   |  6   |  4   |  ...  | ... |  64 |

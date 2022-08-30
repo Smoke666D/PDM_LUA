@@ -178,19 +178,29 @@ void vUSBscriptToReport ( USB_REPORT* report )
 /*---------------------------------------------------------------------------------------------------*/
 void eUSBdataToReport ( USB_REPORT* report )
 {
-  switch ( eDATAget( ( DATA_ADR )report->adr, report->data, &report->length, USB_REPORT_SIZE ) )
+  if ( ulDATAgetSystemLength() < report->adr )
   {
-    case DATA_OK:
-      report->stat = USB_REPORT_STATE_OK;
-      break;
-    case DATA_ERROR_ADR:
-      report->stat   = USB_REPORT_STATE_BAD_REQ;
-      report->length = 0U;
-      break;
-    default:
-      report->stat   = USB_REPORT_STATE_INTERNAL;
-      report->length = 0U;
-      break;
+    report->stat   = USB_REPORT_STATE_OK;
+    report->length = uDATAgetSystem( report->adr, USB_DATA_SIZE, report->data );
+  }
+  else
+  {
+    report->stat   = USB_REPORT_STATE_BAD_REQ;
+    report->length = 0U;
+  }
+  return;
+}
+void eUSBtelemetryToReport ( USB_REPORT* report )
+{
+  if ( ulDATAgetTelemetryLength() < report->adr )
+  {
+    report->stat   = USB_REPORT_STATE_OK;
+    report->length = uDATAgetTelemetry( report->adr, USB_DATA_SIZE, report->data );
+  }
+  else
+  {
+    report->stat   = USB_REPORT_STATE_BAD_REQ;
+    report->length = 0U;
   }
   return;
 }
@@ -233,6 +243,13 @@ USB_STATUS eUSBendWriting ( const USB_REPORT* report )
   {
     res = USB_STATUS_STORAGE_ERROR;
   }
+  return res;
+}
+/*---------------------------------------------------------------------------------------------------*/
+USB_STATUS eUSBupdateTelemetry ( const USB_REPORT* report )
+{
+  USB_STATUS res = USB_STATUS_DONE;
+  vDATAupdate();
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
@@ -355,14 +372,23 @@ void vUSBtask ( void *argument )
       vUSBparseReport( &report );
       switch( report.cmd )
       {
+        /*----------------------------------------*/
         case USB_REPORT_CMD_READ_SCRIPT:
           vUSBsend( &report, vUSBscriptToReport );
           break;
         case USB_REPORT_CMD_READ_DATA:
           vUSBsend( &report, eUSBdataToReport );
           break;
+        case USB_REPORT_CMD_READ_TELEMETRY:
+          vUSBsend( &report, eUSBtelemetryToReport );
+          break;
+        /*----------------------------------------*/
         case USB_REPORT_CMD_WRITE_SCRIPT:
           vUSBget( &report, eUSBreportToScript );
+          break;
+        /*----------------------------------------*/
+        case USB_REPORT_CMD_UPDATE_TELEMETRY:
+          vUSBget( &report, eUSBupdateTelemetry );
           break;
         case USB_REPORT_CMD_START_WRITING:
           vUSBget( &report, eUSBstartWriting );
@@ -370,6 +396,7 @@ void vUSBtask ( void *argument )
         case USB_REPORT_CMD_END_WRITING:
           vUSBget( &report, eUSBendWriting );
           break;
+        /*----------------------------------------*/
         default:
           break;
       }
