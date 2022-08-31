@@ -15,28 +15,28 @@
 
 #define UID_32_LENGTH 3U
 
-typedef struct
+typedef struct __packed
 {
   float            current;
   float            max;
   PDM_OUT_STATE_t  state;
   ERROR_FLAGS_TYPE error;
 } DOUT_TELEMETRY;
-typedef struct
+typedef struct __packed
 {
   uint32_t    time;
   LUA_STATE_t state;
   uint8_t     counter;
 } LUA_TELEMETRY;
-typedef struct
+typedef struct __packed
 {
-  float          battery;
-  float          voltage[AIN_COUNT];
-  uint8_t        din[DIN_CHANNEL];
-  DOUT_TELEMETRY douts[OUT_COUNT];
-  LUA_TELEMETRY  lua;
-} PDM_TELEMETRY;
-typedef struct
+  float          battery;            /* 0 */
+  float          voltage[AIN_COUNT]; /* 4 */
+  uint8_t        din[DIN_CHANNEL];   /* 20 */
+  DOUT_TELEMETRY douts[OUT_COUNT];   /* 31 */
+  LUA_TELEMETRY  lua;                /* 231 */
+} PDM_TELEMETRY; /* 237 */
+typedef struct __packed
 {
   uint32_t uid[UID_32_LENGTH];
   VERSION  bootloader;

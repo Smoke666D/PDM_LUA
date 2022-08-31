@@ -6,33 +6,34 @@
  */
 #include "data.h"
 #include <string.h>
+#include <math.h>
+#include <stdlib.h>
 #include "common.h"
 #include "stm32f4xx_hal.h"
-#include <math.h>
 #include "luatask.h"
 #include "lua.h"
 
-static PDM_TELEMETRY telemetry = { 0U };
-static PDM_DATA      system    = { 0U };
+static PDM_TELEMETRY telemetry  = { 0U };
+static PDM_DATA      systemData = { 0U };
 
 
 void vDATAinit ( void )
 {
-  system.uid[0U]          = HAL_GetUIDw0();
-  system.uid[1U]          = HAL_GetUIDw1();
-  system.uid[2U]          = HAL_GetUIDw2();
-  system.firmware.major   = FIRMWARE_VERSION_MAJOR;
-  system.firmware.minor   = FIRMWARE_VERSION_MINOR;
-  system.firmware.patch   = FIRMWARE_VERSION_PATCH;
-  system.hardware.major   = HARDWARE_VERSION_MAJOR;
-  system.hardware.minor   = HARDWARE_VERSION_MINOR;
-  system.hardware.patch   = HARDWARE_VERSION_PATCH;
-  system.bootloader.major = 0U;
-  system.bootloader.minor = 0U;
-  system.bootloader.patch = 0U;
-  system.lua.major        = LUA_VERSION_MAJOR;
-  system.lua.minor        = LUA_VERSION_MINOR;
-  system.lua.patch        = 0U;
+  systemData.uid[0U]          = HAL_GetUIDw0();
+  systemData.uid[1U]          = HAL_GetUIDw1();
+  systemData.uid[2U]          = HAL_GetUIDw2();
+  systemData.firmware.major   = FIRMWARE_VERSION_MAJOR;
+  systemData.firmware.minor   = FIRMWARE_VERSION_MINOR;
+  systemData.firmware.patch   = FIRMWARE_VERSION_PATCH;
+  systemData.hardware.major   = HARDWARE_VERSION_MAJOR;
+  systemData.hardware.minor   = HARDWARE_VERSION_MINOR;
+  systemData.hardware.patch   = HARDWARE_VERSION_PATCH;
+  systemData.bootloader.major = 0U;
+  systemData.bootloader.minor = 0U;
+  systemData.bootloader.patch = 0U;
+  systemData.lua.major        = atoi( LUA_VERSION_MAJOR );
+  systemData.lua.minor        = atoi( LUA_VERSION_MINOR );
+  systemData.lua.patch        = atoi( LUA_VERSION_RELEASE );
   telemetry.battery       = 0.0f;
   return;
 }
@@ -63,7 +64,7 @@ void vDATAupdate ( void )
 static uint8_t uDATAget ( uint8_t adr, uint8_t size, uint8_t* out, uint8_t* data, uint32_t dataSize )
 {
   uint8_t* source = &( data )[adr];
-  uint32_t remain = sizeof( dataSize ) - adr;
+  uint32_t remain = dataSize - adr;
   uint8_t  length = ( remain > size ) ? size : ( uint8_t )remain;
   ( void )memcpy( out, source, length );
   return length;
@@ -86,6 +87,6 @@ uint8_t uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out )
 
 uint8_t uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out )
 {
-  return uDATAget( adr, size, out, ( uint8_t* )&system, sizeof( PDM_DATA ) );
+  return uDATAget( adr, size, out, ( uint8_t* )&systemData, sizeof( PDM_DATA ) );
 }
 

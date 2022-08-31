@@ -87,6 +87,7 @@ USB_CONN_STATUS eUSBgetStatus ( void )
 /*---------------------------------------------------------------------------------------------------*/
 void vUSBinit ( const PIN_TYPE* usbDet, const PIN_TYPE* usbPullup )
 {
+  vDATAinit();
   usbPullUpPin   = ( PIN_TYPE* )usbPullup;
   usbDetectorPin = ( PIN_TYPE* )usbDet;
   HAL_GPIO_WritePin( usbPullUpPin->port, usbPullUpPin->pin, GPIO_PIN_SET );
@@ -178,10 +179,10 @@ void vUSBscriptToReport ( USB_REPORT* report )
 /*---------------------------------------------------------------------------------------------------*/
 void eUSBdataToReport ( USB_REPORT* report )
 {
-  if ( ulDATAgetSystemLength() < report->adr )
+  if ( report->adr < ulDATAgetSystemLength() )
   {
     report->stat   = USB_REPORT_STATE_OK;
-    report->length = uDATAgetSystem( report->adr, USB_DATA_SIZE, report->data );
+    report->length = uDATAgetSystem( report->adr, ( USB_DATA_SIZE - 1U ), report->data );
   }
   else
   {
@@ -192,10 +193,10 @@ void eUSBdataToReport ( USB_REPORT* report )
 }
 void eUSBtelemetryToReport ( USB_REPORT* report )
 {
-  if ( ulDATAgetTelemetryLength() < report->adr )
+  if ( report->adr < ulDATAgetTelemetryLength() )
   {
     report->stat   = USB_REPORT_STATE_OK;
-    report->length = uDATAgetTelemetry( report->adr, USB_DATA_SIZE, report->data );
+    report->length = uDATAgetTelemetry( report->adr, ( USB_DATA_SIZE - 1U ), report->data );
   }
   else
   {
