@@ -42,6 +42,7 @@ typedef struct
   VERSION  bootloader;
   VERSION  firmware;
   VERSION  hardware;
+  VERSION  lua;
 } PDM_DATA;
 
 void     vDATAinit ( void );

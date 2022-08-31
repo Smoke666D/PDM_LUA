@@ -10,6 +10,7 @@
 #include "stm32f4xx_hal.h"
 #include <math.h>
 #include "luatask.h"
+#include "lua.h"
 
 static PDM_TELEMETRY telemetry = { 0U };
 static PDM_DATA      system    = { 0U };
@@ -29,6 +30,9 @@ void vDATAinit ( void )
   system.bootloader.major = 0U;
   system.bootloader.minor = 0U;
   system.bootloader.patch = 0U;
+  system.lua.major        = LUA_VERSION_MAJOR;
+  system.lua.minor        = LUA_VERSION_MINOR;
+  system.lua.patch        = 0U;
   telemetry.battery       = 0.0f;
   return;
 }
