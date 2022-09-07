@@ -334,6 +334,7 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 			vHWOutOFF(ucChannel);
 			out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
 			out[ucChannel].error_flag  = error_flag;
+			out[ucChannel].PrintCurrent = out[ucChannel].current;
 
 		}
 		else
@@ -415,116 +416,12 @@ static void vDataConvertToFloat( void)
 	}
 	return;
 }
-/*
- *
- */
-void vADCTask(void * argument)
-{
-  /* USER CODE BEGIN vADCTask */
-  pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
-  /* Infinite loop */
-  for(;;)
-  {
-	vTaskDelay(1 );
-	HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
-	HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
-    HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-	xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, portMAX_DELAY );
-	HAL_ADC_Stop_DMA(&hadc1);
-	HAL_ADC_Stop_DMA(&hadc2);
-	HAL_ADC_Stop_DMA(&hadc3);
-	vDataConvertToFloat();
-	xEventGroupSetBits( pADCEvent, ADC_DATA_READY );
-  }
-  /* USER CODE END vADCTask */
-}
 
 
-void vOutContolTask(void * argument)
-{
-	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
-	EventBits_t config_state;
-	vOutInit();
-	for(;;)
-	{
-		   xEventGroupWaitBits( pADCEvent, ADC_DATA_READY, pdTRUE, pdTRUE, portMAX_DELAY );
-		   config_state = xEventGroupGetBits (xOutEvent); //Получаем состоние конфигурационных флагов
-		   for (uint8_t i=0; i<OUT_COUNT;i++)
-		   {
-			   if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
-			   {
-					switch (out[i].out_state)
-					{
-					    case STATE_OUT_ERROR:
-						case STATE_OUT_OFF: //Состония входа - выключен
-							if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
-							{
-								out[i].out_state 	   = STATE_OUT_ON_PROCESS;
-								out[i].restart_timer   = 0U;
-							}
-							break;
-						case STATE_OUT_ON_PROCESS: //Состояния влючения
-							if  (out[i].out_logic_state == OUT_OFF)
-							{
-								vHWOutOFF(i);
-								out[i].out_state = STATE_OUT_OFF;
-								break;
-							}
-							out[i].restart_timer++;
-							uint8_t ucCurrentPower = MAX_POWER;
-							if  ( out[i].restart_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
-							{
-								out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
-								out[i].restart_timer = 0U;
-							}
-							else
-							{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
-								ucCurrentPower =(uint8_t) (float)out[i].restart_timer/out[i].overload_config_timer*MAX_POWER;
-								if (ucCurrentPower < START_POWER)
-								{
-									ucCurrentPower = START_POWER;
-								}
-							}
-							vHWOutSet(i,ucCurrentPower);
-							out[i].PrintCurrent = out[i].current;
-							break;
-						case STATE_OUT_ON:  // Состояние входа - включен
-								if  (out[i].out_logic_state == OUT_OFF)
-								{
-									vHWOutOFF(i);
-									out[i].out_state = STATE_OUT_OFF;
-								}
-								break;
-								out[i].PrintCurrent = out[i].current;
-						case STATE_OUT_ERROR_PROCESS:
-							   if (out[i].error_count == 1)
-							   {
-								   out[i].out_state = STATE_OUT_ERROR;
-								   break;
-							   }
-							   out[i].restart_timer = 0U;
-							   out[i].out_state = STATE_OUT_RESTART_PROCESS;
-							   break;
-						case STATE_OUT_RESTART_PROCESS:
-							out[i].restart_timer++;
-							if  ( out[i].restart_timer >= out[i].restart_config_timer )
-							{
-								out[i].restart_timer = 0U;
-								out[i].out_state = STATE_OUT_ON_PROCESS;
-								if (out[i].error_count > 1U)
-								{
-									out[i].error_count--;
-								}
-							}
-							break;
 
-						default:
-							break;
-					}
-				}
-			}
-	}
-}
+
+
+
 /*
  *
  */
@@ -548,6 +445,120 @@ void vOutContolTask(void * argument)
    }
    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
    return;
+ }
+
+
+ /*
+  *
+  */
+ static void vOutControlFSM(void)
+ {
+ 	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
+    for (uint8_t i=0; i<OUT_COUNT;i++)
+ 	{
+ 				   if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
+ 				   {
+ 						switch (out[i].out_state)
+ 						{
+ 						    case STATE_OUT_ERROR:
+ 						    	//break;
+ 							case STATE_OUT_OFF: //Состония входа - выключен
+ 								if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
+ 								{
+ 									out[i].out_state 	   = STATE_OUT_ON_PROCESS;
+ 									out[i].restart_timer   = 0U;
+ 								}
+ 								out[i].PrintCurrent = out[i].current;
+ 								break;
+ 							case STATE_OUT_ON_PROCESS: //Состояния влючения
+ 								if  (out[i].out_logic_state == OUT_OFF)
+ 								{
+ 									vHWOutOFF(i);
+ 									out[i].out_state = STATE_OUT_OFF;
+ 									break;
+ 								}
+ 								out[i].restart_timer++;
+ 								uint8_t ucCurrentPower = MAX_POWER;
+ 								if  ( out[i].restart_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
+ 								{
+ 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+ 									out[i].restart_timer = 0U;
+ 								}
+ 								else
+ 								{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
+ 									ucCurrentPower =(uint8_t) (((float)out[i].restart_timer/(float)out[i].overload_config_timer)*MAX_POWER);
+ 									if (ucCurrentPower < START_POWER)
+ 									{
+ 										ucCurrentPower = START_POWER;
+ 									}
+ 								}
+ 								vHWOutSet(i,ucCurrentPower);
+ 								out[i].PrintCurrent = out[i].current;
+ 								break;
+ 							case STATE_OUT_ON:  // Состояние входа - включен
+ 									if  (out[i].out_logic_state == OUT_OFF)
+ 									{
+ 										vHWOutOFF(i);
+ 										out[i].out_state = STATE_OUT_OFF;
+ 									}
+ 									break;
+ 									out[i].PrintCurrent = out[i].current;
+ 							case STATE_OUT_ERROR_PROCESS:
+ 								   if (out[i].error_count == 1)
+ 								   {
+ 									   out[i].out_state = STATE_OUT_ERROR;
+ 									   break;
+ 								   }
+ 								   out[i].restart_timer = 0U;
+ 								   out[i].out_state = STATE_OUT_RESTART_PROCESS;
+ 								   break;
+ 							case STATE_OUT_RESTART_PROCESS:
+ 								out[i].restart_timer++;
+ 								if  ( out[i].restart_timer >= out[i].restart_config_timer )
+ 								{
+ 									out[i].restart_timer = 0U;
+ 									out[i].out_state = STATE_OUT_ON_PROCESS;
+ 									if (out[i].error_count > 1U)
+ 									{
+ 										out[i].error_count--;
+ 									}
+ 								}
+ 								break;
+
+ 							default:
+ 								break;
+ 						}
+ 					}
+ 	}
+
+ }
+ /*
+  *
+  */
+ void vADCTask(void * argument)
+ {
+   /* USER CODE BEGIN vADCTask */
+   pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+   xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+   TickType_t xLastWakeTime;
+   const TickType_t xPeriod = pdMS_TO_TICKS(1 );
+   vOutInit();
+   xLastWakeTime = xTaskGetTickCount();
+   /* Infinite loop */
+   for(;;)
+   {
+	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
+	   HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+	   HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+	   HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, portMAX_DELAY );
+	   HAL_ADC_Stop_DMA(&hadc1);
+	   HAL_ADC_Stop_DMA(&hadc2);
+	   HAL_ADC_Stop_DMA(&hadc3);
+	   vDataConvertToFloat();
+	   vOutControlFSM();
+   }
+   /* USER CODE END vADCTask */
  }
 
 /*

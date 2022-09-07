@@ -339,8 +339,8 @@ int  iOutConfig( lua_State *L )
 	{
 		out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
 		power = (float) lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-		overload_timer = (uint16_t) lua_tointeger(L,-(arg_number-3)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
-		overload_power= (float) lua_tonumber(L,-(arg_number-2));
+		overload_timer = (uint16_t) lua_tointeger(L,-(arg_number-2)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
+		overload_power= (float) lua_tonumber(L,-(arg_number-3));
 		vHWOutOverloadConfig(out_number,power, overload_timer, overload_power);
 		vOutHWEnbale(out_number);
 	}

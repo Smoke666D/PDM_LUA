@@ -14,22 +14,22 @@
 #define AIN_COUNT			4U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
-#define DEFAULT_HPOWER      20.0  // Номинальный ток по умолчания для мощных каналов
-#define MAX_HPOWER			20.0  // Максимальный номинальый ток для мощных каналов
+#define DEFAULT_HPOWER      59.0  // Номинальный ток по умолчания для мощных каналов
+#define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
-#define MAX_LPOWER			13.0  //Максимальный номинальый ток для маломощных каналов
+#define MAX_LPOWER			8.0  //Максимальный номинальый ток для маломощных каналов
 #define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
 #define MAX_OVERLOAD_TIMER             32767U //Максимальное время плавного пуска для мощных каналов
 #define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
 #define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
 #define MAX_OVERLOAD_HPOWER             60.0 // Максиальный пусковой ток мощных каналов
 #define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
-#define MAX_OVERLOAD_LPOWER             15.0 // Максиальный пусковой ток маломощных каналов
+#define MAX_OVERLOAD_LPOWER             10.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
 #define MAX_PWM					100U
 #define MAX_POWER				100U
 #define DEFAULT_RESET_TIMER		1000U
-#define DEFAULT_RESET_COUNTER	0U
+#define DEFAULT_RESET_COUNTER	1U
 #define MAX_RESET_TIMER         32767U
 
 #define ADC1_READY         0x01
@@ -64,7 +64,7 @@
 #define V005O08	(float)(0.5/K005O08*RR)
 #define K0005O08  3350U
 #define V0005O08	(float)(0.05/K0005O08*RR)
-#define ERROR_CURRENT  (uint16_t)((0.009*RR)/K)
+#define ERROR_CURRENT  (uint16_t)(4000U)
 
 
 #define COOF  R1 / ( R1 + R2 ) * K
@@ -175,7 +175,6 @@ typedef enum {
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
-void vOutContolTask(void * argument);
 void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
 void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);

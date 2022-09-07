@@ -35,7 +35,7 @@ static uint32_t serialProtectTaskBuffer[SERIAL_PROTECT_TSAK_STACK_SIZE] __sectio
 static uint32_t usbTaskBuffer[USB_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t dinTaskBuffer[DIN_TASK_STACK_SIZE]                      __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t adcTaskBuffer[ADC_TASK_STACK_SIZE]              		__section( TASK_RAM_SECTION ) = { 0U };
-static uint32_t doutTaskBuffer[DOUT_TASK_STACK_SIZE]           		    __section( TASK_RAM_SECTION ) = { 0U };
+
 
 
 static StaticTask_t luaTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
@@ -47,14 +47,14 @@ static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) 
 static StaticTask_t usbTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t dinTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t adcTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
-static StaticTask_t doutTaskControlBlock          __section( TASK_RAM_SECTION ) = { 0U };
+
 
 static osThreadId_t luaTaskHandle           = NULL;
 static osThreadId_t dinTaskHandle          	    __section( TASK_RAM_SECTION ) = NULL;
 static osThreadId_t canRXTaskHandle               __section( TASK_RAM_SECTION ) = NULL;
 static osThreadId_t canTXTaskHandle               __section( TASK_RAM_SECTION ) = NULL;
 static osThreadId_t adcTaskHandle         	    __section( TASK_RAM_SECTION ) = NULL;
-static osThreadId_t doutTaskHandle              __section( TASK_RAM_SECTION ) = NULL;
+
 
 
 static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
@@ -171,7 +171,6 @@ void vSYStaskInit ( void )
   vSYSstaticTaskInit( dinTaskBuffer, sizeof(dinTaskBuffer),&dinTaskControlBlock, DIN_TASK_NAME, &dinTaskHandle, DIN_TASK_PRIORITY, vDinTask);
   vSYSstaticTaskInit( canTXTaskBuffer, sizeof(canTXTaskBuffer),&canTXTaskControlBlock, CAN_TX_TASK_NAME, &canTXTaskHandle, CAN_TX_TASK_PRIORITY, vCanTXTask);
   vSYSstaticTaskInit( canRXTaskBuffer, sizeof(canRXTaskBuffer),&canRXTaskControlBlock, CAN_RX_TASK_NAME, &canRXTaskHandle, CAN_RX_TASK_PRIORITY, vCanRXTask);
-  vSYSstaticTaskInit( doutTaskBuffer, sizeof(doutTaskBuffer),&doutTaskControlBlock, DOUT_TASK_NAME, &doutTaskHandle, DOUT_TASK_PRIORITY,vOutContolTask);
   vSYSstaticTaskInit( adcTaskBuffer, sizeof(adcTaskBuffer),&adcTaskControlBlock, ADC_TASK_NAME, &adcTaskHandle, ADC_TASK_PRIORITY, vADCTask);
   return;
 }
