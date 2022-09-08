@@ -29,4 +29,11 @@
   #error( "Patch firmware version too big" )
 #endif
 /*------------------------------------------------------*/
+typedef struct
+{
+  uint8_t major;
+  uint8_t minor;
+  uint8_t patch;
+} VERSION;
+/*------------------------------------------------------*/
 #endif
