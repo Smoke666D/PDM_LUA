@@ -238,10 +238,12 @@ void vCANinit()
 void vCanTXTask(void *argument)
 {
 	CAN_TX_FRAME_TYPE TXPacket;
+	uint8_t res = 0;
 	while(1)
 	{
 		xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		uPDMCanSend(&TXPacket);
+
 	}
 }
 /*

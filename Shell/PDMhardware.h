@@ -122,6 +122,7 @@ typedef struct
    float power;
    float overload_power;
    uint8_t PWM;
+   uint8_t ucNoRestartState;
    uint8_t error_count; //Кол-во попыток рестарта
    uint16_t overload_config_timer;
  // uint16_t overload_timer;
@@ -130,7 +131,6 @@ typedef struct
    ERROR_FLAGS_TYPE error_flag;
    LIN_COOF CSC[4];
    float current;
-   float PrintCurrent;
    GPIO_TypeDef* GPIOx;
    uint16_t GPIO_Pin;
 } PDM_OUTPUT_TYPE;

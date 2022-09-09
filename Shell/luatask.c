@@ -287,7 +287,7 @@ int iCanSendTable( lua_State *L )
 		{
 			ID 	  = (uint32_t) lua_tointeger(L, CAN_ID_POS ); //Первым аргументом дожен передоваться ID пакета
 			size  = (uint8_t) lua_tointeger(L, FRAME_SIZE_POS);
-			if  (size < CAN_FRAME_SIZE )
+			if  (size <= CAN_FRAME_SIZE )
 			{
 				for (uint8_t i = 0; i < size; i++)
 				{
@@ -471,7 +471,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"CanTable",iCanSendTable);
 	   	   lua_register(L1,"setDINConfig",iDinConfig);
 	   	   lua_register(L1,"setOutConfig", iOutConfig);
-	   	   lua_register(L1,"iOutResetConfig", iOutResetConfig);
+	   	   lua_register(L1,"OutResetConfig", iOutResetConfig);
 	   	   lua_register(L1,"OutSetPWM", iOutSetPWM);
 	   	   lua_register(L1,"CanSend", iCanSendPDM);
 	   	   lua_register(L1,"setCanFilter", iCanSetResiveFilter);

@@ -68,6 +68,8 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		out[out_name].out_line_state  = 0;
 		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		  =	STATE_OUT_OFF;
+		out[out_name].ucNoRestartState = 0;
+		out[out_name].error_flag  = ERROR_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
@@ -238,10 +240,7 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 /*
  *
  */
-float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum)
-{
-	return ( (eChNum < OUT_COUNT) ?  out[eChNum].PrintCurrent : 0U );
-}
+
 
 /*
  *
@@ -314,8 +313,8 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t I
 
 static void vHWOutOFF( uint8_t ucChannel )
 {
-	out[ucChannel].out_line_state  = 0;
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+	out[ucChannel].out_line_state  = 0;
 }
 /*
  *
@@ -334,7 +333,6 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 			vHWOutOFF(ucChannel);
 			out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
 			out[ucChannel].error_flag  = error_flag;
-			out[ucChannel].PrintCurrent = out[ucChannel].current;
 
 		}
 		else
@@ -382,7 +380,7 @@ static void vDataConvertToFloat( void)
 		 }
 		 else
 		 {
-			 out[i].error_flag  = ERROR_OFF;
+			 //out[i].error_flag  = ERROR_OFF;
 			 float temp = (float) muRawCurData [ i ] *K;
 			 for (uint8_t r = 0; r < 4U; r++)
 			 {
@@ -395,12 +393,14 @@ static void vDataConvertToFloat( void)
 					 switch (out[i].out_state)
 					 {
 					 	 case STATE_OUT_ON_PROCESS:
-					 		if (out[i].current > out[i].overload_power ) {
+					 		if (out[i].current > out[i].overload_power )
+					 		{
 					 			ucOverloadFlag = 1;
 					 	    }
 					 		break;
 					 	 default:
-					 		if (out[i].current > out[i].power ) {
+					 		if (out[i].current > out[i].power )
+					 		{
 					 			ucOverloadFlag = 1;
 					 		}
 					 		break;
@@ -461,14 +461,19 @@ static void vDataConvertToFloat( void)
  						switch (out[i].out_state)
  						{
  						    case STATE_OUT_ERROR:
- 						    	//break;
+ 						    	if ( ( (out[i].error_flag  == ERROR_OFF) && ( out[i].ucNoRestartState  == 0 ) )
+ 						    		|| ( (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ) ) )
+ 						    	{
+ 						    		out[i].out_state = STATE_OUT_OFF;
+ 						    	}
+
+ 						    	break;
  							case STATE_OUT_OFF: //Состония входа - выключен
  								if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
  								{
  									out[i].out_state 	   = STATE_OUT_ON_PROCESS;
  									out[i].restart_timer   = 0U;
  								}
- 								out[i].PrintCurrent = out[i].current;
  								break;
  							case STATE_OUT_ON_PROCESS: //Состояния влючения
  								if  (out[i].out_logic_state == OUT_OFF)
@@ -493,7 +498,6 @@ static void vDataConvertToFloat( void)
  									}
  								}
  								vHWOutSet(i,ucCurrentPower);
- 								out[i].PrintCurrent = out[i].current;
  								break;
  							case STATE_OUT_ON:  // Состояние входа - включен
  									if  (out[i].out_logic_state == OUT_OFF)
@@ -502,26 +506,35 @@ static void vDataConvertToFloat( void)
  										out[i].out_state = STATE_OUT_OFF;
  									}
  									break;
- 									out[i].PrintCurrent = out[i].current;
  							case STATE_OUT_ERROR_PROCESS:
- 								   if (out[i].error_count == 1)
- 								   {
- 									   out[i].out_state = STATE_OUT_ERROR;
- 									   break;
- 								   }
  								   out[i].restart_timer = 0U;
  								   out[i].out_state = STATE_OUT_RESTART_PROCESS;
+
  								   break;
  							case STATE_OUT_RESTART_PROCESS:
  								out[i].restart_timer++;
  								if  ( out[i].restart_timer >= out[i].restart_config_timer )
  								{
  									out[i].restart_timer = 0U;
- 									out[i].out_state = STATE_OUT_ON_PROCESS;
- 									if (out[i].error_count > 1U)
+
+ 									if ( out[i].ucNoRestartState  == 1 )
  									{
- 										out[i].error_count--;
+ 										out[i].out_state = STATE_OUT_ERROR;
  									}
+ 									else
+ 									{
+ 										out[i].out_state = STATE_OUT_ON_PROCESS;
+ 									    out[i].error_flag  = ERROR_OFF;
+ 										if (out[i].error_count >= 1U)
+ 										{
+ 											out[i].error_count--;
+ 											if (out[i].error_count == 0)
+ 											{
+ 												out[i].ucNoRestartState  = 1;
+ 											}
+ 										}
+ 									}
+
  								}
  								break;
 
