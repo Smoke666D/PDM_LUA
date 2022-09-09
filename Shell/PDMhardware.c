@@ -61,6 +61,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
 	{
+		vOutHWDisabale( out_name);
 		out[out_name].ptim 			  = ptim;
 		out[out_name].channel 		  = uiChannel;
 		out[out_name].GPIOx 		  = EnablePort;
@@ -68,7 +69,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		out[out_name].out_line_state  = 0;
 		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		  =	STATE_OUT_OFF;
-		out[out_name].ucNoRestartState = 0;
+
 		out[out_name].error_flag  = ERROR_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
@@ -117,6 +118,19 @@ void vOutHWEnbale(OUT_NAME_TYPE out_name)
 	if (out_name < OUT_COUNT)
 	{
 		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_RESET);
+		out[out_name].ucNoRestartState =1;
+	}
+
+}
+/*
+ *
+ */
+void vOutHWDisabale(OUT_NAME_TYPE out_name)
+{
+	if (out_name < OUT_COUNT)
+	{
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_SET);
+		out[out_name].ucNoRestartState =0;
 	}
 
 }
@@ -374,12 +388,14 @@ static void vDataConvertToFloat( void)
 	 //Преобразвоание во float данных тока каналов 1-20
 	 for ( i =0; i < OUT_COUNT; i++)
 	{
-		 if  (muRawCurData[ i ] > ERROR_CURRENT )
+		 if (out[i].ucNoRestartState !=0)
 		 {
-			 vTurnOutToError( i, ERROR_OVERLOAD );
-		 }
-		 else
-		 {
+			 if  (muRawCurData[ i ] > ERROR_CURRENT )
+			 {
+				 vTurnOutToError( i, ERROR_OVERLOAD );
+			 }
+			 else
+			 {
 			 //out[i].error_flag  = ERROR_OFF;
 			 float temp = (float) muRawCurData [ i ] *K;
 			 for (uint8_t r = 0; r < 4U; r++)
@@ -412,7 +428,9 @@ static void vDataConvertToFloat( void)
 					 break;
 				 }
 			 }
+			 }
 		 }
+
 	}
 	return;
 }
@@ -456,12 +474,14 @@ static void vDataConvertToFloat( void)
  	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
+    	if (out[i].ucNoRestartState !=0)
+    	{
  				   if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
  				   {
  						switch (out[i].out_state)
  						{
  						    case STATE_OUT_ERROR:
- 						    	if ( ( (out[i].error_flag  == ERROR_OFF) && ( out[i].ucNoRestartState  == 0 ) )
+ 						    	if ( ( (out[i].error_flag  == ERROR_OFF) && ( out[i].ucNoRestartState  == 1 ) )
  						    		|| ( (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ) ) )
  						    	{
  						    		out[i].out_state = STATE_OUT_OFF;
@@ -517,7 +537,7 @@ static void vDataConvertToFloat( void)
  								{
  									out[i].restart_timer = 0U;
 
- 									if ( out[i].ucNoRestartState  == 1 )
+ 									if ( out[i].ucNoRestartState  == 2 )
  									{
  										out[i].out_state = STATE_OUT_ERROR;
  									}
@@ -530,7 +550,7 @@ static void vDataConvertToFloat( void)
  											out[i].error_count--;
  											if (out[i].error_count == 0)
  											{
- 												out[i].ucNoRestartState  = 1;
+ 												out[i].ucNoRestartState  = 2;
  											}
  										}
  									}
@@ -542,8 +562,13 @@ static void vDataConvertToFloat( void)
  								break;
  						}
  					}
- 	}
+    	}
+    	else
+    	{
+    		out[i].out_state = STATE_OUT_OFF;
+    	}
 
+ 	}
  }
  /*
   *
