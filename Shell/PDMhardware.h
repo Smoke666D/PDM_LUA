@@ -123,7 +123,6 @@ typedef struct
    float overload_power;
    uint8_t PWM;
    uint8_t ucNoRestartState;
-
    uint8_t error_count; //Кол-во попыток рестарта
    uint16_t overload_config_timer;
  // uint16_t overload_timer;

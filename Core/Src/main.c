@@ -170,6 +170,7 @@ int main(void)
   vUSBinit( &usbDet, &usbPullup );
   vDinInit( );
   vCANinit( );
+  vOutInit();
   /* USER CODE END 2 */
 
   /* Init scheduler */

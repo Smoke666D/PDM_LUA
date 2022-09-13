@@ -61,7 +61,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
 	{
-		vOutHWDisabale( out_name);
+
 		out[out_name].ptim 			  = ptim;
 		out[out_name].channel 		  = uiChannel;
 		out[out_name].GPIOx 		  = EnablePort;
@@ -69,7 +69,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		out[out_name].out_line_state  = 0;
 		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		  =	STATE_OUT_OFF;
-
+		vOutHWDisabale( out_name);
 		out[out_name].error_flag  = ERROR_OFF;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
@@ -360,8 +360,29 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 	return;
 }
 /*
+ *
+ */
+float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
+{
+	float fRes;
+
+	for (uint8_t r = 0; r < 4U; r++)
+    {
+		if (( fraw < xOut.CSC[r].data ) || (r ==3))
+		 {
+						 fRes =  fraw * xOut.CSC[r].k;
+						 fRes += xOut.CSC[r].b ;
+						 fRes =  fRes* fraw/RR;
+						 break;
+		 }
+	 }
+	return ( fRes );
+
+}
+/*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
+
 static void vDataConvertToFloat( void)
 {
 	uint8_t i;
@@ -385,53 +406,6 @@ static void vDataConvertToFloat( void)
 	 {
 		 mfVData[ i ] = muRawVData[ i ] * COOF;
 	 }
-	 //Преобразвоание во float данных тока каналов 1-20
-	 for ( i =0; i < OUT_COUNT; i++)
-	{
-		 if (out[i].ucNoRestartState !=0)
-		 {
-			 if  (muRawCurData[ i ] > ERROR_CURRENT )
-			 {
-				 vTurnOutToError( i, ERROR_OVERLOAD );
-			 }
-			 else
-			 {
-			 //out[i].error_flag  = ERROR_OFF;
-			 float temp = (float) muRawCurData [ i ] *K;
-			 for (uint8_t r = 0; r < 4U; r++)
-			 {
-				 if (( temp < out[i].CSC[r].data ) || (r ==3))
-				 {
-					 out[i].current =  temp * out[i].CSC[r].k;
-					 out[i].current += out[i].CSC[r].b ;
-					 out[i].current =  out[i].current* temp/RR;
-					 ucOverloadFlag = 0;
-					 switch (out[i].out_state)
-					 {
-					 	 case STATE_OUT_ON_PROCESS:
-					 		if (out[i].current > out[i].overload_power )
-					 		{
-					 			ucOverloadFlag = 1;
-					 	    }
-					 		break;
-					 	 default:
-					 		if (out[i].current > out[i].power )
-					 		{
-					 			ucOverloadFlag = 1;
-					 		}
-					 		break;
-					 }
-					 if (ucOverloadFlag == 1)
-					 {
-						 vTurnOutToError( i ,ERROR_OVER_LIMIT);
-					 }
-					 break;
-				 }
-			 }
-			 }
-		 }
-
-	}
 	return;
 }
 
@@ -471,18 +445,30 @@ static void vDataConvertToFloat( void)
   */
  static void vOutControlFSM(void)
  {
- 	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
+
+	 EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
     	if (out[i].ucNoRestartState !=0)
     	{
- 				   if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
- 				   {
+    		 if ( (muRawCurData[ i ] > ERROR_CURRENT ) && ( out[i].out_line_state == 0 ) )
+    		 {
+    				out[i].error_flag  = ERROR_CIRCUT_BREAK;
+    				out[i].out_state = STATE_OUT_ERROR;
+    				out[i].current 	   = 0U;
+    		 }
+    		 else
+    		 {
+    			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+    		 }
+
+ 			if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
+ 			{
  						switch (out[i].out_state)
  						{
  						    case STATE_OUT_ERROR:
- 						    	if ( ( (out[i].error_flag  == ERROR_OFF) && ( out[i].ucNoRestartState  == 1 ) )
- 						    		|| ( (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ) ) )
+ 						    	if
+ 						        (  (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ))
  						    	{
  						    		out[i].out_state = STATE_OUT_OFF;
  						    	}
@@ -496,10 +482,12 @@ static void vDataConvertToFloat( void)
  								}
  								break;
  							case STATE_OUT_ON_PROCESS: //Состояния влючения
- 								if  (out[i].out_logic_state == OUT_OFF)
+ 								if ( (out[i].out_logic_state == OUT_OFF) || ( out[i].current > out[i].overload_power ) )
  								{
  									vHWOutOFF(i);
- 									out[i].out_state = STATE_OUT_OFF;
+ 									out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
+ 								 	out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
+ 								 	out[i].restart_timer = 0U;
  									break;
  								}
  								out[i].restart_timer++;
@@ -520,23 +508,18 @@ static void vDataConvertToFloat( void)
  								vHWOutSet(i,ucCurrentPower);
  								break;
  							case STATE_OUT_ON:  // Состояние входа - включен
- 									if  (out[i].out_logic_state == OUT_OFF)
+ 									if  ( (out[i].out_logic_state == OUT_OFF) ||  ( out[i].current > out[i].power ) )
  									{
  										vHWOutOFF(i);
- 										out[i].out_state = STATE_OUT_OFF;
+ 										out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
+ 										out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
  									}
  									break;
- 							case STATE_OUT_ERROR_PROCESS:
- 								   out[i].restart_timer = 0U;
- 								   out[i].out_state = STATE_OUT_RESTART_PROCESS;
 
- 								   break;
  							case STATE_OUT_RESTART_PROCESS:
  								out[i].restart_timer++;
  								if  ( out[i].restart_timer >= out[i].restart_config_timer )
  								{
- 									out[i].restart_timer = 0U;
-
  									if ( out[i].ucNoRestartState  == 2 )
  									{
  										out[i].out_state = STATE_OUT_ERROR;
@@ -561,7 +544,7 @@ static void vDataConvertToFloat( void)
  							default:
  								break;
  						}
- 					}
+    		 }
     	}
     	else
     	{
@@ -580,7 +563,6 @@ static void vDataConvertToFloat( void)
    xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS(1 );
-   vOutInit();
    xLastWakeTime = xTaskGetTickCount();
    /* Infinite loop */
    for(;;)
