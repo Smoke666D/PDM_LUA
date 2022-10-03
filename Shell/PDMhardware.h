@@ -125,7 +125,6 @@ typedef struct
    uint8_t ucNoRestartState;
    uint8_t error_count; //Кол-во попыток рестарта
    uint16_t overload_config_timer;
- // uint16_t overload_timer;
    uint16_t restart_timer;
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;

@@ -66,6 +66,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		out[out_name].channel 		  = uiChannel;
 		out[out_name].GPIOx 		  = EnablePort;
 		out[out_name].GPIO_Pin		  = EnablePin;
+		out[out_name].error_count     = 0U;
 		out[out_name].out_line_state  = 0;
 		out[out_name].out_logic_state = OUT_OFF;
 		out[out_name].out_state		  =	STATE_OUT_OFF;
@@ -273,7 +274,8 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 void vOutInit( void )
 {
-
+	pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+    xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
@@ -362,22 +364,20 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 /*
  *
  */
-float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
+static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 {
 	float fRes;
-
 	for (uint8_t r = 0; r < 4U; r++)
     {
 		if (( fraw < xOut.CSC[r].data ) || (r ==3))
 		 {
 						 fRes =  fraw * xOut.CSC[r].k;
 						 fRes += xOut.CSC[r].b ;
-						 fRes =  fRes* fraw/RR;
+						 fRes *= fraw/RR;
 						 break;
 		 }
 	 }
 	return ( fRes );
-
 }
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
@@ -386,7 +386,6 @@ float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 static void vDataConvertToFloat( void)
 {
 	uint8_t i;
-	uint8_t ucOverloadFlag;
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U ,ADC_FRAME_SIZE, ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
@@ -446,7 +445,7 @@ static void vDataConvertToFloat( void)
  static void vOutControlFSM(void)
  {
 
-	 EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
+	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
     	if (out[i].ucNoRestartState !=0)
@@ -454,7 +453,7 @@ static void vDataConvertToFloat( void)
     		 if ( (muRawCurData[ i ] > ERROR_CURRENT ) && ( out[i].out_line_state == 0 ) )
     		 {
     				out[i].error_flag  = ERROR_CIRCUT_BREAK;
-    				out[i].out_state = STATE_OUT_ERROR;
+    				out[i].out_state   = STATE_OUT_ERROR;
     				out[i].current 	   = 0U;
     		 }
     		 else
@@ -470,9 +469,8 @@ static void vDataConvertToFloat( void)
  						    	if
  						        (  (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ))
  						    	{
- 						    		out[i].out_state = STATE_OUT_OFF;
+ 						    		out[i].out_state = STATE_OUT_ON_PROCESS;
  						    	}
-
  						    	break;
  							case STATE_OUT_OFF: //Состония входа - выключен
  								if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
@@ -495,7 +493,7 @@ static void vDataConvertToFloat( void)
  								if  ( out[i].restart_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
  								{
  									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
- 									out[i].restart_timer = 0U;
+ 									out[i].error_flag  = ERROR_OFF;
  								}
  								else
  								{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
@@ -515,7 +513,6 @@ static void vDataConvertToFloat( void)
  										out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
  									}
  									break;
-
  							case STATE_OUT_RESTART_PROCESS:
  								out[i].restart_timer++;
  								if  ( out[i].restart_timer >= out[i].restart_config_timer )
@@ -559,11 +556,11 @@ static void vDataConvertToFloat( void)
  void vADCTask(void * argument)
  {
    /* USER CODE BEGIN vADCTask */
-   pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
-   xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS(1 );
    xLastWakeTime = xTaskGetTickCount();
+   //vOutInit();
    /* Infinite loop */
    for(;;)
    {
