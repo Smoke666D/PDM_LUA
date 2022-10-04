@@ -122,7 +122,7 @@ static int iDinConfig(lua_State *L )
 					lf = DEF_L_FRONT;
 					hf = DEF_H_FRONT;
 			}
-			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,hf,lf);
+			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,DIN_CONGIG,hf,lf);
 		}
 		return ( 0U );
 }

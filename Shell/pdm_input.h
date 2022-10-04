@@ -26,6 +26,11 @@
 #define DEF_L_FRONT 10U
 
 
+typedef enum {
+	DIN_CONGIG,
+	RMP_OCNFIG
+} PDM_INPUT_TYPE;
+
 typedef struct {
 	uint32_t Pin;
 	GPIO_TypeDef * GPIOx;
@@ -64,13 +69,14 @@ uint8_t 	  ucValue;
 uint32_t 	  ulLowCounter;
 uint32_t 	  ulHighCounter;
 uint8_t 	  ucTempValue;
+PDM_INPUT_TYPE eInputType;
 LOGIC_STATE   eState;
 } DinConfig_t;
 
 
 void vDinInit( void );
 void vDinTask(void *argument);
-PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, uint32_t ulHFront, uint32_t ulLFront);
+PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
 void vSystemDinTimer(void);
 uint8_t ucDinGet(PDM_INPUT_NAME channel);
 #endif /* PDM_INPUT_H_ */

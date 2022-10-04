@@ -65,7 +65,7 @@ void vSystemDinTimer(void)
 /*
  *
  */
-PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, uint32_t ulHFront, uint32_t ulLFront)
+PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType, uint32_t ulHFront, uint32_t ulLFront)
 {
 	PDM_INPUT_CONFIG_ERROR eRes = WRONG_CHANNEL_NUMBER;
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -80,6 +80,7 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, uint32
 			xDinConfig[ucCh].ucValue = (eLogicState == NEGATIVE_STATE) ?1U : 0U;
 			xDinConfig[ucCh].ucTempValue = 0U;
 			xDinConfig[ucCh].eState = eLogicState;
+			xDinConfig[ucCh].eInputType =inType;
 			eRes = CONFIG_OK;
 	}
 	return ( eRes );
@@ -89,17 +90,17 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, uint32
  */
 void vDinInit( void )
 {
-	eDinConfig(INPUT_1,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
-	eDinConfig(INPUT_2,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
-	eDinConfig(INPUT_3,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
-	eDinConfig(INPUT_4,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
-	eDinConfig(INPUT_5,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
-	eDinConfig(INPUT_6,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
-	eDinConfig(INPUT_7,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT );
-	eDinConfig(INPUT_8,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
-	eDinConfig(INPUT_9,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
-	eDinConfig(INPUT_10,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
-	eDinConfig(INPUT_11,POSITIVE_STATE,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_1,POSITIVE_STATE, DIN_CONGIG, DEF_H_FRONT,DEF_L_FRONT );
+	eDinConfig(INPUT_2,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );
+	eDinConfig(INPUT_3,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );
+	eDinConfig(INPUT_4,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_5,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );
+	eDinConfig(INPUT_6,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_7,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );
+	eDinConfig(INPUT_8,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_9,POSITIVE_STATE,RMP_OCNFIG,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_10,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT  );
+	eDinConfig(INPUT_11,POSITIVE_STATE,DIN_CONGIG, DEF_H_FRONT,DEF_L_FRONT  );
 	return;
 }
 /*
@@ -116,25 +117,31 @@ void vDinTask(void *argument)
 		ucTicTime = usDinGetTimer();
 		for (uint8_t i = 0U; i <DIN_CHANNEL; i++)
 		{
-			    ulDinState = HAL_GPIO_ReadPin(xDinPortConfig[i].GPIOx,xDinPortConfig[i].Pin);
-
-				if (ulDinState != xDinConfig[i].ucTempValue )
+				if ( xDinConfig[i].eInputType == DIN_CONGIG )
 				{
-					xDinConfig[i].ulCounter +=  ucTicTime ;
-					if (xDinConfig[i].ulCounter > (xDinConfig[i].ucTempValue == GPIO_PIN_RESET) ? xDinConfig[i].ulHighCounter : xDinConfig[i].ulLowCounter )
+					ulDinState = HAL_GPIO_ReadPin(xDinPortConfig[i].GPIOx,xDinPortConfig[i].Pin);
+					if (ulDinState != xDinConfig[i].ucTempValue )
 					{
-						if (ulDinState == GPIO_PIN_SET)
-							xDinConfig[i].ucValue = (xDinConfig[i].eState == NEGATIVE_STATE) ?0U:1U;
-						else
-							xDinConfig[i].ucValue = (xDinConfig[i].eState == NEGATIVE_STATE) ?1U:0U;
-						xDinConfig[i].ucTempValue = ulDinState ;
+						xDinConfig[i].ulCounter +=  ucTicTime ;
+						if (xDinConfig[i].ulCounter > (xDinConfig[i].ucTempValue == GPIO_PIN_RESET) ? xDinConfig[i].ulHighCounter : xDinConfig[i].ulLowCounter )
+						{
+							if (ulDinState == GPIO_PIN_SET)
+								xDinConfig[i].ucValue = (xDinConfig[i].eState == NEGATIVE_STATE) ?0U:1U;
+							else
+								xDinConfig[i].ucValue = (xDinConfig[i].eState == NEGATIVE_STATE) ?1U:0U;
+							xDinConfig[i].ucTempValue = ulDinState ;
+						}
 					}
-
+					else
+					{
+						xDinConfig[i].ulCounter = 0U;
+					}
 				}
 				else
 				{
-					xDinConfig[i].ulCounter = 0U;
+					xDinConfig[i].ucValue = 1U;
 				}
+
 		}
 	}
 	return;
