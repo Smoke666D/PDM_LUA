@@ -17,7 +17,7 @@ static uint8_t  ucOverload						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM) = NULL;
-
+extern TIM_HandleTypeDef htim10;
 const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											    {Din2_Pin,GPIOE},
 											    {Din3_Pin,GPIOE},
@@ -62,6 +62,14 @@ void vSystemDinTimer(void)
 	}
 	return;
 }
+
+
+void vGetCCData(TIM_HandleTypeDef *htim)
+{
+	uint16_t apc = HAL_TIM_ReadCapturedValue(&htim10,TIM_CHANNEL_1);
+	__HAL_TIM_SET_COUNTER(&htim10, 0x0000);
+	//__HAL_TIM_CLEAR_FLAG(&htim10,TIM_FLAG_CC1);
+}
 /*
  *
  */
@@ -71,17 +79,20 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	if ( ucCh < DIN_CHANNEL)
 	{
+		xDinConfig[ucCh].eInputType =inType;
+		if ( inType == DIN_CONGIG )
+		{
 			GPIO_InitStruct.Pin = xDinPortConfig[ucCh].Pin;
 			GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 			HAL_GPIO_Init(xDinPortConfig[ucCh].GPIOx,&GPIO_InitStruct);
-			xDinConfig[ucCh].ulHighCounter = ulHFront;
-			xDinConfig[ucCh].ulLowCounter = ulLFront;
-			xDinConfig[ucCh].ucValue = (eLogicState == NEGATIVE_STATE) ?1U : 0U;
-			xDinConfig[ucCh].ucTempValue = 0U;
-			xDinConfig[ucCh].eState = eLogicState;
-			xDinConfig[ucCh].eInputType =inType;
-			eRes = CONFIG_OK;
+		}
+		xDinConfig[ucCh].ulHighCounter = ulHFront;
+		xDinConfig[ucCh].ulLowCounter = ulLFront;
+		xDinConfig[ucCh].ucValue = (eLogicState == NEGATIVE_STATE) ?1U : 0U;
+		xDinConfig[ucCh].ucTempValue = 0U;
+		xDinConfig[ucCh].eState = eLogicState;
+		eRes = CONFIG_OK;
 	}
 	return ( eRes );
 }
@@ -110,6 +121,7 @@ void vDinTask(void *argument)
 {
 	uint32_t ulDinState;
 	pxPDMstatusEvent = osLUAetPDMstatusHandle();
+	HAL_TIM_IC_Start_IT(&htim10,TIM_CHANNEL_1);
 	while(1)
 	{
 		vTaskDelay(1);

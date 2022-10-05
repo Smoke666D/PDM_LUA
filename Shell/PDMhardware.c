@@ -72,6 +72,7 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 		out[out_name].out_state		  =	STATE_OUT_OFF;
 		vOutHWDisabale( out_name);
 		out[out_name].error_flag  = ERROR_OFF;
+		out[out_name].current = 0.0;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
@@ -274,7 +275,7 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 void vOutInit( void )
 {
-	pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+
     xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
@@ -458,6 +459,7 @@ static void vDataConvertToFloat( void)
     		 }
     		 else
     		 {
+
     			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     		 }
 
@@ -556,7 +558,7 @@ static void vDataConvertToFloat( void)
  void vADCTask(void * argument)
  {
    /* USER CODE BEGIN vADCTask */
-
+   pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS(1 );
    xLastWakeTime = xTaskGetTickCount();

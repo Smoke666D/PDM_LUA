@@ -73,7 +73,7 @@ PDM_INPUT_TYPE eInputType;
 LOGIC_STATE   eState;
 } DinConfig_t;
 
-
+void vGetCCData(TIM_HandleTypeDef *htim);
 void vDinInit( void );
 void vDinTask(void *argument);
 PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
