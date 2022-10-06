@@ -67,11 +67,11 @@ void vSystemDinTimer(void)
 	return;
 }
 
-uint16_t fGetRPM1()
+uint16_t uGetRPM1()
 {
 	return (uint16_t)( 1.0/( (float)cc_data * 0.0001) )* 60;
 }
-uint16_t fGetRPM2()
+uint16_t uGetRPM2()
 {
 	return (uint16_t)( 1.0/(float)( cc_data  * 0.0001) *60);
 }

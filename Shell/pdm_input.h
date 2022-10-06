@@ -74,8 +74,8 @@ LOGIC_STATE   eState;
 } DinConfig_t;
 
 
-uint16_t fGetRPM1();
-uint16_t fGetRPM2();
+uint16_t uGetRPM1();
+uint16_t uGetRPM2();
 void vGetCCData(TIM_HandleTypeDef *htim);
 void vDinInit( void );
 void vDinTask(void *argument);
