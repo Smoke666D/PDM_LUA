@@ -27,15 +27,16 @@ typedef struct __packed
   uint32_t    time;
   LUA_STATE_t state;
   uint8_t     counter;
-} LUA_TELEMETRY;
+} LUA_TELEMETRY; /* 6 */
 typedef struct __packed
 {
-  float          battery;            /* 0 */
-  float          voltage[AIN_COUNT]; /* 4 */
-  uint8_t        din[DIN_CHANNEL];   /* 20 */
-  DOUT_TELEMETRY douts[OUT_COUNT];   /* 31 */
-  LUA_TELEMETRY  lua;                /* 231 */
-} PDM_TELEMETRY; /* 237 */
+  float          battery;                  /* 0 */
+  float          voltage[AIN_COUNT];       /* 4 */
+  uint8_t        din[DIN_CHANNEL];         /* 20 */
+  DOUT_TELEMETRY douts[OUT_COUNT];         /* 31 */
+  LUA_TELEMETRY  lua;                      /* 231 */
+  uint16_t       velocity[VELOCITY_COUNT]; /* 236 */
+} PDM_TELEMETRY; /* 241 */
 typedef struct __packed
 {
   uint32_t uid[UID_32_LENGTH];

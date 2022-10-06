@@ -12,6 +12,7 @@
 #include "stm32f4xx_hal.h"
 #include "luatask.h"
 #include "lua.h"
+#include "pdm_input.h"
 
 static PDM_TELEMETRY telemetry  = { 0U };
 static PDM_DATA      systemData = { 0U };
@@ -34,7 +35,7 @@ void vDATAinit ( void )
   systemData.lua.major        = atoi( LUA_VERSION_MAJOR );
   systemData.lua.minor        = atoi( LUA_VERSION_MINOR );
   systemData.lua.patch        = atoi( LUA_VERSION_RELEASE );
-  telemetry.battery       = 0.0f;
+  telemetry.battery           = 0.0f;
   return;
 }
 
@@ -55,9 +56,11 @@ void vDATAupdate ( void )
     telemetry.douts[i].state   = eOutGetState( i );
     telemetry.douts[i].error   = eOutGetError( i );
   }
-  telemetry.lua.counter = ucLUAgetErrorCount();
-  telemetry.lua.time    = ulLUAgetWorkCicle();
-  telemetry.lua.state   = eLUAgetSTATE();
+  telemetry.lua.counter  = ucLUAgetErrorCount();
+  telemetry.lua.time     = ulLUAgetWorkCicle();
+  telemetry.lua.state    = eLUAgetSTATE();
+  telemetry.velocity[0U] = uGetRPM1();
+  telemetry.velocity[1U] = uGetRPM2();
   return;
 }
 

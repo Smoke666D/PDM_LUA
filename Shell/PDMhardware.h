@@ -14,6 +14,7 @@
 #define AIN_COUNT			4U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
+#define VELOCITY_COUNT      2U     // Количество каналов скорости
 #define DEFAULT_HPOWER      59.0  // Номинальный ток по умолчания для мощных каналов
 #define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
