@@ -98,13 +98,15 @@ void vLUArestartPDM()
 /*
  * Устанавливаем конфигурацию дискрнтого входа
  */
-#define FULL_DIN_CONFIG_ARG  4U
+#define DIN_CONFIG_ARG  4U
 #define MIN_DIN_CONFIG_ARG   2U
+
 
 static int iDinConfig(lua_State *L )
 {
 		uint32_t lf;
 		uint32_t hf;
+		PDM_INPUT_TYPE eDinType = DIN_CONFIG;
 		uint8_t in_number = 0;
 		int arg_number = lua_gettop(L);
 		LOGIC_STATE state;
@@ -112,17 +114,23 @@ static int iDinConfig(lua_State *L )
 		{
 			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
 			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-			if (arg_number == FULL_DIN_CONFIG_ARG )
+			switch (arg_number)
 			{
-					lf = lua_tointeger(L,-arg_number-2);
-					hf = lua_tointeger(L,-arg_number-3);
-			}
-			else
-			{
+				case MIN_DIN_CONFIG_ARG:
 					lf = DEF_L_FRONT;
 					hf = DEF_H_FRONT;
+					if (state == 2)
+					{
+						eDinType = RPM_CONFIG;
+						state = 1;
+					}
+					break;
+				case DIN_CONFIG_ARG:
+					lf = lua_tointeger(L,-arg_number-2);
+					hf = lua_tointeger(L,-arg_number-3);
+					break;
 			}
-			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,DIN_CONGIG,hf,lf);
+			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,eDinType,hf,lf);
 		}
 		return ( 0U );
 }
@@ -508,8 +516,10 @@ void vLuaTask(void *argument)
 	   	   {
         	   lua_pushnumber( L1, fOutGetCurrent(i));
 	   	   }
+           lua_pushnumber( L1, uGetRPM1());
+           lua_pushnumber( L1, uGetRPM2());
            int temp;
-	   	   switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT),&temp) )
+	   	   switch (lua_resume(L1,L,(1+DIN_CHANNEL+OUT_COUNT+2),&temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)

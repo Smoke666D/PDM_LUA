@@ -236,7 +236,10 @@ void CAN1_SCE_IRQHandler(void)
 void TIM1_BRK_TIM9_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
-
+  if (__HAL_TIM_GET_FLAG(&htim9, TIM_FLAG_CC1 ) != RESET)
+  {
+	 vGetCCData(&htim9,TIM_CHANNEL_1);
+  }
   /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   HAL_TIM_IRQHandler(&htim9);
@@ -253,7 +256,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
    if (__HAL_TIM_GET_FLAG(&htim10, TIM_FLAG_CC1 ) != RESET)
    {
-	 vGetCCData(&htim10);
+	 vGetCCData(&htim10,TIM_CHANNEL_1);
    }
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);

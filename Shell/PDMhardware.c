@@ -159,8 +159,6 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	}
 	return ( res );
 }
-
-
 /*
  * Функция конфигурации режима рестарта
  */
@@ -178,7 +176,6 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	}
 	return ( res );
 }
-
 /*
  * Функция конфигурации режима PWM
  */
@@ -214,7 +211,6 @@ void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
    out[out_name].out_line_state = 1;
    return;
 }
-
 /*
  *
  */
@@ -275,7 +271,6 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 void vOutInit( void )
 {
-
     xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin

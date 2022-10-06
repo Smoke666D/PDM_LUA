@@ -27,8 +27,8 @@
 
 
 typedef enum {
-	DIN_CONGIG,
-	RMP_OCNFIG
+	DIN_CONFIG,
+	RPM_CONFIG
 } PDM_INPUT_TYPE;
 
 typedef struct {
@@ -76,7 +76,8 @@ LOGIC_STATE   eState;
 
 uint16_t uGetRPM1();
 uint16_t uGetRPM2();
-void vGetCCData(TIM_HandleTypeDef *htim);
+void vGetCCData(TIM_HandleTypeDef *htim, uint32_t Channel);
+void vGetCCData1(TIM_HandleTypeDef *htim, uint32_t Channel);
 void vDinInit( void );
 void vDinTask(void *argument);
 PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
