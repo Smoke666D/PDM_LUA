@@ -15,8 +15,12 @@ static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint8_t  ucOverload						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint8_t  cc_counter						__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint16_t cc_data							__SECTION(RAM_SECTION_CCMRAM);
+static uint32_t CC_Data[3]						__SECTION(RAM_SECTION_CCMRAM);
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM) = NULL;
+#define CC_MAX  3
 extern TIM_HandleTypeDef htim10;
 const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											    {Din2_Pin,GPIOE},
@@ -63,11 +67,32 @@ void vSystemDinTimer(void)
 	return;
 }
 
+uint16_t fGetRPM1()
+{
+	return (uint16_t)( 1.0/( (float)cc_data * 0.0001) )* 60;
+}
+uint16_t fGetRPM2()
+{
+	return (uint16_t)( 1.0/(float)( cc_data  * 0.0001) *60);
+}
+
+
 
 void vGetCCData(TIM_HandleTypeDef *htim)
 {
-	uint16_t apc = HAL_TIM_ReadCapturedValue(&htim10,TIM_CHANNEL_1);
+	CC_Data[cc_counter] = HAL_TIM_ReadCapturedValue(&htim10,TIM_CHANNEL_1);
 	__HAL_TIM_SET_COUNTER(&htim10, 0x0000);
+	cc_counter++;
+	if (cc_counter == CC_MAX)
+	{
+		unsigned long ulTemp = 0;
+		cc_counter = 0;
+		for (uint8_t i=0; i < CC_MAX; i++)
+		{
+			ulTemp = ulTemp + CC_Data[i];
+		}
+		cc_data = ulTemp/CC_MAX;
+	}
 	//__HAL_TIM_CLEAR_FLAG(&htim10,TIM_FLAG_CC1);
 }
 /*
@@ -101,6 +126,7 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
  */
 void vDinInit( void )
 {
+	cc_counter	= 0;
 	eDinConfig(INPUT_1,POSITIVE_STATE, DIN_CONGIG, DEF_H_FRONT,DEF_L_FRONT );
 	eDinConfig(INPUT_2,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );
 	eDinConfig(INPUT_3,POSITIVE_STATE,DIN_CONGIG,DEF_H_FRONT,DEF_L_FRONT );

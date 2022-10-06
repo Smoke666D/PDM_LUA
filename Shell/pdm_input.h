@@ -73,6 +73,9 @@ PDM_INPUT_TYPE eInputType;
 LOGIC_STATE   eState;
 } DinConfig_t;
 
+
+uint16_t fGetRPM1();
+uint16_t fGetRPM2();
 void vGetCCData(TIM_HandleTypeDef *htim);
 void vDinInit( void );
 void vDinTask(void *argument);
