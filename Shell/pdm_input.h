@@ -24,7 +24,7 @@
 #define MAX_VAL 65000U
 #define DEF_H_FRONT 10U
 #define DEF_L_FRONT 10U
-
+#define CC_MAX  6
 
 typedef enum {
 	DIN_CONFIG,
@@ -74,10 +74,18 @@ LOGIC_STATE   eState;
 } DinConfig_t;
 
 
+typedef struct RPMConfigDef_t
+{
+ uint8_t ucValid;
+ uint16_t usValidCounter;
+ uint32_t uiData;
+ uint32_t uiRawData[CC_MAX ];
+ uint8_t ucCounter;
+} RPMConfig_t;
+
 uint16_t uGetRPM1();
 uint16_t uGetRPM2();
-void vGetCCData(TIM_HandleTypeDef *htim, uint32_t Channel);
-void vGetCCData1(TIM_HandleTypeDef *htim, uint32_t Channel);
+void vGetCCData(uint8_t TimInd);
 void vDinInit( void );
 void vDinTask(void *argument);
 PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);

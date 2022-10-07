@@ -42,8 +42,8 @@
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
 #define ADC_FRAME_SIZE     3U
-#define R2  10000
-#define R1  140000
+#define R1  10000.0
+#define R2  3000.0
 
 #define K   ( 3.3 / 0xFFF )
 #define RR  330.0
@@ -68,7 +68,8 @@
 #define ERROR_CURRENT  (uint16_t)(4000U)
 
 
-#define COOF  R1 / ( R1 + R2 ) * K
+#define COOF  ( ( R1 + R2 ) /R2) * K
+
 #define STATE_OUT_CONFIG		  0x20
 
 

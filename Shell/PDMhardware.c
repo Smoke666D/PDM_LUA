@@ -399,7 +399,7 @@ static void vDataConvertToFloat( void)
 	 //Преобразование во флоат данных AIN
 	 for ( i = 0; i < AIN_COUNT; i++ )
 	 {
-		 mfVData[ i ] = muRawVData[ i ] * COOF;
+		 mfVData[ i ] = (float) muRawVData[ i ] ;
 	 }
 	return;
 }
@@ -580,7 +580,7 @@ static void vDataConvertToFloat( void)
  */
  float fAinGetState(AIN_NAME_TYPE channel)
  {
-	 return  ( (channel < AIN_COUNT) ? mfVData[channel] : 0U ) ;
+	 return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
  }
  /*
   * Дискретные входа

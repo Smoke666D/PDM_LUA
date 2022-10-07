@@ -15,15 +15,12 @@ static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint8_t  ucOverload						__SECTION(RAM_SECTION_CCMRAM) = 0;
 static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint8_t  cc_counter						__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint8_t  cc_counter1						__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint32_t cc_data							__SECTION(RAM_SECTION_CCMRAM);
-static uint32_t cc_data1					    __SECTION(RAM_SECTION_CCMRAM);
-static uint32_t CC_Data[3]						__SECTION(RAM_SECTION_CCMRAM);
-static uint32_t CC_Data1[3]						__SECTION(RAM_SECTION_CCMRAM);
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM) = NULL;
-#define CC_MAX  3
+static RPMConfig_t eRPM[2] 						__SECTION(RAM_SECTION_CCMRAM);
+
+
+extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											    {Din2_Pin,GPIOE},
@@ -70,62 +67,87 @@ void vSystemDinTimer(void)
 	return;
 }
 
-uint16_t temp111 = 0;
 uint16_t uGetRPM1()
 {
-	temp111 = (xDinConfig[INPUT_9].eInputType==RPM_CONFIG) ? (uint16_t)(( 1.0/( (float)cc_data * 0.0002) )* 60) : 0U;
-	return temp111;
+	uint16_t usTemp = 0;
+	if (eRPM[0].uiData != 0)
+	{
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0002) )* 60);
+	}
+	else
+		usTemp = 0;
+	return (xDinConfig[INPUT_9].eInputType==RPM_CONFIG) ? usTemp : 0U;
 
-			;
 }
 uint16_t uGetRPM2()
 {
-	return (
-			(xDinConfig[INPUT_6].eInputType==RPM_CONFIG)
-			? (uint16_t)( 1.0/( (float)cc_data * 0.0001) )* 60
-			: 0U
-	);
+	uint16_t usTemp = 0;
+	if (eRPM[1].uiData != 0)
+	{
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002) )* 60);
+	}
+	else
+		usTemp = 0;
+	return ( (xDinConfig[INPUT_6].eInputType==RPM_CONFIG) ? usTemp : 0U );
 }
 
 
 /*
  *
  */
-void vGetCCData(TIM_HandleTypeDef *htim, uint32_t Channel)
+static void vCheckRPM( uint8_t index)
 {
-	CC_Data[cc_counter] = HAL_TIM_ReadCapturedValue(htim,Channel);
-	__HAL_TIM_SET_COUNTER(htim, 0x0000);
-	cc_counter++;
-	if (cc_counter == CC_MAX)
+	eRPM[index].usValidCounter++;
+	if (eRPM[index].usValidCounter ==1000)
 	{
-		unsigned long ulTemp = 0;
-		cc_counter = 0;
-		for (uint8_t i=0; i < CC_MAX; i++)
+		eRPM[index].usValidCounter = 0;
+		if (eRPM[index].ucValid)
 		{
-			ulTemp = ulTemp + CC_Data[i];
+			eRPM[index].ucValid = 0;
 		}
-		cc_data = ulTemp/CC_MAX;
+		else
+		{
+			eRPM[index].uiData	= 0;
+		}
 	}
+	return;
 }
 /*
  *
  */
-void vGetCCData1(TIM_HandleTypeDef *htim, uint32_t Channel)
+void vGetCCData(uint8_t TimInd)
 {
-	CC_Data1[cc_counter1] = HAL_TIM_ReadCapturedValue(&htim,Channel);
-	__HAL_TIM_SET_COUNTER(htim, 0x0000);
-	cc_counter1++;
-	if (cc_counter1 == CC_MAX)
+	uint8_t ucTimIndex;
+	switch (TimInd)
+	{
+		case 0:
+			ucTimIndex = 0;
+			eRPM[ucTimIndex].uiRawData[eRPM[ucTimIndex].ucCounter] = HAL_TIM_ReadCapturedValue(&htim10,TIM_CHANNEL_1);
+			__HAL_TIM_SET_COUNTER(&htim10, 0x0000);
+			break;
+		case 1:
+			ucTimIndex = 1;
+			eRPM[ucTimIndex].uiRawData[eRPM[ucTimIndex].ucCounter] = HAL_TIM_ReadCapturedValue(&htim9,TIM_CHANNEL_1);
+			__HAL_TIM_SET_COUNTER(&htim9, 0x0000);
+			break;
+		default:
+			return;
+	}
+	eRPM[ucTimIndex].ucCounter ++;
+	eRPM[ucTimIndex].ucValid = 1;
+	if (eRPM[ucTimIndex].ucCounter == CC_MAX)
 	{
 		unsigned long ulTemp = 0;
-		cc_counter1 = 0;
+		eRPM[ucTimIndex].ucCounter = 0;
 		for (uint8_t i=0; i < CC_MAX; i++)
 		{
-			ulTemp = ulTemp + CC_Data1[i];
+			ulTemp += eRPM[ucTimIndex].uiRawData[i];
 		}
-		cc_data1 = ulTemp/CC_MAX;
+		eRPM[ucTimIndex].uiData = (ulTemp/CC_MAX)*2;
 	}
+	return;
 }
+
 /*
  *
  */
@@ -141,6 +163,10 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
 			switch (ucCh)
 			{
 				case INPUT_9:
+					eRPM[0].ucCounter =0;
+					eRPM[0].uiData = 0;
+					eRPM[0].usValidCounter = 0;
+					eRPM[0].ucValid = 0;
 					__HAL_RCC_TIM10_CLK_ENABLE();
   				    __HAL_RCC_GPIOB_CLK_ENABLE();
 					GPIO_InitStruct.Pin = Din9_Pin;
@@ -155,11 +181,12 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
 					HAL_TIM_IC_Start_IT(&htim10,TIM_CHANNEL_1);
 					break;
 				case INPUT_6:
+					eRPM[1].ucCounter =0;
+					eRPM[1].uiData = 0;
+					eRPM[1].usValidCounter = 0;
+					eRPM[1].ucValid = 0;
    				    __HAL_RCC_TIM9_CLK_ENABLE();
 					__HAL_RCC_GPIOE_CLK_ENABLE();
-					/**TIM9 GPIO Configuration
-					PE5     ------> TIM9_CH1
-					*/
 					GPIO_InitStruct.Pin = Din6_Pin;
 					GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 					GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -169,6 +196,7 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
 					/* TIM9 interrupt Init */
 					HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 5, 0);
 					HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+					HAL_TIM_IC_Start_IT(&htim9,TIM_CHANNEL_1);
 					break;
 				default:
 					xDinConfig[ucCh].eInputType = DIN_CONFIG;
@@ -196,10 +224,6 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_IN
  */
 void vDinInit( void )
 {
-	cc_counter	= 0;
-	cc_data = 0;
-	cc_counter1	= 0;
-	cc_data1 = 0;
 	eDinConfig(INPUT_1,POSITIVE_STATE, DIN_CONFIG, DEF_H_FRONT,DEF_L_FRONT );
 	eDinConfig(INPUT_2,POSITIVE_STATE,DIN_CONFIG,DEF_H_FRONT,DEF_L_FRONT );
 	eDinConfig(INPUT_3,POSITIVE_STATE,DIN_CONFIG,DEF_H_FRONT,DEF_L_FRONT );
@@ -216,6 +240,7 @@ void vDinInit( void )
 /*
  *
  */
+
 void vDinTask(void *argument)
 {
 	uint32_t ulDinState;
@@ -223,6 +248,7 @@ void vDinTask(void *argument)
 	while(1)
 	{
 		vTaskDelay(1);
+
 		xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 		ucTicTime = usDinGetTimer();
 		for (uint8_t i = 0U; i <DIN_CHANNEL; i++)
@@ -249,9 +275,19 @@ void vDinTask(void *argument)
 				}
 				else
 				{
+					switch (i)
+					{
+						case INPUT_9:
+							vCheckRPM(0);
+						break;
+						case INPUT_6:
+							vCheckRPM(1);
+							break;
+						default:
+							break;
+					}
 					xDinConfig[i].ucValue = 1U;
 				}
-
 		}
 	}
 	return;
