@@ -254,6 +254,13 @@ USB_STATUS eUSBupdateTelemetry ( const USB_REPORT* report )
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
+USB_STATUS eUSBrestartLua ( const USB_REPORT* report )
+{
+  USB_STATUS res = USB_STATUS_DONE;
+  vLUArestartPDM();
+  return res;
+}
+/*---------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------*/
 void vUSBsendReport ( USB_REPORT* report )
@@ -396,6 +403,9 @@ void vUSBtask ( void *argument )
           break;
         case USB_REPORT_CMD_END_WRITING:
           vUSBget( &report, eUSBendWriting );
+          break;
+        case USB_REPORT_CMD_RESTART_LUA:
+          vUSBget( &report, eUSBrestartLua );
           break;
         /*----------------------------------------*/
         default:
