@@ -17,7 +17,7 @@
 #include "pdm_input.h"
 #include "flash.h"
 #include "string.h"
-
+#include "CO_driver_ST32F4xx.h"
 
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -78,6 +78,7 @@ void vLUArunPDM()
 {
 	xEventGroupSetBits(xPDMstatusEvent,RUN_STATE);
 	state = LUA_RUN;
+	return;
 }
 /*
  *
@@ -86,6 +87,7 @@ void vLUAstopPDM()
 {
 	xEventGroupClearBits(xPDMstatusEvent,RUN_STATE);
 	state = LUA_STOP;
+	return;
 }
 /*
  *
@@ -93,46 +95,52 @@ void vLUAstopPDM()
 void vLUArestartPDM()
 {
 	state = LUA_RESTART;
+	return;
 }
 
+#define CAN_CONFIG_ARG  	2U
 /*
- * Устанавливаем конфигурацию дискрнтого входа
+ *  Setting Can parameter API function
+ */
+static int iCanSetConfig(lua_State *L)
+{
+	int arg_number = lua_gettop(L);
+	if (arg_number == CAN_CONFIG_ARG)
+	{
+		uint8_t ucCanNumber =(uint8_t) lua_tointeger(L,-arg_number); //First argument it's channel number
+		uint16_t usBaudRate =(uint16_t)lua_tointeger(L,-arg_number -1 ); //Seconds argument it's baud rate
+		CO_CANmodule_init( usBaudRate );
+	}
+	return ( NO_RESULT );
+}
+/*
+ * Setting discrete input configuration API function
  */
 #define DIN_CONFIG_ARG  4U
 #define MIN_DIN_CONFIG_ARG   2U
 
-
 static int iDinConfig(lua_State *L )
 {
-		uint32_t lf;
-		uint32_t hf;
+	int arg_number = lua_gettop(L);
+	if (arg_number >= MIN_DIN_CONFIG_ARG )  /*Check function argument count*/
+	{
+		uint32_t lf 			= DEF_L_FRONT;
+		uint32_t hf 			= DEF_H_FRONT;
 		PDM_INPUT_TYPE eDinType = DIN_CONFIG;
-		uint8_t in_number = 0;
-		int arg_number = lua_gettop(L);
-		LOGIC_STATE state;
-		if (arg_number >= MIN_DIN_CONFIG_ARG )  /*Проверяем, что при вызове нам передали нужное число аргументов*/
+		uint8_t in_number 		=(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
+		uint8_t state	  		=(uint8_t)  lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
+		if ( ( arg_number == MIN_DIN_CONFIG_ARG )&& ( state == RPM_STATE ) )
 		{
-			in_number =(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
-			state = lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-			switch (arg_number)
-			{
-				case MIN_DIN_CONFIG_ARG:
-					lf = DEF_L_FRONT;
-					hf = DEF_H_FRONT;
-					if (state == 2)
-					{
-						eDinType = RPM_CONFIG;
-						state = 1;
-					}
-					break;
-				case DIN_CONFIG_ARG:
-					lf = lua_tointeger(L,-arg_number-2);
-					hf = lua_tointeger(L,-arg_number-3);
-					break;
-			}
-			eDinConfig(in_number, (state == 1)?POSITIVE_STATE:NEGATIVE_STATE ,eDinType,hf,lf);
+			eDinType = RPM_CONFIG;
 		}
-		return ( 0U );
+		if ( arg_number == DIN_CONFIG_ARG )
+		{
+			lf = ( uint32_t) lua_tointeger(L,-arg_number-2);
+			hf = ( uint32_t) lua_tointeger(L,-arg_number-3);
+		}
+		eDinConfig(in_number, (state == 0)?NEGATIVE_STATE:POSITIVE_STATE,eDinType,hf,lf);
+	}
+	return ( NO_RESULT );
 }
 
 /*
@@ -491,6 +499,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"CheckAnswer", iCanCheckData);
 	   	   lua_register(L1,"GetRequest",iCanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",iCanGetResivedData);
+	   	   lua_register(L1,"ConfigCan",iCanSetConfig);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

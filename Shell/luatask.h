@@ -37,6 +37,11 @@
 #define STOPR_STATE  0x02
 #define RESTART_STATE  0x04
 
+
+#define RPM_STATE   0x02
+
+#define NO_RESULT  0U
+
 typedef enum {
 	LUA_INIT,
 	LUA_RUN,

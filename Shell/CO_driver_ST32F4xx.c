@@ -67,8 +67,6 @@ CO_ReturnError_t CO_CANmodule_init(
         uint16_t                CANbitRate)
 {
     //Конфигурация драйвера
-
-    /* Configure CAN module registers */
     pPDMCan->Init.Mode = CAN_MODE_NORMAL;
     pPDMCan->Init.TimeTriggeredMode = DISABLE;
     pPDMCan->Init.AutoBusOff = DISABLE;
@@ -78,9 +76,8 @@ CO_ReturnError_t CO_CANmodule_init(
     pPDMCan->Init.TransmitFifoPriority = DISABLE;
 
     /* Configure CAN timing */
-
-        switch (CANbitRate)
-        {
+      switch (CANbitRate)
+      {
             case 1000:  pPDMCan->Init.Prescaler = 2;
                    break;
             case 500:  pPDMCan->Init.Prescaler = 4;
@@ -98,34 +95,29 @@ CO_ReturnError_t CO_CANmodule_init(
                  break;
             case 10:  pPDMCan->Init.Prescaler = 600;
                  break;
-        }
-        pPDMCan->Init.SyncJumpWidth = CAN_SJW_1TQ;
-        pPDMCan->Init.TimeSeg1 = CAN_BS1_15TQ;
-        pPDMCan->Init.TimeSeg2 = CAN_BS2_5TQ;
+      }
+      pPDMCan->Init.SyncJumpWidth = CAN_SJW_1TQ;
+      pPDMCan->Init.TimeSeg1 = CAN_BS1_15TQ;
+      pPDMCan->Init.TimeSeg2 = CAN_BS2_5TQ;
 
+     if (HAL_CAN_Init(pPDMCan) != HAL_OK)
+     {
+        Error_Handler();
+     }
 
-
-        if (HAL_CAN_Init(pPDMCan) != HAL_OK)
-        {
-            Error_Handler();
-        }
-
-        if (HAL_CAN_ActivateNotification(pPDMCan,
+     if (HAL_CAN_ActivateNotification(pPDMCan,
                   0
-             //     | CAN_IT_TX_MAILBOX_EMPTY
 				  | CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL | CAN_IT_RX_FIFO0_OVERRUN
 				  | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL | CAN_IT_RX_FIFO1_OVERRUN
-				  ) != HAL_OK) {
-              return CO_ERROR_ILLEGAL_ARGUMENT;
-          }
-     //   HAL_NVIC_SetPriority(CAN1_TX_IRQn, 5, 0);
-      //  HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-        HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-        HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-        HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
+		  ) != HAL_OK) {
+         return CO_ERROR_ILLEGAL_ARGUMENT;
+      }
+     HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
+     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+     HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
+     HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+     HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 5, 0);
+     HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
 
     return CO_ERROR_NO;
 }
@@ -238,12 +230,6 @@ void CO_CANmodule_process(CO_CANmodule_t *CANmodule) {
 
 /******************************************************************************/
 
-
-
-
-
-
-
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
 {
 	//CAN_SendMessage();
@@ -256,7 +242,6 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
 {
 	//CAN_SendMessage();
 }
-
 
 static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo)
 {
@@ -277,7 +262,6 @@ static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo)
     }
     return;
 }
-
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
