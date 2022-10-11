@@ -140,11 +140,19 @@ uint8_t getCanFifoFree()
 }
 
 
+
+/*
+ *
+ */
+uint8_t uPDMGetCanReady()
+{
+	return (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan));
+}
+
 /*
  * Функция отправики пакета СAN
  * Поскольку используется апаратный Fifo конртеллера, создание программного буфера не имеет смысла
  */
-
 uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
 {
 	uint8_t res = 0;

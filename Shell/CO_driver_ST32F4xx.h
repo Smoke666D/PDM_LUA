@@ -89,6 +89,7 @@ CO_ReturnError_t CO_CANmodule_init(
 
         uint16_t                CANbitRate);
 
+uint8_t uPDMGetCanReady();
 void CO_CANsetNormalMode();
 void CO_CANmodule_disable();
 uint8_t  co_drv_create_os_objects(void);

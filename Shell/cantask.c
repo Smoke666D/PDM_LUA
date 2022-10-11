@@ -215,7 +215,7 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 	{
 		data_to_send.data[i] = data[i];
 	}
-	xQueueSend(pCanTXHandle, &data_to_send, portMAX_DELAY);
+	xQueueSend(pCanTXHandle, &data_to_send, 1U);
 	return;
 }
 
@@ -241,8 +241,12 @@ void vCanTXTask(void *argument)
 	uint8_t res = 0;
 	while(1)
 	{
-		xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
-		uPDMCanSend(&TXPacket);
+		xQueuePeek( pCanTXHandle, &TXPacket, portMAX_DELAY);
+		if (uPDMGetCanReady() > 0 )
+		{
+			xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
+			uPDMCanSend(&TXPacket);
+		}
 
 	}
 }
