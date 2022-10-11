@@ -299,5 +299,18 @@ uint8_t ucDinGet( PDM_INPUT_NAME eChNum )
 {
 	return ( (eChNum < DIN_CHANNEL) ? xDinConfig[ eChNum ].ucValue: 0U );
 }
+/*
+ *
+ */
+uint32_t uiGetDinMask()
+{
+	uint32_t uiMask = 0;
+	for (uint8_t i =0; i< DIN_CHANNEL;i++)
+	{
+		uiMask<<1;
+		uiMask |= (xDinConfig[ i ].ucValue & 0x01 );
+	}
+	return uiMask;
+}
 
 #endif /* PDM_INPUT_C_ */

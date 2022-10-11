@@ -60,12 +60,16 @@ static osThreadId_t adcTaskHandle         	    __section( TASK_RAM_SECTION ) = N
 static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
 
 static uint8_t serialOutputBuffer[ SERIAL_QUEUE_SIZE * sizeof( UART_MESSAGE ) ] __section( TASK_RAM_SECTION ) = { 0U };
-static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]     __section( TASK_RAM_SECTION ) = { 0U };
-static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]    __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 		__section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t can2TXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]   __section( TASK_RAM_SECTION ) = { 0U };
+static uint8_t can2RXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 	__section( TASK_RAM_SECTION ) = { 0U };
 
 static StaticQueue_t xSERIALqueue __section( TASK_RAM_SECTION ) = { 0U };
 static StaticQueue_t xcanRXqueue __section( TASK_RAM_SECTION ) = { 0U };
 static StaticQueue_t xcanTXqueue __section( TASK_RAM_SECTION ) = { 0U };
+static StaticQueue_t xcan2RXqueue __section( TASK_RAM_SECTION ) = { 0U };
+static StaticQueue_t xcan2TXqueue __section( TASK_RAM_SECTION ) = { 0U };
 /*-------------------------------- Functions ---------------------------------*/
 
 /*----------------------------------------------------------------------------*/

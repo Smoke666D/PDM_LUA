@@ -261,12 +261,16 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
 {
 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].error_flag : 0U );
 }
-
+/*
+ *
+ */
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 {
 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
 }
-
+/*
+ *
+ */
 void vOutEventInit()
 {
 	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
@@ -350,7 +354,6 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 			vHWOutOFF(ucChannel);
 			out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
 			out[ucChannel].error_flag  = error_flag;
-
 		}
 		else
 		if ((out[ucChannel].out_line_state == 0 ) && (out[ ucChannel ].out_state != STATE_OUT_ERROR))
@@ -445,7 +448,6 @@ static void vDataConvertToFloat( void)
   */
  static void vOutControlFSM(void)
  {
-
 	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
@@ -459,10 +461,8 @@ static void vDataConvertToFloat( void)
     		 }
     		 else
     		 {
-
     			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     		 }
-
  			if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
  			{
  						switch (out[i].out_state)
@@ -536,10 +536,8 @@ static void vDataConvertToFloat( void)
  											}
  										}
  									}
-
  								}
  								break;
-
  							default:
  								break;
  						}
@@ -549,7 +547,6 @@ static void vDataConvertToFloat( void)
     	{
     		out[i].out_state = STATE_OUT_OFF;
     	}
-
  	}
  }
  /*
@@ -562,8 +559,6 @@ static void vDataConvertToFloat( void)
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS(1 );
    xLastWakeTime = xTaskGetTickCount();
-   //vOutInit();
-   /* Infinite loop */
    for(;;)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );

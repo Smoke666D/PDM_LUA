@@ -85,6 +85,7 @@ typedef struct RPMConfigDef_t
 
 uint16_t uGetRPM1();
 uint16_t uGetRPM2();
+uint32_t uiGetDinMask();
 void vGetCCData(uint8_t TimInd);
 void vDinInit( void );
 void vDinTask(void *argument);
