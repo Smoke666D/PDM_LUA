@@ -70,6 +70,7 @@ typedef enum
   BUFFER_FULL = 1
 } ERROR_TYPE_t;
 
+char * pcGetLUAError();
 LUA_STATE_t eLUAgetSTATE();
 const char* pcLUAgetErrorString( void );
 uint8_t     ucLUAgetErrorCount ( void );

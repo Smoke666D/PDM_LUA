@@ -28,7 +28,7 @@ static ENABLE_t eMainLoopIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
 
 static EventGroupHandle_t xPDMstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
 
-const char * pcLuaErrorString 				__SECTION(RAM_SECTION_CCMRAM) = NULL;
+char * pcLuaErrorString 				__SECTION(RAM_SECTION_CCMRAM) = NULL;
 int res 									__SECTION(RAM_SECTION_CCMRAM) = 0;
 
 /*
@@ -70,6 +70,13 @@ static void vSafeModeOutState()
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
 {
   return ( &xPDMstatusEvent );
+}
+/*
+ *
+ */
+char * pcGetLUAError()
+{
+	return pcLuaErrorString;
 }
 /*
  *
