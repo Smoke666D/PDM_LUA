@@ -266,12 +266,17 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 {
 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
 }
+
+void vOutEventInit()
+{
+	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+}
 /*
  *
  */
 void vOutInit( void )
 {
-    xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);

@@ -172,6 +172,7 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
+void vOutEventInit();
 void vOutInit( void );
 void vOutHWDisabale(OUT_NAME_TYPE out_name);
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);

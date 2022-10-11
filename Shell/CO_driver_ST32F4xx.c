@@ -153,11 +153,24 @@ uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
 	//CO_LOCK_CAN_SEND(CANmodule);
     if (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan) > 0) {
 
-	        pTXHeader.DLC                = (uint32_t)buffer->DLC;
-	        pTXHeader.ExtId              = 0U;
-	        pTXHeader.IDE                = CAN_ID_STD;
-	        pTXHeader.RTR                = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
-	        pTXHeader.StdId              = buffer->ident & CANID_MASK;
+    		pTXHeader.DLC                = (uint32_t)buffer->DLC;
+    		if ( buffer->ident & CAN_EXT_FLAG)
+    		{
+    			buffer->ident 		&= ~CAN_EXT_FLAG;
+    			pTXHeader.ExtId      =  buffer->ident;
+    			pTXHeader.IDE        = CAN_ID_EXT;
+    			pTXHeader.RTR        = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
+    			pTXHeader.StdId 	 = 0U;
+    		}
+    		else
+    		{
+    			pTXHeader.ExtId              = 0U;
+    	        pTXHeader.IDE                = CAN_ID_STD;
+    	        pTXHeader.RTR                = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
+    	        pTXHeader.StdId              = buffer->ident & CANID_MASK;
+
+    		}
+
 	        pTXHeader.TransmitGlobalTime = DISABLE;
 
 	        /* Now add message to FIFO. Should not fail */

@@ -17,11 +17,15 @@
 
 #define MAILBOXSIZE  14*4
 
+
+#define CAN_EXT_FLAG   0x80000000
+
 /* Transmit message object */
 typedef struct {
     uint32_t ident;
     uint8_t DLC;
     uint8_t data[8];
+
 } CAN_TX_FRAME_TYPE;
 
 typedef struct {

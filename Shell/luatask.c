@@ -284,7 +284,7 @@ int iCanSendPDM( lua_State *L )
 		}
 		vCanInsertTXData(ID, &DATA[0], size);
 	}
-	return (0);
+	return ( NO_RESULT );
 }
 
 
@@ -315,7 +315,7 @@ int iCanSendTable( lua_State *L )
 			}
 		}
 	}
-	return (0U);
+	return (  NO_RESULT );
 }
 /*
  *
@@ -337,7 +337,7 @@ int iCanSendRequest( lua_State *L )
 		}
 		vCanInsertTXData(ID, &DATA[0], size);
 	}
-	return 0;
+	return ( NO_RESULT );
 }
 
 
@@ -360,7 +360,7 @@ int  iOutConfig( lua_State *L )
 		vHWOutOverloadConfig(out_number,power, overload_timer, overload_power);
 		vOutHWEnbale(out_number);
 	}
-	return (0U);
+	return ( NO_RESULT );
 }
 /*
  *
@@ -378,7 +378,7 @@ int  iOutResetConfig( lua_State *L )
 		timer = (uint16_t) lua_tointeger(L,-(arg_number-2));
 		vHWOutResetConfig(out_number, reset_count, timer);
 	}
-	return (0U);
+	return ( NO_RESULT );
 }
 /*
  *
@@ -397,7 +397,7 @@ int  iOutSetPWM( lua_State *L )
 			vOutSetPWM(out_number, ( pwm <= MAX_PWM )? pwm : MAX_PWM);
 		}
 	}
-	return ( 0U );
+	return ( NO_RESULT );
 }
 
 /****************
@@ -470,6 +470,7 @@ void vLuaTask(void *argument)
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
+	 vOutEventInit();
 	 vCCMRAVarInir();
     // Загружаем библиотеки PDM
 	 HAL_TIM_Base_Start(&htim11);
