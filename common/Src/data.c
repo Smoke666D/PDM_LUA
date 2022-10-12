@@ -17,6 +17,8 @@
 static PDM_TELEMETRY telemetry  = { 0U };
 static PDM_DATA      systemData = { 0U };
 
+static uint8_t nullString[ERROR_STRING_LENGTH] = { 0U };
+
 
 void vDATAinit ( void )
 {
@@ -77,15 +79,23 @@ uint32_t ulDATAgetTelemetryLength ( void )
 {
   return sizeof( PDM_TELEMETRY );
 }
-
 uint32_t ulDATAgetSystemLength ( void )
 {
   return sizeof( PDM_DATA );
 }
-
 uint8_t uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out )
 {
   return uDATAget( adr, size, out, ( uint8_t* )&telemetry, sizeof( PDM_TELEMETRY ) );
+}
+uint8_t uDATAgetErrorString ( uint8_t adr, uint8_t size, uint8_t* out )
+{
+  uint8_t  len = ERROR_STRING_LENGTH;
+  uint8_t* src = nullString;
+  if ( pcGetLUAError() != NULL ) {
+    src = ( uint8_t* )pcGetLUAError();
+    len = strlen( pcGetLUAError() );
+  }
+  return uDATAget( adr, size, out, src, len );
 }
 
 uint8_t uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out )

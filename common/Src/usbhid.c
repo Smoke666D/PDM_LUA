@@ -205,6 +205,20 @@ void eUSBtelemetryToReport ( USB_REPORT* report )
   }
   return;
 }
+void eUSBerrorStringToReport ( USB_REPORT* report )
+{
+  if ( report->adr < ERROR_STRING_LENGTH )
+  {
+    report->stat   = USB_REPORT_STATE_OK;
+    report->length = uDATAgetErrorString( report->adr, ( USB_DATA_SIZE - 1U ), report->data );
+  }
+  else
+  {
+    report->stat   = USB_REPORT_STATE_BAD_REQ;
+    report->length = 0U;
+  }
+  return;
+}
 /*---------------------------------------------------------------------------------------------------*/
 USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
 {
@@ -389,6 +403,9 @@ void vUSBtask ( void *argument )
           break;
         case USB_REPORT_CMD_READ_TELEMETRY:
           vUSBsend( &report, eUSBtelemetryToReport );
+          break;
+        case USB_REPORT_CMD_READ_ERROR_STR:
+          vUSBsend( &report, eUSBerrorStringToReport );
           break;
         /*----------------------------------------*/
         case USB_REPORT_CMD_WRITE_SCRIPT:

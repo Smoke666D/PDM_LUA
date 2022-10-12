@@ -61,7 +61,8 @@ typedef enum
   USB_REPORT_CMD_READ_DATA,        /* 5 */
   USB_REPORT_CMD_READ_TELEMETRY,   /* 6 */
   USB_REPORT_CMD_UPDATE_TELEMETRY, /* 7 */
-  USB_REPORT_CMD_RESTART_LUA       /* 8 */
+  USB_REPORT_CMD_RESTART_LUA,      /* 8 */
+  USB_REPORT_CMD_READ_ERROR_STR    /* 9 */
 } USB_REPORT_CMD;
 /*
  * |  0  |  1  |  2   |  3   |  4   |  5   |  6   |  4   |  ...  | ... |  64 |

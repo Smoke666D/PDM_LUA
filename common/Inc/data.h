@@ -13,7 +13,8 @@
 #include "pdm_input.h"
 #include "version.h"
 
-#define UID_32_LENGTH 3U
+#define UID_32_LENGTH       3U
+#define ERROR_STRING_LENGTH 100U
 
 typedef struct __packed
 {
@@ -49,6 +50,7 @@ typedef struct __packed
 void     vDATAinit ( void );
 void     vDATAupdate ( void );
 uint8_t  uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out );
+uint8_t  uDATAgetErrorString ( uint8_t adr, uint8_t size, uint8_t* out );
 uint32_t ulDATAgetTelemetryLength ( void );
 uint8_t  uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out );
 uint32_t ulDATAgetSystemLength ( void );
