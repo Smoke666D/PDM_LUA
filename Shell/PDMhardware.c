@@ -252,7 +252,42 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
 /*
  *
  */
+void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
+{
+	uint32_t status = 0;
+	uint8_t channel_state = 0;
+	for (uint8_t i=0;i<10;i++)
+	{
+		switch( out[i].out_state)
+		{
+			case STATE_OUT_OFF:
+			case STATE_OUT_RESTART_PROCESS:
+				channel_state = 0;
+				break;
+			case STATE_OUT_ON_PROCESS:
+			case STATE_OUT_ON:
+				channel_state = 1;
+				break;
+			case STATE_OUT_ERROR:
+				if (out[i].error_flag == ERROR_CIRCUT_BREAK)
+				{
+					channel_state = 0x02;
+				}
+				if ((out[i].error_flag == ERROR_OVERLOAD ) || (out[i].error_flag == ERROR_OVER_LIMIT ))
+				{
+									channel_state = 0x02;
+				}
+				break;
+			default:
+				break;
+		}
 
+	}
+	for (uint8_t i=0;i<10;i++)
+	{
+
+	}
+}
 
 /*
  *
@@ -352,7 +387,7 @@ static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
 		if (out[ucChannel].out_line_state == 1)
 		{
 			vHWOutOFF(ucChannel);
-			out[ ucChannel ].out_state = STATE_OUT_ERROR_PROCESS; //Переходим в состония бработки ошибок
+			out[ ucChannel ].out_state = STATE_OUT_ERROR; //Переходим в состония бработки ошибок
 			out[ucChannel].error_flag  = error_flag;
 		}
 		else
