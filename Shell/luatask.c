@@ -279,7 +279,7 @@ int iCanGetResivedData(lua_State *L )
 int iCanSendPDM( lua_State *L )
 {
 	uint32_t ID;
-	uint8_t  DATA[CAN_FRAME_SIZE];
+	uint8_t  DATA[CAN_FRAME_SIZE] = {0,0,0,0,0,0,0,0};
 	uint8_t  size = lua_gettop(L);
 	if ((size >= CANSEND_ARGUMENT_COUNT)&& lua_isinteger(L, CAN_ID_POS ) )    /*Проверяем, что при вызове нам передали нужное число аргументов*/
 	{
@@ -289,7 +289,7 @@ int iCanSendPDM( lua_State *L )
 		{
 		  DATA[i]= (uint8_t) lua_tointeger(L,-( size-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
 		}
-		vCanInsertTXData(ID, &DATA[0], size);
+		vCanInsertTXData(ID, &DATA[0], 8);
 	}
 	return ( NO_RESULT );
 }
