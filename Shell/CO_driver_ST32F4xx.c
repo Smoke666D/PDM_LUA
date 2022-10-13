@@ -73,7 +73,7 @@ CO_ReturnError_t CO_CANmodule_init(
     pPDMCan->Init.AutoWakeUp = DISABLE;
     pPDMCan->Init.AutoRetransmission = ENABLE;
     pPDMCan->Init.ReceiveFifoLocked = DISABLE;
-    pPDMCan->Init.TransmitFifoPriority = DISABLE;
+    pPDMCan->Init.TransmitFifoPriority = ENABLE;
 
     /* Configure CAN timing */
       switch (CANbitRate)
