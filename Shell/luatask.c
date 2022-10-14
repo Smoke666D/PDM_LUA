@@ -555,18 +555,12 @@ void vLuaTask(void *argument)
 	   	   lua_pop(L1, temp);
 	   	   break;
 	   	 case LUA_ERROR:
+	   	 case LUA_STOP:
 	   		if (eSafeModeIsEnable == IS_DISABLE)
 	   		{
 	   			vSafeModeOutState();
 	   			eSafeModeIsEnable = IS_ENABLE;
 	   		}
-	   	   break;
-	   	 case LUA_STOP:
-	   		if (eSafeModeIsEnable == IS_DISABLE)
-			{
-	   			vSafeModeOutState();
-	   			eSafeModeIsEnable = IS_ENABLE;
-			}
 	   	   break;
 	   	 case LUA_RESTART:
 	   	   lua_close(L);

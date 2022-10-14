@@ -20,7 +20,6 @@ volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U 
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 
 PDM_OUTPUT_TYPE out[OUT_COUNT]  		__SECTION(RAM_SECTION_CCMRAM);
-
 static uint16_t muRawCurData[OUT_COUNT] __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
 static float mfVData[AIN_COUNT] 		__SECTION(RAM_SECTION_CCMRAM);
@@ -61,7 +60,6 @@ void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiCh
 	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
 	{
-
 		out[out_name].ptim 			  = ptim;
 		out[out_name].channel 		  = uiChannel;
 		out[out_name].GPIOx 		  = EnablePort;
@@ -122,7 +120,7 @@ void vOutHWEnbale(OUT_NAME_TYPE out_name)
 		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_RESET);
 		out[out_name].ucNoRestartState =1;
 	}
-
+	return;
 }
 /*
  *
@@ -134,7 +132,7 @@ void vOutHWDisabale(OUT_NAME_TYPE out_name)
 		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_SET);
 		out[out_name].ucNoRestartState =0;
 	}
-
+	return;
 }
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
@@ -254,10 +252,12 @@ float fOutGetCurrent ( OUT_NAME_TYPE eChNum)
  */
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 {
-	uint32_t status = 0;
-	uint8_t channel_state = 0;
-	for (uint8_t i=0;i<10;i++)
+	uint32_t status1 		= 0;
+	uint32_t status2 		= 0;
+	uint32_t channel_state 	= 0;
+	for (uint8_t i=0;i<20;i++)
 	{
+
 		switch( out[i].out_state)
 		{
 			case STATE_OUT_OFF:
@@ -271,22 +271,28 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 			case STATE_OUT_ERROR:
 				if (out[i].error_flag == ERROR_CIRCUT_BREAK)
 				{
-					channel_state = 0x02;
+					channel_state = 0x01;
 				}
 				if ((out[i].error_flag == ERROR_OVERLOAD ) || (out[i].error_flag == ERROR_OVER_LIMIT ))
 				{
-									channel_state = 0x02;
+					channel_state = 0x02;
 				}
 				break;
 			default:
 				break;
 		}
-
+		if (i<10)
+		{
+			status1 |= channel_state<<(2*i);
+		}
+		else
+		{
+			status2 |= channel_state<<(2*(i-10));
+		}
 	}
-	for (uint8_t i=0;i<10;i++)
-	{
-
-	}
+	*Dout1_10Status = status1;
+	*Dout11_20Status = status2;
+	return;
 }
 
 /*
@@ -309,13 +315,13 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 void vOutEventInit()
 {
 	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
+	return;
 }
 /*
  *
  */
 void vOutInit( void )
 {
-
 	//Инициализация портов упраления ключами
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
@@ -371,6 +377,7 @@ static void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
 	out[ucChannel].out_line_state  = 0;
+	return;
 }
 /*
  *
@@ -446,12 +453,6 @@ static void vDataConvertToFloat( void)
 	 }
 	return;
 }
-
-
-
-
-
-
 /*
  *
  */
@@ -486,7 +487,7 @@ static void vDataConvertToFloat( void)
 	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
-    	if (out[i].ucNoRestartState !=0)
+    	if (out[i].ucNoRestartState !=0 )
     	{
     		 if ( (muRawCurData[ i ] > ERROR_CURRENT ) && ( out[i].out_line_state == 0 ) )
     		 {
