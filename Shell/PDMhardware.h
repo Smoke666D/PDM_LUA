@@ -171,6 +171,7 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
+void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
 void vOutEventInit();
 void vOutInit( void );
 void vOutHWDisabale(OUT_NAME_TYPE out_name);

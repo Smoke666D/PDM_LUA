@@ -474,6 +474,8 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t size)
 void vLuaTask(void *argument)
 {
 	 uint32_t uiScriptSize = 0;
+	 uint32_t OutStatus1   = 0;
+	 uint32_t OutStatus2   = 0;
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
@@ -525,6 +527,9 @@ void vLuaTask(void *argument)
 	   	     lua_getglobal(L1, "main");
 	   	   ulWorkCicleIn10us  = ulRestartTimer();
 	   	   lua_pushinteger(L1, ulWorkCicleIn10us );
+	   	   vGetDoutStatus(&OutStatus1 , &OutStatus2 );
+	   	   lua_pushinteger( L1, OutStatus1 );
+	   	   lua_pushinteger( L1, OutStatus2 );
 	   	   lua_pushinteger( L1, uiGetDinMask() );
            for ( i = 0U; i < OUT_COUNT ; i++ )
 	   	   {
@@ -533,7 +538,7 @@ void vLuaTask(void *argument)
            lua_pushnumber( L1, uGetRPM1());
            lua_pushnumber( L1, uGetRPM2());
            int temp;
-           switch (lua_resume(L1,L,(1+1+OUT_COUNT+2),&temp) )
+           switch (lua_resume(L1,L,(1+1+2+OUT_COUNT+2),&temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)

@@ -258,28 +258,27 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 	for (uint8_t i=0;i<20;i++)
 	{
 
-		switch( out[i].out_state)
+		switch (out[i].error_flag)
 		{
-			case STATE_OUT_OFF:
-			case STATE_OUT_RESTART_PROCESS:
-				channel_state = 0;
+			case ERROR_CIRCUT_BREAK:
+				channel_state = 0x02;
 				break;
-			case STATE_OUT_ON_PROCESS:
-			case STATE_OUT_ON:
-				channel_state = 1;
-				break;
-			case STATE_OUT_ERROR:
-				if (out[i].error_flag == ERROR_CIRCUT_BREAK)
-				{
-					channel_state = 0x01;
-				}
-				if ((out[i].error_flag == ERROR_OVERLOAD ) || (out[i].error_flag == ERROR_OVER_LIMIT ))
-				{
-					channel_state = 0x02;
-				}
+			case ERROR_OVERLOAD:
+			case  ERROR_OVER_LIMIT:
+				channel_state = 0x03;
 				break;
 			default:
-				break;
+				switch( out[i].out_state)
+				{
+					case STATE_OUT_ON_PROCESS:
+					case STATE_OUT_ON:
+						channel_state = 1;
+						break;
+					default:
+						channel_state = 0;
+						break;
+				}
+
 		}
 		if (i<10)
 		{
@@ -491,8 +490,8 @@ static void vDataConvertToFloat( void)
     	{
     		 if ( (muRawCurData[ i ] > ERROR_CURRENT ) && ( out[i].out_line_state == 0 ) )
     		 {
-    				out[i].error_flag  = ERROR_CIRCUT_BREAK;
-    				out[i].out_state   = STATE_OUT_ERROR;
+    			//	out[i].error_flag  = ERROR_CIRCUT_BREAK;
+    			//	out[i].out_state   = STATE_OUT_ERROR;
     				out[i].current 	   = 0U;
     		 }
     		 else
@@ -550,8 +549,22 @@ static void vDataConvertToFloat( void)
  										out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
  										out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
  									}
+ 									if (out[i].current < 0.1 )
+ 									{
+ 										out[i].error_flag  = ERROR_CIRCUT_BREAK;
+ 									}
+ 									else
+ 									{
+ 										out[i].error_flag  = ERROR_OFF;
+ 									}
  									break;
  							case STATE_OUT_RESTART_PROCESS:
+ 								if (out[i].out_logic_state == OUT_OFF)
+ 								{
+ 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+ 									out[i].error_flag  = ERROR_OFF;
+ 									break;
+ 								}
  								out[i].restart_timer++;
  								if  ( out[i].restart_timer >= out[i].restart_config_timer )
  								{
