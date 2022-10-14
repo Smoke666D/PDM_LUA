@@ -496,7 +496,10 @@ static void vDataConvertToFloat( void)
     		 }
     		 else
     		 {
+    			 if (out[i].error_flag  != ERROR_OVER_LIMIT)
+    			 {
     			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+    			 }
     		 }
  			if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
  			{
@@ -548,6 +551,7 @@ static void vDataConvertToFloat( void)
  										vHWOutOFF(i);
  										out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
  										out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
+ 										break;
  									}
  									if (out[i].current < 0.1 )
  									{
@@ -575,6 +579,7 @@ static void vDataConvertToFloat( void)
  									else
  									{
  										out[i].out_state = STATE_OUT_ON_PROCESS;
+ 									    out[i].restart_timer =0;
  									    out[i].error_flag  = ERROR_OFF;
  										if (out[i].error_count >= 1U)
  										{
