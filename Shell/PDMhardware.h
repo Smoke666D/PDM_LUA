@@ -9,7 +9,7 @@
 #define PDMHARDWARE_H_
 
 #include "main.h"
-
+#include "luatask.h"
 
 #define AIN_COUNT			4U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
@@ -67,7 +67,7 @@
 #define V0005O08	(float)(0.05/K0005O08*RR)
 #define ERROR_CURRENT  (uint16_t)(4000U)
 
-
+#define CIRCUT_BREAK_CURRENT  0.1
 #define COOF  ( ( R1 + R2 ) /R2) * K
 
 #define STATE_OUT_CONFIG		  0x20
@@ -116,15 +116,15 @@ typedef struct
 typedef struct
 {
    uint32_t  channel;
-   uint8_t   out_line_state;
    TIM_HandleTypeDef * ptim;
-   OUT_STATE out_logic_state;
    PDM_OUT_STATE_t out_state;
    float power;
    float overload_power;
    uint8_t PWM;
-   uint8_t ucNoRestartState;
+   ENABLE_t EnableFlag;
    uint8_t error_count; //Кол-во попыток рестарта
+   uint8_t error_counter;
+   uint16_t soft_start_timer;
    uint16_t overload_config_timer;
    uint16_t restart_timer;
    uint16_t restart_config_timer;
@@ -172,20 +172,15 @@ typedef enum {
 } AIN_NAME_TYPE;
 
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
-void vOutEventInit();
 void vOutInit( void );
-void vOutHWDisabale(OUT_NAME_TYPE out_name);
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
-void vHWOutSet( OUT_NAME_TYPE out_name,  uint8_t power);
-void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
 void vOutHWEnbale(OUT_NAME_TYPE out_name);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
-uint16_t GetTimer(void);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
 float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState(AIN_NAME_TYPE channel);

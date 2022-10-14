@@ -4,6 +4,7 @@
 #include "event_groups.h"
 #include "system.h"
 
+
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern ADC_HandleTypeDef hadc3;
@@ -49,65 +50,40 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K0
 
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
-static   EventGroupHandle_t xOutEvent 				__SECTION(RAM_SECTION_CCMRAM);
-static   StaticEventGroup_t xOutCreatedEventGroup	__SECTION(RAM_SECTION_CCMRAM);
-
+static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM);
+static void vHWOutOFF( uint8_t ucChannel );
 /*
  *
  */
-void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM)
+void vOutInit( void )
 {
-	volatile uint8_t j;
-	if ( out_name < OUT_COUNT )
-	{
-		out[out_name].ptim 			  = ptim;
-		out[out_name].channel 		  = uiChannel;
-		out[out_name].GPIOx 		  = EnablePort;
-		out[out_name].GPIO_Pin		  = EnablePin;
-		out[out_name].error_count     = 0U;
-		out[out_name].out_line_state  = 0;
-		out[out_name].out_logic_state = OUT_OFF;
-		out[out_name].out_state		  =	STATE_OUT_OFF;
-		vOutHWDisabale( out_name);
-		out[out_name].error_flag  = ERROR_OFF;
-		out[out_name].current = 0.0;
-		if (out_name < OUT_HPOWER_COUNT)
-		{
-			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
-		}
-		else
-		{
-			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX);
-		}
-		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
-		vOutSetPWM(out_name, DEFAULT_PWM);
-		out[out_name].error_flag = ERROR_OFF;
-		for (j=0; j< 4U; j++)
-		{
-			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
-			if ((CurSensData[out_name][j].Data != 0.0D) || (CurSensData[out_name][j+1].Data != 0.0D ))
-			{
-				float temp;
-				float temp1;
-				float temp2;
-				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-				out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-				temp =  CurSensData[out_name][j].Data   * CurSensData[out_name][j+1].KOOF;
-				temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
-				temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
-				out[out_name].CSC[j].b = (temp1 - temp)/temp2;
-			}
-		}
-		TIM_OC_InitTypeDef sConfigOC = {0U};
-		sConfigOC.OCMode = TIM_OCMODE_PWM1;
-		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM );
-		sConfigOC.OCPolarity 	= TIM_OCPOLARITY_HIGH;
-		sConfigOC.OCNPolarity 	= TIM_OCNPOLARITY_HIGH;
-		sConfigOC.OCFastMode 	= TIM_OCFAST_DISABLE;
-		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
-		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
-		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-	}
+	//Инициализация портов упраления ключами
+	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
+	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, DEFAULT_PWM	);
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin,DEFAULT_PWM	 );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin,DEFAULT_PWM	 );
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin, DEFAULT_PWM  );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin, DEFAULT_PWM  );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,  DEFAULT_PWM	 );
+	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
 /*
@@ -118,19 +94,7 @@ void vOutHWEnbale(OUT_NAME_TYPE out_name)
 	if (out_name < OUT_COUNT)
 	{
 		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_RESET);
-		out[out_name].ucNoRestartState =1;
-	}
-	return;
-}
-/*
- *
- */
-void vOutHWDisabale(OUT_NAME_TYPE out_name)
-{
-	if (out_name < OUT_COUNT)
-	{
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_SET);
-		out[out_name].ucNoRestartState =0;
+		out[out_name].EnableFlag	  =IS_ENABLE;
 	}
 	return;
 }
@@ -142,7 +106,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	ERROR_CODE res = INVALID_ARG;
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
 	{
-		xEventGroupSetBits ( xOutEvent, ( 0x1 < out_name ) );
+		out[out_name].EnableFlag	  =IS_DISABLE;
 		if ( (overload_timer <= MAX_OVERLOAD_TIMER) && (
 					((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
 					((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ) )
@@ -153,7 +117,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 				out[out_name].overload_power = overload_power;
 				res = ERROR_OK;
 			}
-		xEventGroupClearBits ( xOutEvent, ( 0x1 <out_name ) );
+		out[out_name].EnableFlag	  =IS_ENABLE;
 	}
 	return ( res );
 }
@@ -165,12 +129,12 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	ERROR_CODE res = INVALID_ARG;
 	if ((out_name < OUT_COUNT) && (timer<= MAX_RESET_TIMER ))     //Проверяем корекность номера канала
 	{
-		xEventGroupSetBits (xOutEvent, ( 0x1 < out_name) );
+		out[out_name].EnableFlag	  =IS_DISABLE;
 		out[out_name].error_count = restart_count;
 		out[out_name].restart_timer = 0U;
 		out[out_name].restart_config_timer = timer;
 		res = ERROR_OK;
-		xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
+		out[out_name].EnableFlag	  =IS_ENABLE;
 	}
 	return ( res );
 }
@@ -182,55 +146,32 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 	ERROR_CODE res = INVALID_ARG;
 	if ((out_name <  OUT_COUNT ) && (PWM <=MAX_PWM)) //Проверяем коректность агрументов
 	{
-		xEventGroupSetBits (xOutEvent, ( 0x1 <out_name) );
 		out[out_name].PWM = PWM;
 		if (out[out_name].out_state == STATE_OUT_ON) //Если выход вклчюен и не находится в каком-то переходном процессе
 		{
 			vHWOutSet( out_name, MAX_PWM );
 		}
 		res = ERROR_OK;
-		xEventGroupClearBits (xOutEvent, ( 0x1 < out_name) );
 	}
 	return ( res );
 }
 /*
  *
  */
-void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
-{
-   TIM_OC_InitTypeDef sConfigOC = {0};
-   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
-   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
-   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
-   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
-   out[out_name].out_line_state = 1;
-   return;
-}
-/*
- *
- */
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 {
-	out[out_name].out_logic_state = (state != 0U) ? OUT_ON : OUT_OFF;
-	return;
-}
-/*
- *
- */
-void vOutSet(OUT_NAME_TYPE out_name)
-{
-	out[out_name].out_logic_state = OUT_ON;
-	return;
-}
-/*
- *
- */
-void vOutReset(OUT_NAME_TYPE out_name)
-{
-	out[out_name].out_logic_state = OUT_OFF;
+	switch (state)
+	{
+		case 0:
+			out[out_name].out_state = STATE_OUT_OFF;
+			vHWOutOFF(out_name);
+			break;
+		case 1:
+			out[out_name].out_state = STATE_OUT_ON_PROCESS;
+			break;
+		default:
+			break;
+	}
 	return;
 }
 /*
@@ -309,49 +250,86 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
 }
 /*
- *
+ * Напряжение на аналогвом входе
  */
-void vOutEventInit()
-{
-	xOutEvent = xEventGroupCreateStatic(&xOutCreatedEventGroup );
-	return;
-}
+ float fAinGetState(AIN_NAME_TYPE channel)
+ {
+	 return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
+ }
 /*
  *
  */
-void vOutInit( void )
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM)
 {
-	//Инициализация портов упраления ключами
-	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, DEFAULT_PWM	);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin,DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin,DEFAULT_PWM	 );
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin, DEFAULT_PWM  );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin, DEFAULT_PWM  );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,  DEFAULT_PWM	 );
-	HAL_TIM_Base_Start_IT(&htim2);
+	volatile uint8_t j;
+	if ( out_name < OUT_COUNT )
+	{
+		out[out_name].ptim 			   = ptim;
+		out[out_name].channel 		   = uiChannel;
+		out[out_name].GPIOx 		   = EnablePort;
+		out[out_name].GPIO_Pin		   = EnablePin;
+		out[out_name].error_count      = 0U;
+		out[out_name].soft_start_timer = 0;
+		out[out_name].out_state		  =	STATE_OUT_OFF;
+		out[out_name].error_flag  = ERROR_OFF;
+		out[out_name].current = 0.0;
+		if (out_name < OUT_HPOWER_COUNT)
+		{
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
+		}
+		else
+		{
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX);
+		}
+		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
+		vOutSetPWM(out_name, DEFAULT_PWM);
+		out[out_name].EnableFlag = IS_DISABLE;
+		out[out_name].error_flag = ERROR_OFF;
+		for (j=0; j< 4U; j++)
+		{
+			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
+			if ((CurSensData[out_name][j].Data != 0.0D) || (CurSensData[out_name][j+1].Data != 0.0D ))
+			{
+				float temp;
+				float temp1;
+				float temp2;
+				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
+				out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
+				temp =  CurSensData[out_name][j].Data   * CurSensData[out_name][j+1].KOOF;
+				temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
+				temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
+				out[out_name].CSC[j].b = (temp1 - temp)/temp2;
+			}
+		}
+		TIM_OC_InitTypeDef sConfigOC = {0U};
+		sConfigOC.OCMode = TIM_OCMODE_PWM1;
+		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM );
+		sConfigOC.OCPolarity 	= TIM_OCPOLARITY_HIGH;
+		sConfigOC.OCNPolarity 	= TIM_OCNPOLARITY_HIGH;
+		sConfigOC.OCFastMode 	= TIM_OCFAST_DISABLE;
+		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
+		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
+		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_SET);
+	}
 	return;
 }
 
-
-
+/*
+ *
+ */
+static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
+{
+   TIM_OC_InitTypeDef sConfigOC = {0};
+   sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
+   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
+   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+   return;
+}
 /*
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
@@ -370,40 +348,11 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t I
 	}
 	return;
 }
-
-
+/*
+*/
 static void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
-	out[ucChannel].out_line_state  = 0;
-	return;
-}
-/*
- *
- */
-static void vTurnOutToError( uint8_t ucChannel,  ERROR_FLAGS_TYPE error_flag)
-{
-	if ( ucChannel <= OUT_COUNT )
-	{
-		if (out[ ucChannel ].out_state == STATE_OUT_ON_PROCESS)
-		{
-			return;
-		}
-		else
-		if (out[ucChannel].out_line_state == 1)
-		{
-			vHWOutOFF(ucChannel);
-			out[ ucChannel ].out_state = STATE_OUT_ERROR; //Переходим в состония бработки ошибок
-			out[ucChannel].error_flag  = error_flag;
-		}
-		else
-		if ((out[ucChannel].out_line_state == 0 ) && (out[ ucChannel ].out_state != STATE_OUT_ERROR))
-		{
-			out[ucChannel].error_flag  = ERROR_CIRCUT_BREAK;
-			out[ucChannel].current 	   = 0U;
-			out[ ucChannel ].out_state = STATE_OUT_ERROR;
-		}
-	}
 	return;
 }
 /*
@@ -477,22 +426,25 @@ static void vDataConvertToFloat( void)
    return;
  }
 
-
+ static void vGotoRestartState( uint8_t ucChannel )
+ {
+	 out[ucChannel].out_state =  STATE_OUT_RESTART_PROCESS;
+	 out[ucChannel].error_flag = ERROR_OVER_LIMIT;
+	 out[ucChannel].restart_timer = 0U;
+	 vHWOutOFF(ucChannel);
+ }
  /*
   *
   */
  static void vOutControlFSM(void)
  {
-	EventBits_t config_state  = xEventGroupGetBits (xOutEvent);  //Получаем состоние конфигурационных флагов
     for (uint8_t i=0; i<OUT_COUNT;i++)
  	{
-    	if (out[i].ucNoRestartState !=0 )
+    	if (out[i].EnableFlag == IS_ENABLE )
     	{
-    		 if ( (muRawCurData[ i ] > ERROR_CURRENT ) && ( out[i].out_line_state == 0 ) )
+    		 if (  out[i].out_state == STATE_OUT_OFF )
     		 {
-    			//	out[i].error_flag  = ERROR_CIRCUT_BREAK;
-    			//	out[i].out_state   = STATE_OUT_ERROR;
-    				out[i].current 	   = 0U;
+    			out[i].current 	   = 0U;
     		 }
     		 else
     		 {
@@ -501,106 +453,84 @@ static void vDataConvertToFloat( void)
     			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     			 }
     		 }
- 			if ( (config_state & ((uint32_t)0x1< i)) ==0 ) //Если канал не находится в режиме конфигурации, то переходим к обработке
+ 			switch (out[i].out_state)
  			{
- 						switch (out[i].out_state)
+ 				case STATE_OUT_OFF: //Состония входа - выключен
+ 					out[i].restart_timer   	 = 0U;
+ 					out[i].error_flag 		 = ERROR_OFF;
+ 					break;
+ 				case STATE_OUT_ON_PROCESS: //Состояния влючения
+ 					out[i].restart_timer++;
+ 					if (out[i].soft_start_timer !=0)
+ 					{
+ 						if  ( out[i].current > out[i].power )
  						{
- 						    case STATE_OUT_ERROR:
- 						    	if
- 						        (  (out[i].out_logic_state == OUT_ON) && (out[i].error_flag  == ERROR_CIRCUT_BREAK ))
- 						    	{
- 						    		out[i].out_state = STATE_OUT_ON_PROCESS;
- 						    	}
- 						    	break;
- 							case STATE_OUT_OFF: //Состония входа - выключен
- 								if (out[i].out_logic_state == OUT_ON)  //Если обнаружено логическое соостония -вкл, то переходим в состония включения
- 								{
- 									out[i].out_state 	   = STATE_OUT_ON_PROCESS;
- 									out[i].restart_timer   = 0U;
- 								}
- 								break;
- 							case STATE_OUT_ON_PROCESS: //Состояния влючения
- 								if ( (out[i].out_logic_state == OUT_OFF) || ( out[i].current > out[i].overload_power ) )
- 								{
- 									vHWOutOFF(i);
- 									out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
- 								 	out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
- 								 	out[i].restart_timer = 0U;
- 									break;
- 								}
- 								out[i].restart_timer++;
- 								uint8_t ucCurrentPower = MAX_POWER;
- 								if  ( out[i].restart_timer >= out[i].overload_config_timer ) //Если прошло время полонго пуска
- 								{
- 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
- 									out[i].error_flag  = ERROR_OFF;
- 								}
- 								else
- 								{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
- 									ucCurrentPower =(uint8_t) (((float)out[i].restart_timer/(float)out[i].overload_config_timer)*MAX_POWER);
- 									if (ucCurrentPower < START_POWER)
- 									{
- 										ucCurrentPower = START_POWER;
- 									}
- 								}
- 								vHWOutSet(i,ucCurrentPower);
- 								break;
- 							case STATE_OUT_ON:  // Состояние входа - включен
- 									if  ( (out[i].out_logic_state == OUT_OFF) ||  ( out[i].current > out[i].power ) )
- 									{
- 										vHWOutOFF(i);
- 										out[i].out_state = (out[i].out_logic_state == OUT_OFF) ? STATE_OUT_OFF : STATE_OUT_RESTART_PROCESS;
- 										out[i].error_flag  = ( out[i].current > out[i].power ) ? ERROR_OVER_LIMIT : ERROR_OFF;
- 										break;
- 									}
- 									if (out[i].current < 0.1 )
- 									{
- 										out[i].error_flag  = ERROR_CIRCUT_BREAK;
- 									}
- 									else
- 									{
- 										out[i].error_flag  = ERROR_OFF;
- 									}
- 									break;
- 							case STATE_OUT_RESTART_PROCESS:
- 								if (out[i].out_logic_state == OUT_OFF)
- 								{
- 									out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
- 									out[i].error_flag  = ERROR_OFF;
- 									break;
- 								}
- 								out[i].restart_timer++;
- 								if  ( out[i].restart_timer >= out[i].restart_config_timer )
- 								{
- 									if ( out[i].ucNoRestartState  == 2 )
- 									{
- 										out[i].out_state = STATE_OUT_ERROR;
- 									}
- 									else
- 									{
- 										out[i].out_state = STATE_OUT_ON_PROCESS;
- 									    out[i].restart_timer =0;
- 									    out[i].error_flag  = ERROR_OFF;
- 										if (out[i].error_count >= 1U)
- 										{
- 											out[i].error_count--;
- 											if (out[i].error_count == 0)
- 											{
- 												out[i].ucNoRestartState  = 2;
- 											}
- 										}
- 									}
- 								}
- 								break;
- 							default:
- 								break;
+ 							vGotoRestartState(i);
  						}
-    		 }
-    	}
-    	else
-    	{
-    		out[i].out_state = STATE_OUT_OFF;
-    	}
+ 						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
+ 						{
+ 						 		vHWOutSet(i,MAX_POWER);
+ 						 		out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+ 						}
+ 						else
+ 						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
+ 						 		uint8_t ucCurrentPower =(uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*MAX_POWER);
+ 						 		if (ucCurrentPower < START_POWER)
+ 						 		{
+ 						 			ucCurrentPower = START_POWER;
+ 						 		}
+ 						 		vHWOutSet(i,ucCurrentPower);
+ 						 }
+ 					}
+ 					else
+ 					{
+ 						 vHWOutSet(i,MAX_POWER);
+ 						 if (out[i].restart_timer >=out[i].overload_config_timer)
+ 						 {
+ 							out[i].out_state = STATE_OUT_ON;
+ 						 }
+ 						 if  ( out[i].current > out[i].overload_power )
+ 						 {
+ 							vGotoRestartState(i);
+ 						 }
+ 					}
+ 					break;
+ 				case STATE_OUT_ON:  // Состояние входа - включен
+ 					if  ( out[i].current > out[i].power )
+ 					{
+ 						vGotoRestartState(i);
+ 						break;
+ 					}
+ 					if (out[i].current < CIRCUT_BREAK_CURRENT )
+ 					{
+ 						out[i].error_flag  = ERROR_CIRCUT_BREAK;
+ 					}
+ 					break;
+ 				case STATE_OUT_RESTART_PROCESS:
+ 					if (out[i].error_counter == 1)
+ 					{
+ 						out[i].out_state = STATE_OUT_ERROR;
+ 					}
+ 					else
+ 					{
+ 						out[i].restart_timer++;
+ 						if  ( out[i].restart_timer >= out[i].restart_config_timer )
+ 						{
+ 							out[i].out_state = STATE_OUT_ON_PROCESS;
+ 							out[i].restart_timer =0;
+ 							out[i].error_flag  = ERROR_OFF;
+ 							if (out[i].error_counter > 1U )
+ 							{
+ 								out[i].error_counter--;
+ 							}
+ 						}
+ 					}
+ 					break;
+ 				case STATE_OUT_ERROR:
+ 				default:
+ 					break;
+ 			}
+   		 }
  	}
  }
  /*
@@ -629,21 +559,7 @@ static void vDataConvertToFloat( void)
    /* USER CODE END vADCTask */
  }
 
-/*
- * Напряжение на аналогвом входе
- */
- float fAinGetState(AIN_NAME_TYPE channel)
- {
-	 return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
- }
- /*
-  * Дискретные входа
-  *
-  *
-  */
- void vDoutConfig()
- {
- }
+
 
 
 

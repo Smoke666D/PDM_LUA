@@ -479,7 +479,6 @@ void vLuaTask(void *argument)
 	 uint8_t i;
 	 lua_State *L;
 	 lua_State *L1;
-	 vOutEventInit();
 	 vCCMRAVarInir();
     // Загружаем библиотеки PDM
 	 HAL_TIM_Base_Start(&htim11);

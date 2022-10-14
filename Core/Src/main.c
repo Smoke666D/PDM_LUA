@@ -176,7 +176,6 @@ int main(void)
   vUSBinit( &usbDet, &usbPullup );
   vDinInit( );
   vCANinit( );
-  vOutEventInit();
   vOutInit();
   /* USER CODE END 2 */
 
