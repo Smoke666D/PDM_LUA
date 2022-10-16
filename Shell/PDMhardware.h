@@ -113,32 +113,32 @@ typedef struct
 	float b;
 }   LIN_COOF;
 
-typedef struct
+typedef struct __packed
 {
-   uint32_t  channel;
+   GPIO_TypeDef* GPIOx;
    TIM_HandleTypeDef * ptim;
-   PDM_OUT_STATE_t out_state;
+   uint32_t  channel;
    float power;
    float overload_power;
-   uint8_t PWM;
+   float current;
    ENABLE_t EnableFlag;
    uint8_t error_count; //Кол-во попыток рестарта
    uint8_t error_counter;
+   uint8_t PWM;
+   uint16_t GPIO_Pin;
    uint16_t soft_start_timer;
    uint16_t overload_config_timer;
    uint16_t restart_timer;
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;
+   PDM_OUT_STATE_t out_state;
    LIN_COOF CSC[4];
-   float current;
-   GPIO_TypeDef* GPIOx;
-   uint16_t GPIO_Pin;
 } PDM_OUTPUT_TYPE;
 
 typedef struct
 {
-	uint16_t KOOF;
 	float Data;
+	uint16_t KOOF;
 } KAL_DATA;
 
 typedef enum {

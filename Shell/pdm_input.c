@@ -11,12 +11,12 @@
 #include "pdm_input.h"
 
 
-static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint8_t  ucOverload						__SECTION(RAM_SECTION_CCMRAM) = 0;
-static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM) = 0;
+static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM);
+static uint8_t  ucOverload						__SECTION(RAM_SECTION_CCMRAM);
+static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM);
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
-static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM) = NULL;
+static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 static RPMConfig_t eRPM[2] 						__SECTION(RAM_SECTION_CCMRAM);
 
 
@@ -33,8 +33,6 @@ const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
 											    {Din9_Pin,GPIOB},
 											    {Din10_Pin,GPIOF},
 											    {Din11_Pin,GPIOF}};
-
-
 /*
  *
  */
@@ -66,25 +64,30 @@ void vSystemDinTimer(void)
 	}
 	return;
 }
-
+/*
+ *
+ */
 uint16_t uGetRPM1()
 {
 	uint16_t usTemp = 0;
 	if (eRPM[0].uiData != 0)
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0002) )* 60);
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0002D) )* 60);
 	}
 	else
 		usTemp = 0;
 	return (xDinConfig[INPUT_9].eInputType==RPM_CONFIG) ? usTemp : 0U;
 
 }
+/*
+ *
+ */
 uint16_t uGetRPM2()
 {
 	uint16_t usTemp = 0;
 	if (eRPM[1].uiData != 0)
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002) )* 60);
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002D) )* 60);
 	}
 	else
 		usTemp = 0;
@@ -248,7 +251,6 @@ void vDinTask(void *argument)
 	while(1)
 	{
 		vTaskDelay(1);
-
 		xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 		ucTicTime = usDinGetTimer();
 		for (uint8_t i = 0U; i <DIN_CHANNEL; i++)
@@ -310,7 +312,7 @@ uint32_t uiGetDinMask()
 		uiMask<<1;
 		uiMask |= (xDinConfig[ i ].ucValue & 0x01 );
 	}
-	return uiMask;
+	return ( uiMask );
 }
 
 #endif /* PDM_INPUT_C_ */

@@ -65,9 +65,9 @@ typedef enum  {
 typedef struct DinConfigDef_t
 {
 uint32_t      ulCounter;
-uint8_t 	  ucValue;
 uint32_t 	  ulLowCounter;
 uint32_t 	  ulHighCounter;
+uint8_t 	  ucValue;
 uint8_t 	  ucTempValue;
 PDM_INPUT_TYPE eInputType;
 LOGIC_STATE   eState;
@@ -76,11 +76,11 @@ LOGIC_STATE   eState;
 
 typedef struct RPMConfigDef_t
 {
- uint8_t ucValid;
- uint16_t usValidCounter;
- uint32_t uiData;
- uint32_t uiRawData[CC_MAX ];
- uint8_t ucCounter;
+	uint32_t uiData;
+	uint32_t uiRawData[CC_MAX ];
+	uint8_t ucCounter;
+	uint8_t ucValid;
+	uint16_t usValidCounter;
 } RPMConfig_t;
 
 uint16_t uGetRPM1();

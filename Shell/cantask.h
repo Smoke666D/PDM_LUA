@@ -30,9 +30,9 @@ typedef struct {
 
 typedef struct {
     uint16_t ident;
+    uint16_t filter_id;
     uint8_t DLC;
     uint8_t data[8];
-    uint16_t filter_id;
     uint8_t new_data;
 } CANRX;
 

@@ -425,7 +425,9 @@ static void vDataConvertToFloat( void)
    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
    return;
  }
-
+/*
+ *
+ */
  static void vGotoRestartState( uint8_t ucChannel )
  {
 	 out[ucChannel].out_state =  STATE_OUT_RESTART_PROCESS;
@@ -438,11 +440,11 @@ static void vDataConvertToFloat( void)
   */
  static void vOutControlFSM(void)
  {
-    for (uint8_t i=0; i<OUT_COUNT;i++)
+    for (uint8_t i = 0U; i < OUT_COUNT; i++ )
  	{
-    	if (out[i].EnableFlag == IS_ENABLE )
+    	if (out[i].EnableFlag == IS_ENABLE )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
-    		 if (  out[i].out_state == STATE_OUT_OFF )
+    		 if (  out[i].out_state == STATE_OUT_OFF ) /*Если канал выключен, то ток контралировать нет смысла*/
     		 {
     			out[i].current 	   = 0U;
     		 }
@@ -450,7 +452,7 @@ static void vDataConvertToFloat( void)
     		 {
     			 if (out[i].error_flag  != ERROR_OVER_LIMIT)
     			 {
-    			   out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+    				 out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     			 }
     		 }
  			switch (out[i].out_state)
