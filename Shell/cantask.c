@@ -244,8 +244,12 @@ void vCanTXTask(void *argument)
 		xQueuePeek( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		if (uPDMGetCanReady() > 0 )
 		{
-			xQueueReceive( pCanTXHandle, &TXPacket, portMAX_DELAY);
+			xQueueReceive( pCanTXHandle, &TXPacket, 1);
 			uPDMCanSend(&TXPacket);
+		}
+		else
+		{
+			vTaskDelay( 1 );
 		}
 
 	}

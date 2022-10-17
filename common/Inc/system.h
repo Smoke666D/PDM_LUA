@@ -28,7 +28,7 @@
 #define  DIN_TASK_PRIORITY              osPriorityLow
 
 #define  DEFAULT_TASK_STACK_SIZE        128U
-#define  LUA_TASK_STACK_SIZE            2000U
+#define  LUA_TASK_STACK_SIZE            3000U
 #define  ADC_TASK_STACK_SIZE            128U
 #define  DOUT_TASK_STACK_SIZE           128U
 #define  CAN_RX_TASK_STACK_SIZE         128U
