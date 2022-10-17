@@ -137,8 +137,8 @@ typedef struct __packed
 
 typedef struct
 {
-	float Data;
 	uint16_t KOOF;
+	float Data;
 } KAL_DATA;
 
 typedef enum {

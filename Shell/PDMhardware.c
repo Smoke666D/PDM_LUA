@@ -24,6 +24,8 @@ PDM_OUTPUT_TYPE out[OUT_COUNT]  		__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT] __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
 static float mfVData[AIN_COUNT] 		__SECTION(RAM_SECTION_CCMRAM);
+static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
+static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 
 static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
 										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
@@ -48,8 +50,7 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K0
 										};
 
 
-static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
-static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
+
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM);
 static void vHWOutOFF( uint8_t ucChannel );
@@ -167,7 +168,10 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 			vHWOutOFF(out_name);
 			break;
 		case 1:
-			out[out_name].out_state = STATE_OUT_ON_PROCESS;
+			if (out[out_name].out_state != STATE_OUT_ON )
+			{
+				out[out_name].out_state = STATE_OUT_ON_PROCESS;
+			}
 			break;
 		default:
 			break;
@@ -270,9 +274,8 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].GPIO_Pin		   = EnablePin;
 		out[out_name].error_count      = 0U;
 		out[out_name].soft_start_timer = 0;
-		out[out_name].out_state		  =	STATE_OUT_OFF;
-		out[out_name].error_flag  = ERROR_OFF;
-		out[out_name].current = 0.0;
+		out[out_name].out_state		   = STATE_OUT_OFF;
+		out[out_name].current 		   = 0.0;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
@@ -288,7 +291,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		for (j=0; j< 4U; j++)
 		{
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
-			if ((CurSensData[out_name][j].Data != 0.0D) || (CurSensData[out_name][j+1].Data != 0.0D ))
+			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
 			{
 				float temp;
 				float temp1;
