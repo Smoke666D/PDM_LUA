@@ -43,6 +43,7 @@ typedef struct {
     uint16_t filter_id;
 } CAN_FRAME_TYPE;
 
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan);
 void vCANinit();
 QueueHandle_t* pCANRXgetQueue ( void );
 QueueHandle_t* pCANTXgetQueue ( void );

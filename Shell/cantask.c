@@ -247,13 +247,31 @@ void vCanTXTask(void *argument)
 			xQueueReceive( pCanTXHandle, &TXPacket, 1);
 			uPDMCanSend(&TXPacket);
 		}
-		else
+	/*	else
 		{
 			vTaskDelay( 1 );
 		}
-
+*/
 	}
 }
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+	uint32_t error =hcan->ErrorCode;
+	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR0)
+	{
+		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX0);
+	}
+	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR1)
+	{
+			HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX1);
+	}
+	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR2)
+	{
+			HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX2);
+	}
+}
+
 /*
  *
  */
