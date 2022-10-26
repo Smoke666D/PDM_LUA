@@ -70,6 +70,10 @@ typedef enum
   BUFFER_FULL = 1
 } ERROR_TYPE_t;
 
+
+#define Device_ADD 0x00A0
+
+void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 char * pcGetLUAError();
 LUA_STATE_t eLUAgetSTATE();
 const char* pcLUAgetErrorString( void );

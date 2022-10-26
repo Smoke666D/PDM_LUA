@@ -26,6 +26,7 @@
 #include "PDMhardware.h"
 #include "cantask.h"
 #include "CO_driver_ST32F4xx.h"
+#include "EEPROM.h"
 #include "usbhid.h"
 #include "pdm_input.h"
 #include "system.h"
@@ -172,6 +173,7 @@ int main(void)
   MX_TIM7_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
+
   vSERIALinit( &huart2 );
   vUSBinit( &usbDet, &usbPullup );
   vDinInit( );
