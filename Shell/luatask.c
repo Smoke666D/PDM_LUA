@@ -18,7 +18,7 @@
 #include "flash.h"
 #include "string.h"
 #include "CO_driver_ST32F4xx.h"
-#include "EEPROM.H"
+#include "datastorage.h"
 
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -581,26 +581,4 @@ void vLuaTask(void *argument)
 }
 
 
-I2C_HandleTypeDef  * I2C;
 
-
-void vEEPROMInit(I2C_HandleTypeDef * hi2c2)
-{
- uint8_t Data[]={0x01,0x22,0x44,0x77,0x44,0x66,0x76,0x24};
- uint8_t rData[8] ={0x01,0,0,0,0,0,0,0};
- I2C = hi2c2;
-
- HAL_I2C_Master_Transmit(I2C, Device_ADD , &Data[0], 8, 1000);
- HAL_I2C_Master_Transmit(I2C, Device_ADD , &Data[0], 1, 1000);
- HAL_I2C_Master_Receive( I2C, Device_ADD, &rData[0], 7, 1000);
- return;
-}
-
-void vEEPROMRead()
-{
-
-}
-void vEEPROMWrite()
-{
-
-}
