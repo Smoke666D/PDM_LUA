@@ -7,6 +7,9 @@
 
 #define Device_ADD 0x00A0
 #define VALID_CODE   0x55
+#define BOOLEAN_DATA 0x51
+#define INTEGER_DATA 0x52
+#define NUMBER_DATA  0x53
 #define INVALID_CODE 0x00
 #define WRITE_DATA_FRAME 0x06
 
@@ -34,5 +37,8 @@ typedef struct {
 
 
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
+EERPOM_ERROR_CODE_t eEEPROMReadTpye( uint16_t addr , uint8_t * data_type );
+EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data );
+EERPOM_ERROR_CODE_t eEEPROMWrite( uint16_t addr, uint8_t * data, uint8_t data_type );
 
 #endif /* DATASTORAGE_H_ */

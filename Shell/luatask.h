@@ -30,6 +30,10 @@
 #define CAN_SEND_TABLE_ARGUMENT_COUNT 	3U
 
 
+#define FIRST_ARGUMENT   1U
+#define SECOND_ARGUMENT  2U
+#define LAST_ARGUMENT	-1
+
 #define END_OF_FILE_BYTE  0xFF
 
 
@@ -41,6 +45,11 @@
 #define RPM_STATE   0x02
 
 #define NO_RESULT  0U
+#define ONE_RESULT 1U
+#define TWO_RESULT 2U
+#define SUCSESS    1U
+#define ERROR	   0U
+
 
 typedef enum {
 	LUA_INIT,

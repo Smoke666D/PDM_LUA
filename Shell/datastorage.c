@@ -30,11 +30,10 @@ void vEEPROMInit(I2C_HandleTypeDef * hi2c2)
  //HAL_I2C_Master_Receive( I2C, Device_ADD, &rData[0], 7, 1000);
  return;
 }
-
 /*
  *
  */
-EERPOM_ERROR_CODE_t vEEPROMRead( uint16_t addr, uint8_t * data  )
+EERPOM_ERROR_CODE_t eEEPROMReadTpye( uint16_t addr, uint8_t * data_type )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
 	uint16_t usAddres = addr * EEPROM_DATA_FRAME;
@@ -55,7 +54,40 @@ EERPOM_ERROR_CODE_t vEEPROMRead( uint16_t addr, uint8_t * data  )
 				}
 			}
 		}
-		if (datacash[usAddres]== VALID_CODE)
+		if (datacash[usAddres]!= INVALID_CODE)
+		{
+			*data_type =datacash[usAddres];
+			res = EEPROM_OK;
+		}
+	}
+	return ( res );
+}
+
+/*
+ *
+ */
+EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data )
+{
+	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
+	uint16_t usAddres = addr * EEPROM_DATA_FRAME;
+	if (  usAddres  < EEPROM_MAX_ADRRES )
+	{
+		if (datacash[usAddres] == INVALID_CODE )
+		{
+			uint8_t ucTemp = (uint8_t)(usAddres & 0xFF);
+			if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucTemp, EEPROM_ADRESS_SIZE , EEPROM_TIME_OUT) != HAL_OK )
+			{
+				res = EEPROM_READ_ERROR;
+			}
+			else
+			{
+				if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &datacash[usAddres], EEPROM_DATA_FRAME, EEPROM_TIME_OUT) != HAL_OK)
+				{
+					res = EEPROM_READ_ERROR;
+				}
+			}
+		}
+		if (datacash[usAddres]!= INVALID_CODE)
 		{
 			for (uint8_t i=0U; i < EEPROM_DATA_FRAME-1U; i++ )
 			{
@@ -69,7 +101,7 @@ EERPOM_ERROR_CODE_t vEEPROMRead( uint16_t addr, uint8_t * data  )
 /*
  *
  */
-EERPOM_ERROR_CODE_t vEEPROMWrite( uint16_t addr, uint8_t * data )
+EERPOM_ERROR_CODE_t eEEPROMWrite( uint16_t addr, uint8_t * data, uint8_t data_type )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
 	uint16_t usAddres = addr * EEPROM_DATA_FRAME;
@@ -81,7 +113,7 @@ EERPOM_ERROR_CODE_t vEEPROMWrite( uint16_t addr, uint8_t * data )
 			ucData[i+2U] = data[i];
 		}
 		ucData[0U] = (uint8_t)( usAddres & 0xFF );
-		ucData[1U] = VALID_CODE;
+		ucData[1U] = data_type;
 		res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucData[0],WRITE_DATA_FRAME, EEPROM_TIME_OUT ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
 		if (res == EEPROM_OK)
 		{
@@ -98,3 +130,9 @@ EERPOM_ERROR_CODE_t vEEPROMWrite( uint16_t addr, uint8_t * data )
 	return ( res );
 
 }
+/*
+ *
+ */
+
+
+

@@ -29,7 +29,7 @@ static ENABLE_t eMainLoopIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
 
 static EventGroupHandle_t xPDMstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
 
-char * pcLuaErrorString 				__SECTION(RAM_SECTION_CCMRAM) = NULL;
+char * pcLuaErrorString 				    __SECTION(RAM_SECTION_CCMRAM) = NULL;
 int res 									__SECTION(RAM_SECTION_CCMRAM) = 0;
 
 /*
@@ -408,6 +408,95 @@ int  iOutSetPWM( lua_State *L )
 	return ( NO_RESULT );
 }
 
+#define EEPROM_WRITE_ARG_COUNT  2U
+#define EEPROM_READ_ARG_COUNT 	1U
+/*
+ * Функция записи в EEPROM
+ */
+static int iSetEEPROM( lua_State *L )
+{
+	uint32_t res = ERROR;
+	uint16_t adr;
+	if (lua_gettop(L) == EEPROM_WRITE_ARG_COUNT )
+	{
+		adr = lua_tointeger( L , FIRST_ARGUMENT );
+		if ( lua_isinteger( L, SECOND_ARGUMENT ) )
+		{
+			int idata = lua_tointeger( L, SECOND_ARGUMENT );
+			res = ( eEEPROMWrite( adr, (uint8_t *)&idata, INTEGER_DATA ) == EEPROM_OK )? SUCSESS : ERROR;
+		}
+		else
+		{
+			if ( lua_isnumber( L, SECOND_ARGUMENT ) )
+			{
+				float fdata = lua_tonumber( L, SECOND_ARGUMENT);
+				res = ( eEEPROMWrite( adr, (uint8_t *)&fdata, NUMBER_DATA  ) == EEPROM_OK ) ? SUCSESS : ERROR;
+			}
+			else
+			{
+				if ( lua_isboolean ( L, SECOND_ARGUMENT ) )
+				{
+					int idata = lua_toboolean( L, SECOND_ARGUMENT );
+					res = ( eEEPROMWrite( adr, (uint8_t *)&idata, BOOLEAN_DATA  ) == EEPROM_OK ) ? SUCSESS : ERROR;
+				}
+			}
+		}
+	}
+	lua_pushnumber(L, res );
+	return ( ONE_RESULT );
+}
+/*
+ *
+ */
+static int iGetEEPROM( lua_State *L )
+{
+	uint32_t res = ERROR;
+	if ( lua_gettop( L ) == EEPROM_READ_ARG_COUNT )
+	{
+		uint16_t adr = (uint16_t) lua_tointeger( L, FIRST_ARGUMENT );
+		uint8_t  data_type;
+		res = eEEPROMReadTpye( adr , &data_type );
+		if ( data_type == INTEGER_DATA )
+		{
+			int idata;
+			if ( eEEPROMRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
+			{
+				lua_pushinteger( L, idata );
+				res = SUCSESS;
+			}
+		}
+		else
+		{
+			if ( data_type == BOOLEAN_DATA )
+			{
+				int idata;
+				if ( eEEPROMRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
+				{
+					lua_pushboolean( L, idata);
+					res = SUCSESS;
+				}
+			}
+			else
+			{
+				float fdata;
+				if ( eEEPROMRead( adr, (uint8_t *)&fdata ) == EEPROM_OK )
+				{
+					lua_pushnumber( L, fdata);
+					res = SUCSESS;
+				}
+			}
+		}
+	}
+	if ( res == ERROR)
+	{
+		lua_pushnumber( L, NO_RESULT );
+	}
+	lua_pushnumber( L, res );
+	return ( TWO_RESULT );
+}
+
+
+
 /****************
  *
  */
@@ -476,12 +565,10 @@ extern I2C_HandleTypeDef hi2c2;
  */
 void vLuaTask(void *argument)
 {
-	 uint32_t uiScriptSize = 0;
 	 uint32_t OutStatus1   = 0;
 	 uint32_t OutStatus2   = 0;
-	 uint8_t i;
-	 lua_State *L;
-	 lua_State *L1;
+	 lua_State *L = NULL;
+	 lua_State *L1 = NULL;
 	 vCCMRAVarInir();
 	 vEEPROMInit( &hi2c2 );
     // Загружаем библиотеки PDM
@@ -513,6 +600,8 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"GetRequest",iCanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",iCanGetResivedData);
 	   	   lua_register(L1,"ConfigCan",iCanSetConfig);
+	   	   lua_register(L1,"GetEEPROM",iGetEEPROM);
+	   	   lua_register(L1,"SetEEPROM",iSetEEPROM);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
@@ -534,14 +623,14 @@ void vLuaTask(void *argument)
 	   	   lua_pushinteger( L1, OutStatus1 );
 	   	   lua_pushinteger( L1, OutStatus2 );
 	   	   lua_pushinteger( L1, uiGetDinMask() );
-           for ( i = 0U; i < OUT_COUNT ; i++ )
+           for ( uint8_t i = 0U; i < OUT_COUNT ; i++ )
 	   	   {
-        	   lua_pushnumber( L1, fOutGetCurrent(i));
+        	   lua_pushnumber( L1, fOutGetCurrent( i ) );
 	   	   }
-           lua_pushnumber( L1, uGetRPM1());
-           lua_pushnumber( L1, uGetRPM2());
+           lua_pushnumber( L1, uGetRPM1( ) );
+           lua_pushnumber( L1, uGetRPM2( ) );
            int temp;
-           switch (lua_resume(L1,L,(1+1+2+OUT_COUNT+2),&temp) )
+           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2), &temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)
@@ -549,18 +638,18 @@ void vLuaTask(void *argument)
 	   	   		   eMainLoopIsEnable = IS_ENABLE;
 	   	   	   }
 	   	   	 case LUA_YIELD:
-	   	   		 for ( i = 0; i < OUT_COUNT; i++)
+	   	   		 for ( uint8_t i = 0; i < OUT_COUNT; i++)
 	   	   		 {
-	   	   			 vOutSetState( i, (uint8_t) lua_toboolean(L1,-(i+1)) );
+	   	   			 vOutSetState( i, (uint8_t) lua_toboolean( L1,-(i+1)) );
 	   	   		 }
 	   	   		 break;
 	   	   	 default:
-	   	   	   pcLuaErrorString =  lua_tostring(L1, -1);
+	   	   	   pcLuaErrorString =  (char *) lua_tostring( L1, LAST_ARGUMENT );
 	   	   	   ucErrorCount++;
 	   	   	   state  = LUA_ERROR;
 	   	   	   break;
 	   	   }
-	   	   lua_pop(L1, temp);
+	   	   lua_pop( L1, temp);
 	   	   break;
 	   	 case LUA_ERROR:
 	   	 case LUA_STOP:
