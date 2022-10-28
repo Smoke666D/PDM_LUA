@@ -219,17 +219,27 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 	return;
 }
 
+
 /*
  *
  */
+void vCANBoudInit( uint16_t boudrate )
+{
+	CO_CANsetConfigurationMode();
+	CO_CANmodule_disable();
+	CO_CANmodule_init( boudrate);
+	CO_CANsetNormalMode();
+    return;
+}
+/*
+ *
+ */
+
 void vCANinit()
 {
 	vInitMailBoxBuffer();
 	vConfigCAN(&hcan1);
-	CO_CANsetConfigurationMode();
-	CO_CANmodule_disable();
-	CO_CANmodule_init(1000U);
-	CO_CANsetNormalMode();
+	vCANBoudInit( 1000 );
 	return;
 }
 /*

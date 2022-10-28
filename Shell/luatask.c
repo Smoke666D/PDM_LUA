@@ -106,18 +106,16 @@ void vLUArestartPDM()
 	return;
 }
 
-#define CAN_CONFIG_ARG  	2U
+
 /*
  *  Setting Can parameter API function
  */
 static int iCanSetConfig(lua_State *L)
 {
-	int arg_number = lua_gettop(L);
-	if (arg_number == CAN_CONFIG_ARG)
+	if (lua_gettop(L) == TWO_ARGUMENT)
 	{
-		uint8_t ucCanNumber =(uint8_t) lua_tointeger(L,-arg_number); //First argument it's channel number
-		uint16_t usBaudRate =(uint16_t)lua_tointeger(L,-arg_number -1 ); //Seconds argument it's baud rate
-		CO_CANmodule_init( usBaudRate );
+		uint8_t ucCanNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
+		vCANBoudInit( (uint16_t)lua_tointeger( L, SECOND_ARGUMENT) );
 	}
 	return ( NO_RESULT );
 }
@@ -408,8 +406,8 @@ int  iOutSetPWM( lua_State *L )
 	return ( NO_RESULT );
 }
 
-#define EEPROM_WRITE_ARG_COUNT  2U
-#define EEPROM_READ_ARG_COUNT 	1U
+
+
 /*
  * Функция записи в EEPROM
  */
@@ -417,7 +415,7 @@ static int iSetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
 	uint16_t adr;
-	if (lua_gettop(L) == EEPROM_WRITE_ARG_COUNT )
+	if (lua_gettop(L) == TWO_ARGUMENT )
 	{
 		adr = lua_tointeger( L , FIRST_ARGUMENT );
 		if ( lua_isinteger( L, SECOND_ARGUMENT ) )
@@ -451,7 +449,7 @@ static int iSetEEPROM( lua_State *L )
 static int iGetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
-	if ( lua_gettop( L ) == EEPROM_READ_ARG_COUNT )
+	if ( lua_gettop( L ) == ONE_ARGUMENT )
 	{
 		uint16_t adr = (uint16_t) lua_tointeger( L, FIRST_ARGUMENT );
 		uint8_t  data_type;

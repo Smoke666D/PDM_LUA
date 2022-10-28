@@ -45,6 +45,7 @@ typedef struct {
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan);
 void vCANinit();
+void vCANBoudInit( uint16_t boudrate );
 QueueHandle_t* pCANRXgetQueue ( void );
 QueueHandle_t* pCANTXgetQueue ( void );
 uint8_t vCheckAnswer( void );

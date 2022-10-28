@@ -34,6 +34,9 @@
 #define SECOND_ARGUMENT  2U
 #define LAST_ARGUMENT	-1
 
+#define ONE_ARGUMENT	1U
+#define TWO_ARGUMENT	2U
+
 #define END_OF_FILE_BYTE  0xFF
 
 
