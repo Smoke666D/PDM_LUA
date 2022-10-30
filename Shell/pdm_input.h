@@ -27,19 +27,15 @@
 #define CC_MAX  6
 
 typedef enum {
-	DIN_CONFIG,
-	RPM_CONFIG
+	DIN_CONFIG_NEGATIVE = 0U,
+	DIN_CONFIG_POSITIVE = 1U,
+	RPM_CONFIG = 2U
 } PDM_INPUT_TYPE;
 
 typedef struct {
 	uint32_t Pin;
 	GPIO_TypeDef * GPIOx;
 } PIN_CONFIG;
-
-typedef enum {
-	POSITIVE_STATE = 0U,
-	NEGATIVE_STATE = 1U,
-} LOGIC_STATE;
 
 typedef enum {
 		INPUT_1 = 0U,
@@ -70,7 +66,6 @@ uint32_t 	  ulHighCounter;
 uint8_t 	  ucValue;
 uint8_t 	  ucTempValue;
 PDM_INPUT_TYPE eInputType;
-LOGIC_STATE   eState;
 } DinConfig_t;
 
 
@@ -78,8 +73,8 @@ typedef struct RPMConfigDef_t
 {
 	uint32_t uiData;
 	uint32_t uiRawData[CC_MAX ];
-	uint8_t ucCounter;
-	uint8_t ucValid;
+	uint8_t  ucCounter;
+	uint8_t  ucValid;
 	uint16_t usValidCounter;
 } RPMConfig_t;
 
@@ -89,7 +84,7 @@ uint32_t uiGetDinMask();
 void vGetCCData(uint8_t TimInd);
 void vDinInit( void );
 void vDinTask(void *argument);
-PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, LOGIC_STATE eLogicState, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
+PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
 void vSystemDinTimer(void);
 uint8_t ucDinGet(PDM_INPUT_NAME channel);
 #endif /* PDM_INPUT_H_ */

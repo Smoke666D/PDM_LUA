@@ -52,7 +52,7 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K0
 
 
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM);
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin);
 static void vHWOutOFF( uint8_t ucChannel );
 /*
  *
@@ -64,26 +64,26 @@ void vOutInit( void )
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, DEFAULT_PWM	);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin,DEFAULT_PWM	 );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin, DEFAULT_PWM	 );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin,DEFAULT_PWM	 );
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin, DEFAULT_PWM  );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin, DEFAULT_PWM  );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,  DEFAULT_PWM	 );
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin);
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin	);
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin );
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
@@ -128,7 +128,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer)
 {
 	ERROR_CODE res = INVALID_ARG;
-	if ((out_name < OUT_COUNT) && (timer<= MAX_RESET_TIMER ))     //Проверяем корекность номера канала
+	if ( out_name < OUT_COUNT )      //Проверяем корекность номера канала
 	{
 		out[out_name].EnableFlag	  =IS_DISABLE;
 		out[out_name].error_count = restart_count;
@@ -200,9 +200,8 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 	uint32_t status1 		= 0;
 	uint32_t status2 		= 0;
 	uint32_t channel_state 	= 0;
-	for (uint8_t i=0;i<20;i++)
+	for (uint8_t i = 0; i < OUT_COUNT ;i++)
 	{
-
 		switch (out[i].error_flag)
 		{
 			case ERROR_CIRCUT_BREAK:
@@ -223,7 +222,6 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 						channel_state = 0;
 						break;
 				}
-
 		}
 		if (i<10)
 		{
@@ -263,7 +261,7 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 /*
  *
  */
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin,   uint8_t PWM)
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin )
 {
 	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
@@ -337,17 +335,17 @@ static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
  */
-static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size,uint16_t FrameSize, uint16_t BufferSize)
+static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size, uint16_t BufferSize)
 {
 	uint32_t temp;
-	for (uint8_t i=0;i<Size;i++)
+	for (uint8_t i=0; i<Size; i++ )
 	{
 		temp = 0;
-		for (uint8_t j=0;j<FrameSize;j++)
+		for (uint8_t j=0;j < ADC_FRAME_SIZE; j++ )
 		{
-		  temp += InData[InIndex+i+j*BufferSize];
+		  temp += InData[ InIndex + i + j * BufferSize ];
 		}
-		OutData[OutIndex+i] = temp / FrameSize;
+		OutData[ OutIndex + i ] = temp / ADC_FRAME_SIZE;
 	}
 	return;
 }
@@ -367,12 +365,12 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 	for (uint8_t r = 0; r < 4U; r++)
     {
 		if (( fraw < xOut.CSC[r].data ) || (r ==3))
-		 {
-						 fRes =  fraw * xOut.CSC[r].k;
-						 fRes += xOut.CSC[r].b ;
-						 fRes *= fraw/RR;
-						 break;
-		 }
+		{
+			fRes =  fraw * xOut.CSC[r].k;
+			fRes += xOut.CSC[r].b ;
+			fRes *= fraw/RR;
+			break;
+		}
 	 }
 	return ( fRes );
 }
@@ -384,19 +382,19 @@ static void vDataConvertToFloat( void)
 {
 	uint8_t i;
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U ,ADC_FRAME_SIZE, ADC1_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U ,ADC_FRAME_SIZE, ADC1_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 4U ,ADC_FRAME_SIZE, ADC1_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 4U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
-	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U ,ADC_FRAME_SIZE, ADC2_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
-	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U ,ADC_FRAME_SIZE, ADC2_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U ,ADC_FRAME_SIZE, ADC3_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U ,ADC_FRAME_SIZE, ADC3_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
 	 //Преобразование во флоат данных AIN
 	 for ( i = 0; i < AIN_COUNT; i++ )
 	 {
@@ -411,20 +409,7 @@ static void vDataConvertToFloat( void)
  {
    static portBASE_TYPE xHigherPriorityTaskWoken;
    xHigherPriorityTaskWoken = pdFALSE;
-   switch ( adc_number )
-   {
-     case ADC3_READY:
-       xEventGroupSetBitsFromISR( pADCEvent, ADC3_READY, &xHigherPriorityTaskWoken );
-       break;
-     case ADC2_READY:
-       xEventGroupSetBitsFromISR( pADCEvent, ADC2_READY, &xHigherPriorityTaskWoken );
-       break;
-     case ADC1_READY:
-       xEventGroupSetBitsFromISR( pADCEvent, ADC1_READY, &xHigherPriorityTaskWoken );
-       break;
-     default:
-       break;
-   }
+   xEventGroupSetBitsFromISR( pADCEvent, adc_number, &xHigherPriorityTaskWoken );
    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
    return;
  }

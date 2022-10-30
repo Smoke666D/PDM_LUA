@@ -16,7 +16,6 @@
 extern CAN_HandleTypeDef hcan1;
 QueueHandle_t pCanRXHandle  __SECTION(RAM_SECTION_CCMRAM);
 QueueHandle_t pCanTXHandle  __SECTION(RAM_SECTION_CCMRAM);
-
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
 
 /*

@@ -6,14 +6,12 @@
  */
 #include "luatask.h"
 #include "lprefix.h"
-#include "luaDefScript.h"
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "lapi.h"
 #include "PDMhardware.h"
 #include "cantask.h"
-#include "script.c"
 #include "pdm_input.h"
 #include "flash.h"
 #include "string.h"
@@ -52,9 +50,8 @@ static void vCCMRAVarInir()
  */
 static uint32_t ulRestartTimer()
 {
-	uint32_t data;
-	data = htim11.Instance->CNT;
-	htim11.Instance->CNT= 0;
+	uint32_t data = htim11.Instance->CNT;
+	htim11.Instance->CNT = 0U;
 	return ( data );
 }
 /*
@@ -62,10 +59,11 @@ static uint32_t ulRestartTimer()
  */
 static void vSafeModeOutState()
 {
-	 for (uint8_t i=0;i<OUT_COUNT;i++)
+	 for (uint8_t i = 0; i<OUT_COUNT; i++ )
 	 {
 		 vOutSetState( i, 0U);
      }
+	 return;
 }
 /*---------------------------------------------------------------------------------------------------*/
 EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
@@ -77,7 +75,7 @@ EventGroupHandle_t* osLUAetPDMstatusHandle ( void )
  */
 char * pcGetLUAError()
 {
-	return pcLuaErrorString;
+	return ( pcLuaErrorString );
 }
 /*
  *
@@ -105,14 +103,12 @@ void vLUArestartPDM()
 	state = LUA_RESTART;
 	return;
 }
-
-
 /*
  *  Setting Can parameter API function
  */
 static int iCanSetConfig(lua_State *L)
 {
-	if (lua_gettop(L) == TWO_ARGUMENT)
+	if (lua_gettop(L) == TWO_ARGUMENTS)
 	{
 		uint8_t ucCanNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
 		vCANBoudInit( (uint16_t)lua_tointeger( L, SECOND_ARGUMENT) );
@@ -122,29 +118,15 @@ static int iCanSetConfig(lua_State *L)
 /*
  * Setting discrete input configuration API function
  */
-#define DIN_CONFIG_ARG  4U
-#define MIN_DIN_CONFIG_ARG   2U
-
 static int iDinConfig(lua_State *L )
 {
 	int arg_number = lua_gettop(L);
-	if (arg_number >= MIN_DIN_CONFIG_ARG )  /*Check function argument count*/
+	if (arg_number >= TWO_ARGUMENTS )  /*Check function argument count*/
 	{
-		uint32_t lf 			= DEF_L_FRONT;
-		uint32_t hf 			= DEF_H_FRONT;
-		PDM_INPUT_TYPE eDinType = DIN_CONFIG;
-		uint8_t in_number 		=(uint8_t) (lua_tointeger(L,-arg_number) -1) ; /*Первым аргументом дожен передоваться номер канала*/
-		uint8_t state	  		=(uint8_t)  lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-		if ( ( arg_number == MIN_DIN_CONFIG_ARG )&& ( state == RPM_STATE ) )
-		{
-			eDinType = RPM_CONFIG;
-		}
-		if ( arg_number == DIN_CONFIG_ARG )
-		{
-			lf = ( uint32_t) lua_tointeger(L,-arg_number-2);
-			hf = ( uint32_t) lua_tointeger(L,-arg_number-3);
-		}
-		eDinConfig(in_number, (state == 0)?NEGATIVE_STATE:POSITIVE_STATE,eDinType,hf,lf);
+		eDinConfig( (uint8_t) lua_tointeger( L, FIRST_ARGUMENT ) -1U ,
+				    (uint8_t) lua_tonumber( L, SECOND_ARGUMENT ) ,
+					( arg_number == FOUR_ARGUMENTS ) ? ( uint32_t) lua_tointeger( L, FOURTH_ARGUMENT) :DEF_H_FRONT,
+					( arg_number == FOUR_ARGUMENTS ) ? ( uint32_t) lua_tointeger( L, THIRD_ARGUMENT) : DEF_L_FRONT );
 	}
 	return ( NO_RESULT );
 }
@@ -154,25 +136,11 @@ static int iDinConfig(lua_State *L )
  */
 int iCanSetResiveFilter(lua_State *L )
 {
-  uint8_t ucResNumber = 0;
+  uint8_t ucResNumber = NO_RESULT;
   if (lua_gettop(L) == 1U )  /*Проверяем, что при вызове нам передали нужное число аргументов*/
   {
-	  if( lua_isinteger(L, -1) == 1) /*Проверяем что аргумент нужного типа*/
-	  {
-		  switch (eMailboxFilterSet( lua_tointeger(L,-1)))  /*Пытамеся настроить mailbox.*/
-		  {
-		  	  case BUFFER_FULL:   /*Если все mailbox заняты*/
-		  		  lua_pushnumber(L, 1U );
-		  		  ucResNumber = 1;
-		  		  break;
-		  	  case ERROR_NO:  /*Если id успешно зарегестрирован*/
-		  		  lua_pushnumber(L, 0U );
-		  		  ucResNumber = 1;
-		  		  break;
-		  	  default:
-		  		  break;
-		  }
-	  }
+	  lua_pushnumber(L, eMailboxFilterSet( ( uint32_t ) lua_tointeger(L,-1))== BUFFER_FULL ? 1U : 0U );
+	  ucResNumber = ONE_RESULT;
   }
   return ( ucResNumber );
 }
@@ -189,10 +157,7 @@ int iCanCheckData(lua_State *L )
 		  uiRes = vCheckAnswer();
 		  break;
 	  case 1U:
-		  if ( lua_isinteger( L, CAN_ID_POS ) )
-		  {
-			  uiRes = vCanChekMessage( lua_tointeger(L, CAN_ID_POS) );
-		  }
+		  uiRes = vCanChekMessage( lua_tointeger(L, CAN_ID_POS) );
 		  break;
 	  default:
 		  break;
@@ -277,18 +242,16 @@ int iCanGetResivedData(lua_State *L )
  */
 int iCanSendPDM( lua_State *L )
 {
-	uint32_t ID;
 	uint8_t  DATA[CAN_FRAME_SIZE] = {0,0,0,0,0,0,0,0};
 	uint8_t  size = lua_gettop(L);
-	if ((size >= CANSEND_ARGUMENT_COUNT)&& lua_isinteger(L, CAN_ID_POS ) )    /*Проверяем, что при вызове нам передали нужное число аргументов*/
+	if (size >= TWO_ARGUMENTS)
 	{
-	    ID = (uint32_t) lua_tointeger(L, CAN_ID_POS) ; /*Первым аргументом дожен передоваться ID пакета*/
 		size--;
 		for (int i=0;i< size ;i++)
 		{
-		  DATA[i]= (uint8_t) lua_tointeger(L,-( size-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
+			DATA[i]= (uint8_t) lua_tointeger(L,-( size-i)); /*Третьем агрументом должно передоватьс время плавного старта в милисекундах*/
 		}
-		vCanInsertTXData(ID, &DATA[0], 8);
+		vCanInsertTXData( (uint32_t)lua_tointeger(L, FIRST_ARGUMENT) , &DATA[0], 8);
 	}
 	return ( NO_RESULT );
 }
@@ -300,15 +263,12 @@ int iCanSendPDM( lua_State *L )
 int iCanSendTable( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
-	uint32_t ID;
 	uint8_t DATA[ CAN_FRAME_SIZE ];
-	uint8_t size;
 	if (arg_number == CAN_SEND_TABLE_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		if ( lua_istable(L, CAN_TABLE_POS ) &&  lua_isinteger(L,FRAME_SIZE_POS) && lua_isinteger(L, CAN_ID_POS) )
+		if ( lua_istable(L, CAN_TABLE_POS ) )
 		{
-			ID 	  = (uint32_t) lua_tointeger(L, CAN_ID_POS ); //Первым аргументом дожен передоваться ID пакета
-			size  = (uint8_t) lua_tointeger(L, FRAME_SIZE_POS);
+			uint8_t size 	= (uint8_t) lua_tointeger(L, FRAME_SIZE_POS);
 			if  (size <= CAN_FRAME_SIZE )
 			{
 				for (uint8_t i = 0; i < size; i++)
@@ -317,7 +277,7 @@ int iCanSendTable( lua_State *L )
 					DATA[i]= lua_tointeger(L,-1);
 					lua_pop(L,1);
 				}
-				vCanInsertTXData(ID, &DATA[0], size);
+				vCanInsertTXData((uint32_t) lua_tointeger(L, FIRST_ARGUMENT ), &DATA[0], size);
 			}
 		}
 	}
@@ -329,41 +289,31 @@ int iCanSendTable( lua_State *L )
 int iCanSendRequest( lua_State *L )
 {
 	int arg_number = lua_gettop(L);
-	uint32_t ID;
 	uint8_t DATA[CAN_FRAME_SIZE];
-	uint8_t size;
 	if (arg_number >= SEND_REQUEST_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		ID = (uint32_t) lua_tointeger(L,-arg_number) ; //Первым аргументом дожен передоваться ID пакета
-		vSetWaitFilter(lua_tointeger(L,-(arg_number-1)) );//Второй агрумент - id ответного пакета
-		size  = arg_number -2;
+		vSetWaitFilter( lua_tointeger( L, SECOND_ARGUMENT ) );//Второй агрумент - id ответного пакета
+		uint8_t size  = arg_number -2;
 		for (int i=0;i<size;i++)
 		{
 			DATA[i] = (uint8_t) lua_tointeger(L,-(arg_number-2-i)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
 		}
-		vCanInsertTXData(ID, &DATA[0], size);
+		vCanInsertTXData( (uint32_t) lua_tointeger( L, FIRST_ARGUMENT ), &DATA[0], size);
 	}
 	return ( NO_RESULT );
 }
-
-
 /*
  *
  */
 int  iOutConfig( lua_State *L )
 {
-	int out_number;
-	int arg_number = lua_gettop(L);
-	float power;
-	float overload_power;
-	uint16_t overload_timer;
-	if (arg_number >= CONFIG_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if ( lua_gettop(L) >= FOUR_ARGUMENTS)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
-		power = (float) lua_tonumber(L,-(arg_number-1));  //Вторым агрументом должена передоваться номинальная мощность
-		overload_timer = (uint16_t) lua_tointeger(L,-(arg_number-2)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
-		overload_power= (float) lua_tonumber(L,-(arg_number-3));
-		vHWOutOverloadConfig(out_number,power, overload_timer, overload_power);
+		uint8_t out_number 		= ( uint8_t ) lua_tointeger( L, FIRST_ARGUMENT ) - 1U ; //Первым аргументом дожен передоваться номер канала
+		vHWOutOverloadConfig( out_number,
+							  ( float ) lua_tonumber(L, SECOND_ARGUMENT ),
+							  ( uint16_t ) lua_tointeger(L, THIRD_ARGUMENT),
+							  ( float ) lua_tonumber(L, FOURTH_ARGUMENT ) );
 		vOutHWEnbale(out_number);
 	}
 	return ( NO_RESULT );
@@ -373,16 +323,11 @@ int  iOutConfig( lua_State *L )
  */
 int  iOutResetConfig( lua_State *L )
 {
-	int out_number = 0;
-	int arg_number = lua_gettop(L);
-	uint8_t reset_count;
-	uint16_t timer;
-	if (arg_number >= RESET_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if (lua_gettop(L) >= THREE_ARGUMENTS )  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		out_number = lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
-		reset_count = (uint8_t) lua_tointeger(L,-(arg_number-1)); //Третьем агрументом должно передоватьс время плавного старта в милисекундах
-		timer = (uint16_t) lua_tointeger(L,-(arg_number-2));
-		vHWOutResetConfig(out_number, reset_count, timer);
+		vHWOutResetConfig(( uint8_t ) lua_tointeger(L, FIRST_ARGUMENT ) -1U,
+						  ( uint8_t ) lua_tointeger(L, SECOND_ARGUMENT ),
+						  ( uint16_t) lua_tointeger(L, THIRD_ARGUMENT ));
 	}
 	return ( NO_RESULT );
 }
@@ -391,33 +336,23 @@ int  iOutResetConfig( lua_State *L )
  */
 int  iOutSetPWM( lua_State *L )
 {
-	uint16_t out_number = 0;
-    uint16_t pwm;
-	int arg_number = lua_gettop(L);
-	if (arg_number >= PWM_ARGUMENT_COUNT)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if (lua_gettop(L) == TWO_ARGUMENTS )  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
-		out_number = ( uint16_t ) lua_tointeger(L,-arg_number) -1 ; //Первым аргументом дожен передоваться номер канала
-		if (out_number < OUT_COUNT) //Проверяем, что номер канала задан верно
-		{
-			pwm = ( uint16_t) lua_tointeger(L,-(arg_number-1)); //Вторам агрументом должна передоватьс мощность канала в процентах 0-100.
-			vOutSetPWM(out_number, ( pwm <= MAX_PWM )? pwm : MAX_PWM);
-		}
+		vOutSetPWM( ( uint8_t ) lua_tointeger(L, FIRST_ARGUMENT ) -1U,
+					( uint8_t) lua_tointeger( L, SECOND_ARGUMENT )
+					);
 	}
 	return ( NO_RESULT );
 }
-
-
-
 /*
  * Функция записи в EEPROM
  */
 static int iSetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
-	uint16_t adr;
-	if (lua_gettop(L) == TWO_ARGUMENT )
+	if (lua_gettop(L) == TWO_ARGUMENTS )
 	{
-		adr = lua_tointeger( L , FIRST_ARGUMENT );
+		uint16_t adr = lua_tointeger( L , FIRST_ARGUMENT );
 		if ( lua_isinteger( L, SECOND_ARGUMENT ) )
 		{
 			int idata = lua_tointeger( L, SECOND_ARGUMENT );
@@ -530,8 +465,7 @@ static RESULT_t eIsLuaSkriptValid(const char* pcData, uint32_t size)
 {
 	uint8_t ucRes = RESULT_FALSE;
 	uint8_t ucEND = 0x00;
-	uint32_t ulIndex;
-	for (ulIndex = 0;ulIndex < size; ulIndex++)
+	for (uint32_t ulIndex = 0;ulIndex < size; ulIndex++)
 	{
 		if ( pcData[ulIndex] == ucEND )
 		{
