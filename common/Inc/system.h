@@ -26,7 +26,9 @@
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
 #define  USB_TASK_PRIORITY              osPriorityLow
 #define  DIN_TASK_PRIORITY              osPriorityLow
+#define  MEMS_TASK_PRIORITY             osPriorityNormal
 
+#define  MEMS_TASK_STACK_SIZE           5000U
 #define  DEFAULT_TASK_STACK_SIZE        128U
 #define  LUA_TASK_STACK_SIZE            3000U
 #define  ADC_TASK_STACK_SIZE            128U
@@ -50,6 +52,7 @@
 #define  SERIAL_PROTECT_TASK_NAME       "serialProtectTask"
 #define  USB_TASK_NAME                  "usbTask"
 #define  DIN_TASK_NAME                  "dinTask"
+#define  MEMS_TASK_NAME                  "memsTask"
 
 #define  SYS_MAX_TSAK_NUMBER            20U
 #define  SYS_BAR_LENGTH                 10U

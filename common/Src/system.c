@@ -17,6 +17,7 @@
 #include "luatask.h"
 #include "cantask.h"
 #include "PDMhardware.h"
+#include "mems.h"
 
 /*-------------------------------- Structures --------------------------------*/
 /*--------------------------------- Constant ---------------------------------*/
@@ -25,7 +26,7 @@ static TASK_ANALIZE tasks[SYS_MAX_TSAK_NUMBER] = { 0U };
 static uint8_t      taskNumber                 = 0U;
 
 
-
+static uint32_t memsTaskBuffer[MEMS_TASK_STACK_SIZE]            		  __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t luaTaskBuffer[LUA_TASK_STACK_SIZE]            			  __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t canTXTaskBuffer[CAN_TX_TASK_STACK_SIZE]             		    __section( TASK_RAM_SECTION ) = { 0U };
 static uint32_t canRXTaskBuffer[CAN_RX_TASK_STACK_SIZE]             		    __section( TASK_RAM_SECTION ) = { 0U };
@@ -47,6 +48,7 @@ static StaticTask_t serialProtectTaskControlBlock __section( TASK_RAM_SECTION ) 
 static StaticTask_t usbTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t dinTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t adcTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
+static StaticTask_t memsTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 
 
 static osThreadId_t luaTaskHandle           = NULL;
@@ -54,6 +56,8 @@ static osThreadId_t dinTaskHandle          	    __section( TASK_RAM_SECTION ) = 
 static osThreadId_t canRXTaskHandle               __section( TASK_RAM_SECTION ) = NULL;
 static osThreadId_t canTXTaskHandle               __section( TASK_RAM_SECTION ) = NULL;
 static osThreadId_t adcTaskHandle         	    __section( TASK_RAM_SECTION ) = NULL;
+static osThreadId_t memsTaskHandle         	    __section( TASK_RAM_SECTION ) = NULL;
+
 
 
 
@@ -176,6 +180,7 @@ void vSYStaskInit ( void )
   vSYSstaticTaskInit( canTXTaskBuffer, sizeof(canTXTaskBuffer),&canTXTaskControlBlock, CAN_TX_TASK_NAME, &canTXTaskHandle, CAN_TX_TASK_PRIORITY, vCanTXTask);
   vSYSstaticTaskInit( canRXTaskBuffer, sizeof(canRXTaskBuffer),&canRXTaskControlBlock, CAN_RX_TASK_NAME, &canRXTaskHandle, CAN_RX_TASK_PRIORITY, vCanRXTask);
   vSYSstaticTaskInit( adcTaskBuffer, sizeof(adcTaskBuffer),&adcTaskControlBlock, ADC_TASK_NAME, &adcTaskHandle, ADC_TASK_PRIORITY, vADCTask);
+  vSYSstaticTaskInit( memsTaskBuffer, sizeof(memsTaskBuffer),&memsTaskControlBlock, MEMS_TASK_NAME, &memsTaskHandle, MEMS_TASK_PRIORITY, vmemsTask);
   return;
 }
 /*----------------------------------------------------------------------------*/

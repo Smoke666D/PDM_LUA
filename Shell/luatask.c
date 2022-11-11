@@ -18,6 +18,7 @@
 #include "CO_driver_ST32F4xx.h"
 #include "datastorage.h"
 
+
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -103,6 +104,53 @@ void vLUArestartPDM()
 	state = LUA_RESTART;
 	return;
 }
+/*
+ *
+ */
+static int iSetPID(lua_State *L)
+{
+	if (lua_gettop(L) == FOUR_ARGUMENTS)
+	{
+		        uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
+		        float Kp = (float) lua_tointeger( L, SECOND_ARGUMENT);
+		        float Ki = (float) lua_tointeger( L, SECOND_ARGUMENT);
+		        float Kd = (float) lua_tointeger( L, SECOND_ARGUMENT);
+		        vInitPID(ucNumber - 1U , Kp,Ki,Kd);
+	}
+	return ( NO_RESULT );
+
+}
+
+static int iResetPID(lua_State *L)
+{
+	if (lua_gettop(L) == ONE_ARGUMENT)
+	{
+			uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
+			vPidReset(ucNumber - 1U );
+	}
+	return ( NO_RESULT );
+
+}
+/*
+ *
+ */
+static int iProcessPID(lua_State *L)
+{
+	uint8_t res =  NO_RESULT;
+	if (lua_gettop(L) == TWO_ARGUMENTS)
+		{
+				uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
+				float fInData =  (uint8_t) lua_tointeger( L, SECOND_ARGUMENT);
+				float fOutData;
+				vProcessPID(ucNumber- 1U,fInData,&fOutData);
+				lua_pushnumber(L, fOutData);
+				res = ONE_RESULT;
+		}
+		return ( res );
+}
+
+
+
 /*
  *  Setting Can parameter API function
  */
@@ -534,6 +582,9 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"ConfigCan",iCanSetConfig);
 	   	   lua_register(L1,"GetEEPROM",iGetEEPROM);
 	   	   lua_register(L1,"SetEEPROM",iSetEEPROM);
+	   	   lua_register(L1,"setPID",iSetPID);
+	   	   lua_register(L1,"resetPID",iResetPID);
+	   	   lua_register(L1,"processPID",iProcessPID);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
