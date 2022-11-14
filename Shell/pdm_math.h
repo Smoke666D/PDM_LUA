@@ -17,7 +17,7 @@
 
 
 void vInitPID(uint8_t pid_number, float32_t Kp,float32_t Ki,float32_t Kd);
-void vProcessPID(uint8_t pid_number, float32_t input, float32_t * output);
+float vProcessPID(uint8_t pid_number, float32_t input);
 void vPidReset(uint8_t pid_number);
 
 #endif /* PDM_MATH_H_ */

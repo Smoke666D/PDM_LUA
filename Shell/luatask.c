@@ -17,6 +17,7 @@
 #include "string.h"
 #include "CO_driver_ST32F4xx.h"
 #include "datastorage.h"
+#include "pdm_math.h"
 
 
 extern TIM_HandleTypeDef htim11;
@@ -30,7 +31,7 @@ static EventGroupHandle_t xPDMstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
 
 char * pcLuaErrorString 				    __SECTION(RAM_SECTION_CCMRAM) = NULL;
 int res 									__SECTION(RAM_SECTION_CCMRAM) = 0;
-
+float dd = 0;
 /*
  * Переменные, размещенные в секции CCMRAM не инициализиурются при объявлении,
  * для коректности работы необходима явная инициалиазция
@@ -107,14 +108,18 @@ void vLUArestartPDM()
 /*
  *
  */
+
+
+
+
 static int iSetPID(lua_State *L)
 {
 	if (lua_gettop(L) == FOUR_ARGUMENTS)
 	{
 		        uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
-		        float Kp = (float) lua_tointeger( L, SECOND_ARGUMENT);
-		        float Ki = (float) lua_tointeger( L, SECOND_ARGUMENT);
-		        float Kd = (float) lua_tointeger( L, SECOND_ARGUMENT);
+		        float Kp = (float) lua_tonumber( L, SECOND_ARGUMENT);
+		        float Ki = (float) lua_tonumber( L, THIRD_ARGUMENT);
+		        float Kd = (float) lua_tonumber( L, FOURTH_ARGUMENT);
 		        vInitPID(ucNumber - 1U , Kp,Ki,Kd);
 	}
 	return ( NO_RESULT );
@@ -134,21 +139,20 @@ static int iResetPID(lua_State *L)
 /*
  *
  */
+
 static int iProcessPID(lua_State *L)
 {
 	uint8_t res =  NO_RESULT;
 	if (lua_gettop(L) == TWO_ARGUMENTS)
-		{
+	{
 				uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
-				float fInData =  (uint8_t) lua_tointeger( L, SECOND_ARGUMENT);
-				float fOutData;
-				vProcessPID(ucNumber- 1U,fInData,&fOutData);
+				dd = vProcessPID(ucNumber- 1U, lua_tonumber( L, SECOND_ARGUMENT));
+				float fOutData = dd;
 				lua_pushnumber(L, fOutData);
 				res = ONE_RESULT;
-		}
-		return ( res );
+	}
+	return ( res );
 }
-
 
 
 /*

@@ -10,7 +10,7 @@
 
 
 
-static arm_pid_instance_f32 PID[PID_COUNT]  __SECTION(RAM_SECTION_CCMRAM);
+static arm_pid_instance_f32 PID[PID_COUNT]; //  __SECTION(RAM_SECTION_CCMRAM);
 
 void vInitPID(uint8_t pid_number, float32_t Kp,float32_t Ki,float32_t Kd)
 {
@@ -24,13 +24,15 @@ void vInitPID(uint8_t pid_number, float32_t Kp,float32_t Ki,float32_t Kd)
   return;
 }
 
-void vProcessPID(uint8_t pid_number, float32_t input, float32_t * output)
+
+float vProcessPID(uint8_t pid_number, float input)
 {
+     float res = 0;
 	if ( pid_number < PID_COUNT )
 	{
-		*output = arm_pid_f32(&PID[pid_number],input);
+		res = arm_pid_f32(&PID[pid_number],input);
 	}
-	return;
+	return ( res );
 }
 
 void vPidReset(uint8_t pid_number)

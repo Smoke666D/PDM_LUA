@@ -86,6 +86,7 @@ uint16_t uGetRPM2()
 	{
 		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002D) )* 60);
 	}
+
 	return ( usTemp );
 }
 /*
