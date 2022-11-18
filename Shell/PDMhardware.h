@@ -11,14 +11,17 @@
 #include "main.h"
 #include "luatask.h"
 
+
 #define AIN_COUNT			4U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
 #define DEFAULT_HPOWER      59.0  // Номинальный ток по умолчания для мощных каналов
 #define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
+#define MAX_HOVERLOAD_POWER 60.0
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
-#define MAX_LPOWER			8.0  //Максимальный номинальый ток для маломощных каналов
+#define MAX_LPOWER			10.0  //Максимальный номинальый ток для маломощных каналов
+#define MAX_LOVERLOAD_POWER 20.0
 #define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
 #define MAX_OVERLOAD_TIMER             32767U //Максимальное время плавного пуска для мощных каналов
 #define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
@@ -44,6 +47,7 @@
 #define ADC_FRAME_SIZE     3U
 #define R1  10000.0
 #define R2  3000.0
+#define R3  1500.0
 
 #define K   ( 3.3 / 0xFFF )
 #define RR  330.0
@@ -69,6 +73,7 @@
 
 #define CIRCUT_BREAK_CURRENT  0.1
 #define COOF  ( ( R1 + R2 ) /R2) * K
+#define COOF1  ( ( R1 + R3 ) /R3) * K
 
 #define STATE_OUT_CONFIG		  0x20
 
@@ -122,7 +127,6 @@ typedef struct __packed
    float overload_power;
    float current;
    ENABLE_t EnableFlag;
-   uint8_t error_count; //Кол-во попыток рестарта
    uint8_t error_counter;
    uint8_t PWM;
    uint16_t GPIO_Pin;

@@ -12,6 +12,8 @@
 float freq = 100.0f;
 static MDI_knobs_t iKnobs;
 static MDI_knobs_t *ipKnobs = &iKnobs;
+static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
+
 
 //static MOTION_SENSOR_Axes_t AccValue;
 //static MOTION_SENSOR_Axes_t GyrValue;
@@ -65,12 +67,13 @@ static MDI_input_t data_in;
 
 void vmemsTask(void *argument)
 {
-
+	pxPDMstatusEvent = osLUAetPDMstatusHandle();
 	MX_DynamicInclinometer_Init();
 	data_in.Timestamp = 0;
 	for(;;)
 	{
 	   osDelay(10);
+	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   data_in.Gyro[0] = 0.1;
 	   data_in.Gyro[1] = 0.8;
 	   data_in.Gyro[2] = 0.2;

@@ -26,6 +26,7 @@ static uint16_t muRawVData[AIN_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
 static float mfVData[AIN_COUNT] 		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
+static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 
 static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
 										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
@@ -50,10 +51,12 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K0
 										};
 
 
-
+static void vADCCallBackSet(ADC_HandleTypeDef* hadc);
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin);
 static void vHWOutOFF( uint8_t ucChannel );
+static HAL_StatusTypeDef ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
+static HAL_StatusTypeDef ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
 /*
  *
  */
@@ -131,7 +134,7 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	if ( out_name < OUT_COUNT )      //Проверяем корекность номера канала
 	{
 		out[out_name].EnableFlag	  =IS_DISABLE;
-		out[out_name].error_count = restart_count;
+		out[out_name].error_counter = restart_count;
 		out[out_name].restart_timer = 0U;
 		out[out_name].restart_config_timer = timer;
 		res = ERROR_OK;
@@ -168,7 +171,7 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 			vHWOutOFF(out_name);
 			break;
 		case 1:
-			if (out[out_name].out_state != STATE_OUT_ON )
+			if (out[out_name].out_state == STATE_OUT_OFF)
 			{
 				out[out_name].out_state = STATE_OUT_ON_PROCESS;
 			}
@@ -270,7 +273,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].channel 		   = uiChannel;
 		out[out_name].GPIOx 		   = EnablePort;
 		out[out_name].GPIO_Pin		   = EnablePin;
-		out[out_name].error_count      = 0U;
+		out[out_name].error_counter      = 0U;
 		out[out_name].soft_start_timer = 0;
 		out[out_name].out_state		   = STATE_OUT_OFF;
 		out[out_name].current 		   = 0.0;
@@ -416,12 +419,16 @@ static void vDataConvertToFloat( void)
 /*
  *
  */
- static void vGotoRestartState( uint8_t ucChannel )
+ static void vGotoRestartState( uint8_t ucChannel, float fCurr )
  {
-	 out[ucChannel].out_state =  STATE_OUT_RESTART_PROCESS;
-	 out[ucChannel].error_flag = ERROR_OVER_LIMIT;
-	 out[ucChannel].restart_timer = 0U;
+	 out[ ucChannel ].out_state =  (out[ ucChannel ].error_counter == 1) ? STATE_OUT_ERROR : STATE_OUT_RESTART_PROCESS;
+	 out[ ucChannel ].error_flag = ERROR_OVER_LIMIT;
+	 out[ ucChannel ].restart_timer = 0U;
 	 vHWOutOFF(ucChannel);
+	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_HOVERLOAD_POWER : MAX_LOVERLOAD_POWER ) )
+	 {
+		 out[ucChannel].current = fCurr;
+	 }
  }
  /*
   *
@@ -432,20 +439,11 @@ static void vDataConvertToFloat( void)
  	{
     	if (out[i].EnableFlag == IS_ENABLE )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
-    		 if (  out[i].out_state == STATE_OUT_OFF ) /*Если канал выключен, то ток контралировать нет смысла*/
-    		 {
-    			out[i].current 	   = 0U;
-    		 }
-    		 else
-    		 {
-    			 if (out[i].error_flag  != ERROR_OVER_LIMIT)
-    			 {
-    				 out[i].current = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
-    			 }
-    		 }
+    	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
  			switch (out[i].out_state)
  			{
  				case STATE_OUT_OFF: //Состония входа - выключен
+ 					out[i].current 	   		 = 0U;
  					out[i].restart_timer   	 = 0U;
  					out[i].error_flag 		 = ERROR_OFF;
  					break;
@@ -453,9 +451,10 @@ static void vDataConvertToFloat( void)
  					out[i].restart_timer++;
  					if (out[i].soft_start_timer !=0)
  					{
- 						if  ( out[i].current > out[i].power )
+ 						if  ( fCurrent  > out[i].power )
  						{
- 							vGotoRestartState(i);
+ 							vGotoRestartState(i,fCurrent);
+ 							break;
  						}
  						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
  						{
@@ -469,50 +468,43 @@ static void vDataConvertToFloat( void)
  						 		{
  						 			ucCurrentPower = START_POWER;
  						 		}
- 						 		vHWOutSet(i,ucCurrentPower);
+ 						 		vHWOutSet( i, ucCurrentPower );
  						 }
  					}
  					else
  					{
- 						 vHWOutSet(i,MAX_POWER);
- 						 if (out[i].restart_timer >=out[i].overload_config_timer)
+ 						 if  ( fCurrent  > out[ i ].overload_power )
  						 {
- 							out[i].out_state = STATE_OUT_ON;
+ 						 	vGotoRestartState(i,fCurrent);
+ 						 	break;
  						 }
- 						 if  ( out[i].current > out[i].overload_power )
+ 						 vHWOutSet( i , MAX_POWER );
+ 						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
- 							vGotoRestartState(i);
+ 							out[ i ].out_state = STATE_OUT_ON;
  						 }
  					}
+ 					out[i].current = fCurrent;
  					break;
  				case STATE_OUT_ON:  // Состояние входа - включен
- 					if  ( out[i].current > out[i].power )
+ 					if  (fCurrent  > out[ i ].power )
  					{
- 						vGotoRestartState(i);
+ 						vGotoRestartState( i, fCurrent );
  						break;
  					}
- 					if (out[i].current < CIRCUT_BREAK_CURRENT )
- 					{
- 						out[i].error_flag  = ERROR_CIRCUT_BREAK;
- 					}
+ 					out[i].error_flag = (fCurrent  < CIRCUT_BREAK_CURRENT ? ERROR_CIRCUT_BREAK: ERROR_OFF );
+ 					out[i].current = fCurrent;
  					break;
  				case STATE_OUT_RESTART_PROCESS:
- 					if (out[i].error_counter == 1)
+ 					out[ i ].restart_timer++;
+ 					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
  					{
- 						out[i].out_state = STATE_OUT_ERROR;
- 					}
- 					else
- 					{
- 						out[i].restart_timer++;
- 						if  ( out[i].restart_timer >= out[i].restart_config_timer )
+ 						out[ i ].out_state = STATE_OUT_ON_PROCESS;
+ 						out[ i ].restart_timer =0;
+ 						out[ i ].error_flag  = ERROR_OFF;
+ 						if ( out[i].error_counter !=0 )
  						{
- 							out[i].out_state = STATE_OUT_ON_PROCESS;
- 							out[i].restart_timer =0;
- 							out[i].error_flag  = ERROR_OFF;
- 							if (out[i].error_counter > 1U )
- 							{
- 								out[i].error_counter--;
- 							}
+ 							out[i].error_counter--;
  						}
  					}
  					break;
@@ -523,6 +515,8 @@ static void vDataConvertToFloat( void)
    		 }
  	}
  }
+
+
  /*
   *
   */
@@ -530,19 +524,25 @@ static void vDataConvertToFloat( void)
  {
    /* USER CODE BEGIN vADCTask */
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
+   pxPDMstatusEvent = osLUAetPDMstatusHandle();
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS(1 );
    xLastWakeTime = xTaskGetTickCount();
+   vADCCallBackSet(&hadc1);
+   vADCCallBackSet(&hadc2);
+   vADCCallBackSet(&hadc3);
    for(;;)
    {
+
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
-	   HAL_ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
-	   HAL_ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
-	   HAL_ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
+	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
+	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
+	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
 	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
-	   HAL_ADC_Stop_DMA(&hadc1);
-	   HAL_ADC_Stop_DMA(&hadc2);
-	   HAL_ADC_Stop_DMA(&hadc3);
+	   ADC_Stop_DMA(&hadc1);
+	   ADC_Stop_DMA(&hadc2);
+	   ADC_Stop_DMA(&hadc3);
 	   vDataConvertToFloat();
 	   vOutControlFSM();
    }
@@ -550,6 +550,139 @@ static void vDataConvertToFloat( void)
  }
 
 
+/*
+ *
+ */
+ static void ADC_DMAError(DMA_HandleTypeDef *hdma)
+ {
+   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+   hadc->State= HAL_ADC_STATE_ERROR_DMA;
+   hadc->ErrorCode |= HAL_ADC_ERROR_DMA;
+ }
+
+ static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma)
+ {
+   /* Retrieve ADC handle corresponding to current DMA handle */
+   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+
+   /* Update state machine on conversion status if not in error state */
+   if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA))
+   {
+     /* Update ADC state machine */
+     SET_BIT(hadc->State, HAL_ADC_STATE_REG_EOC);
+
+     /* Determine whether any further conversion upcoming on group regular   */
+     /* by external trigger, continuous mode or scan sequence on going.      */
+     /* Note: On STM32F4, there is no independent flag of end of sequence.   */
+     /*       The test of scan sequence on going is done either with scan    */
+     /*       sequence disabled or with end of conversion flag set to        */
+     /*       of end of sequence.                                            */
+     if(ADC_IS_SOFTWARE_START_REGULAR(hadc)                   &&
+        (hadc->Init.ContinuousConvMode == DISABLE)            &&
+        (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
+         HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)  )   )
+     {
+       /* Disable ADC end of single conversion interrupt on group regular */
+       /* Note: Overrun interrupt was enabled with EOC interrupt in          */
+       /* HAL_ADC_Start_IT(), but is not disabled here because can be used   */
+       /* by overrun IRQ process below.                                      */
+       __HAL_ADC_DISABLE_IT(hadc, ADC_IT_EOC);
+
+       /* Set ADC state */
+       CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);
+
+       if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_INJ_BUSY))
+       {
+         SET_BIT(hadc->State, HAL_ADC_STATE_READY);
+       }
+     }
+   }
+   else /* DMA and-or internal error occurred */
+   {
+     if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
+     {
+       /* Call HAL ADC Error Callback function */
 
 
+     	HAL_ADC_ErrorCallback(hadc);
+     }
+ 	else
+ 	{
+       /* Call DMA error callback */
+       hadc->DMA_Handle->XferErrorCallback(hdma);
+     }
+   }
+ }
+
+/*
+ *
+ */
+ static void vADCCallBackSet(ADC_HandleTypeDef* hadc)
+ {
+ 	    hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
+ 	    hadc->DMA_Handle->XferHalfCpltCallback = NULL;
+ 	    hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
+ 	    return;
+ }
+
+ /*
+  *
+  */
+ static HAL_StatusTypeDef ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
+  {
+    __HAL_LOCK(hadc);
+    __HAL_ADC_DISABLE(hadc);
+    if(HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_ADON))
+    {
+      hadc->Instance->CR2 &= ~ADC_CR2_DMA;
+      if (hadc->DMA_Handle->State == HAL_DMA_STATE_BUSY)
+      {
+        if (HAL_DMA_Abort(hadc->DMA_Handle) != HAL_OK)
+        {
+          SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_DMA);
+        }
+      }
+      __HAL_ADC_DISABLE_IT(hadc, ADC_IT_OVR);
+      ADC_STATE_CLR_SET(hadc->State,
+                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                        HAL_ADC_STATE_READY);
+    }
+    __HAL_UNLOCK(hadc);
+    return ( HAL_OK );
+  }
+/*
+ *
+ */
+ static HAL_StatusTypeDef ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
+ {
+   __HAL_LOCK(hadc);
+   if((hadc->Instance->CR2 & ADC_CR2_ADON) != ADC_CR2_ADON)
+   {
+     __HAL_ADC_ENABLE(hadc);
+     __IO uint32_t counter = (ADC_STAB_DELAY_US * (SystemCoreClock / 1000000U));
+     while(counter != 0U)
+     {
+       counter--;
+     }
+   }
+   CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
+   if(HAL_IS_BIT_SET(hadc->Instance->CR2, ADC_CR2_ADON))
+   {
+     ADC_STATE_CLR_SET(hadc->State,
+                       HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR,
+                       HAL_ADC_STATE_REG_BUSY);
+     __HAL_UNLOCK(hadc);
+     __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
+     __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
+     hadc->Instance->CR2 |= ADC_CR2_DMA;
+     HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
+     hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
+   }
+   else
+   {
+     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
+     SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
+   }
+   return ( HAL_OK );
+ }
 
