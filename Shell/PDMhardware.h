@@ -77,6 +77,12 @@
 
 #define STATE_OUT_CONFIG		  0x20
 
+ typedef struct
+ {
+   __IO uint32_t ISR;   /*!< DMA interrupt status register */
+   __IO uint32_t Reserved0;
+   __IO uint32_t IFCR;  /*!< DMA interrupt flag clear register */
+ } DMA_Base_Registers;
 
 typedef enum {
   STATE_OUT_OFF,
@@ -191,4 +197,5 @@ float fAinGetState(AIN_NAME_TYPE channel);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
+void DMA_IRQHandler(DMA_HandleTypeDef *hdma);
 #endif /* PDMHARDWARE_H_ */
