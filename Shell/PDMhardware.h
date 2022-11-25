@@ -11,10 +11,12 @@
 #include "main.h"
 #include "luatask.h"
 
-#define AIN_COUNT			4U		//Количесвто аналоговых входов
+#define AIN_COUNT			      3U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
+#define TEMPERATURE_COUNT   1U     /* Количество каналов температуры */
+#define ANGLE_COUNT         2U     /* Количество каналов углов */
 #define DEFAULT_HPOWER      59.0  // Номинальный ток по умолчания для мощных каналов
 #define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
@@ -171,6 +173,12 @@ typedef enum {
 	AIN_4 = 3,
 } AIN_NAME_TYPE;
 
+typedef enum {
+  ANGLE_TYPE_ROLL,
+  ANGLE_TYPE_PITCH,
+  ANGLE_TYPE_YAW
+} ANGLE_TYPE;
+
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
 void vOutInit( void );
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
@@ -183,7 +191,10 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
 float fOutGetCurrent(OUT_NAME_TYPE eChNum);
-float fAinGetState(AIN_NAME_TYPE channel);
+float fAinGetState ( AIN_NAME_TYPE channel );
+float fBatteryGet ( void );
+float fTemperatureGet ( uint8_t chanel );
+float fAngleGet ( ANGLE_TYPE type );
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
