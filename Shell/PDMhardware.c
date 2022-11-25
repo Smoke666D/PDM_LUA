@@ -257,10 +257,31 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 /*
  * Напряжение на аналогвом входе
  */
- float fAinGetState(AIN_NAME_TYPE channel)
- {
-	 return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
- }
+float fAinGetState ( AIN_NAME_TYPE channel )
+{
+ return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
+}
+/*
+ *
+ */
+float fBatteryGet ( void )
+{
+ return 0.0f;
+}
+/*
+ *
+ */
+float fTemperatureGet ( uint8_t chanel )
+{
+  return 0.0f;
+}
+/*
+ *
+ */
+float fAngleGet ( ANGLE_TYPE type )
+{
+  return 0.0f;
+}
 /*
  *
  */

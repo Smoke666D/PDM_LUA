@@ -31,13 +31,15 @@ typedef struct __packed
 } LUA_TELEMETRY; /* 6 */
 typedef struct __packed
 {
-  float          battery;                  /* 0 */
-  float          voltage[AIN_COUNT];       /* 4 */
-  uint8_t        din[DIN_CHANNEL];         /* 20 */
-  DOUT_TELEMETRY douts[OUT_COUNT];         /* 31 */
-  LUA_TELEMETRY  lua;                      /* 231 */
-  uint16_t       velocity[VELOCITY_COUNT]; /* 236 */
-} PDM_TELEMETRY; /* 241 */
+  float          battery;                        /* 0 */
+  float          voltage[AIN_COUNT];             /* 4 */
+  uint8_t        din[DIN_CHANNEL];               /* 20 */
+  DOUT_TELEMETRY douts[OUT_COUNT];               /* 31 */
+  LUA_TELEMETRY  lua;                            /* 231 */
+  uint16_t       velocity[VELOCITY_COUNT];       /* 236 */
+  float          temperature[TEMPERATURE_COUNT]; /* 240 */
+  float          angle[ANGLE_COUNT];             /* 248 */
+} PDM_TELEMETRY; /* 246 */
 typedef struct __packed
 {
   uint32_t uid[UID_32_LENGTH];

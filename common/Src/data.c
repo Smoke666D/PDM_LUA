@@ -37,12 +37,12 @@ void vDATAinit ( void )
   systemData.lua.major        = atoi( LUA_VERSION_MAJOR );
   systemData.lua.minor        = atoi( LUA_VERSION_MINOR );
   systemData.lua.patch        = atoi( LUA_VERSION_RELEASE );
-  telemetry.battery           = 0.0f;
   return;
 }
 
 void vDATAupdate ( void )
 {
+  telemetry.battery = fBatteryGet();
   for ( uint8_t i=0U; i<AIN_COUNT; i++ )
   {
     telemetry.voltage[i] = fAinGetState( ( AIN_NAME_TYPE )i );
@@ -63,6 +63,14 @@ void vDATAupdate ( void )
   telemetry.lua.state    = eLUAgetSTATE();
   telemetry.velocity[0U] = uGetRPM1();
   telemetry.velocity[1U] = uGetRPM2();
+  for ( uint8_t i=0U; i<TEMPERATURE_COUNT; i++ )
+  {
+    telemetry.temperature[i] = fTemperatureGet( i );
+  }
+  for ( uint8_t i=0U; i<ANGLE_COUNT; i++ )
+  {
+    telemetry.angle[i] = fAngleGet( ( ANGLE_TYPE )i );
+  }
   return;
 }
 
@@ -102,4 +110,3 @@ uint8_t uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out )
 {
   return uDATAget( adr, size, out, ( uint8_t* )&systemData, sizeof( PDM_DATA ) );
 }
-
