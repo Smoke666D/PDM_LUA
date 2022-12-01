@@ -151,18 +151,81 @@ uint8_t uPDMGetCanReady()
 	return (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan));
 }
 
+
+
+
+static HAL_StatusTypeDef CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pHeader, uint8_t aData[])
+{
+  uint32_t transmitmailbox;
+  HAL_CAN_StateTypeDef state = hcan->State;
+  uint32_t tsr = READ_REG(hcan->Instance->TSR);
+
+
+  if ((state == HAL_CAN_STATE_READY) || (state == HAL_CAN_STATE_LISTENING))
+  {
+
+      /* Select an empty transmit mailbox */
+      transmitmailbox = (tsr & CAN_TSR_CODE) >> CAN_TSR_CODE_Pos;
+
+      /* Check transmit mailbox value */
+      if (transmitmailbox <= 2U)
+      {
+
+
+    	  /* Set up the Id */
+    	  if (pHeader->IDE == CAN_ID_STD)
+    	  {
+    		 hcan->Instance->sTxMailBox[transmitmailbox].TIR = ((pHeader->StdId << CAN_TI0R_STID_Pos) |
+                                                           pHeader->RTR);
+    	  }
+    	  else
+    	  {
+    		  hcan->Instance->sTxMailBox[transmitmailbox].TIR = ((pHeader->ExtId << CAN_TI0R_EXID_Pos) |
+                                                           pHeader->IDE |
+                                                           pHeader->RTR);
+    	  }
+
+    	  hcan->Instance->sTxMailBox[transmitmailbox].TDTR = (pHeader->DLC);
+
+    	  if (pHeader->TransmitGlobalTime == ENABLE)
+    	  {
+    		  	  SET_BIT(hcan->Instance->sTxMailBox[transmitmailbox].TDTR, CAN_TDT0R_TGT);
+    	  }
+
+    	  WRITE_REG(hcan->Instance->sTxMailBox[transmitmailbox].TDHR,
+                ((uint32_t)aData[7] << CAN_TDH0R_DATA7_Pos) |
+                ((uint32_t)aData[6] << CAN_TDH0R_DATA6_Pos) |
+                ((uint32_t)aData[5] << CAN_TDH0R_DATA5_Pos) |
+                ((uint32_t)aData[4] << CAN_TDH0R_DATA4_Pos));
+    	  WRITE_REG(hcan->Instance->sTxMailBox[transmitmailbox].TDLR,
+                ((uint32_t)aData[3] << CAN_TDL0R_DATA3_Pos) |
+                ((uint32_t)aData[2] << CAN_TDL0R_DATA2_Pos) |
+                ((uint32_t)aData[1] << CAN_TDL0R_DATA1_Pos) |
+                ((uint32_t)aData[0] << CAN_TDL0R_DATA0_Pos));
+
+
+    	  SET_BIT(hcan->Instance->sTxMailBox[transmitmailbox].TIR, CAN_TI0R_TXRQ);
+
+    	  /* Return function status */
+    	  return HAL_OK;
+    }
+  }
+  return HAL_ERROR;
+}
+
+
 /*
  * Функция отправики пакета СAN
  * Поскольку используется апаратный Fifo конртеллера, создание программного буфера не имеет смысла
  */
 uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
 {
-	uint8_t res = 0;
 	static  CAN_TxHeaderTypeDef pTXHeader;
-    uint32_t TxMailbox;
-	//CO_LOCK_CAN_SEND(CANmodule);
-    if (HAL_CAN_GetTxMailboxesFreeLevel(pPDMCan) > 0) {
-
+	/*
+	 * Проверям что какой-то есть хотя бы один свободный TX mailbox
+	 */
+    if ( ( ((pPDMCan->Instance->TSR & CAN_TSR_TME0) != 0U) || ((pPDMCan->Instance->TSR & CAN_TSR_TME1) != 0U) || ((pPDMCan->Instance->TSR & CAN_TSR_TME2) != 0U) ))
+    {
     		pTXHeader.DLC                = (uint32_t)buffer->DLC;
     		if ( buffer->ident & CAN_EXT_FLAG)
     		{
@@ -174,97 +237,24 @@ uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
     		}
     		else
     		{
-    			pTXHeader.ExtId              = 0U;
-    	        pTXHeader.IDE                = CAN_ID_STD;
-    	        pTXHeader.RTR                = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
-    	        pTXHeader.StdId              = buffer->ident & CANID_MASK;
-
+    			pTXHeader.ExtId       = 0U;
+    	        pTXHeader.IDE         = CAN_ID_STD;
+    	        pTXHeader.RTR         = (buffer->ident & FLAG_RTR) ? CAN_RTR_REMOTE : CAN_RTR_DATA;
+    	        pTXHeader.StdId       = buffer->ident & CANID_MASK;
     		}
-
 	        pTXHeader.TransmitGlobalTime = DISABLE;
 
 	        /* Now add message to FIFO. Should not fail */
-	        if (HAL_CAN_AddTxMessage(pPDMCan,  &pTXHeader, buffer->data, &TxMailbox) == HAL_OK)
+	        if (CAN_AddTxMessage(pPDMCan,  &pTXHeader, buffer->data) == HAL_OK)
 	        {
-	        	res = 1;
+	        	return 1;
 	        }
 	  }
-
-//	 CO_UNLOCK_CAN_SEND(CANmodule);
-	 return res;
+	 return 0;
 }
 
 
 
-/******************************************************************************/
-/* Get error counters from the module. If necessary, function may use
-    * different way to determine errors. */
-static uint16_t rxErrors=0, txErrors=0, overflow=0;
-
-void CO_CANmodule_process(CO_CANmodule_t *CANmodule) {
-    uint32_t err;
-
-    err = ((uint32_t)txErrors << 16) | ((uint32_t)rxErrors << 8) | overflow;
-
-    if (CANmodule->errOld != err) {
-        uint16_t status = CANmodule->CANerrorStatus;
-
-        CANmodule->errOld = err;
-
-        if (txErrors >= 256U) {
-            /* bus off */
-            status |= CO_CAN_ERRTX_BUS_OFF;
-        }
-        else {
-            /* recalculate CANerrorStatus, first clear some flags */
-            status &= 0xFFFF ^ (CO_CAN_ERRTX_BUS_OFF |
-                                CO_CAN_ERRRX_WARNING | CO_CAN_ERRRX_PASSIVE |
-                                CO_CAN_ERRTX_WARNING | CO_CAN_ERRTX_PASSIVE);
-
-            /* rx bus warning or passive */
-            if (rxErrors >= 128) {
-                status |= CO_CAN_ERRRX_WARNING | CO_CAN_ERRRX_PASSIVE;
-            } else if (rxErrors >= 96) {
-                status |= CO_CAN_ERRRX_WARNING;
-            }
-
-            /* tx bus warning or passive */
-            if (txErrors >= 128) {
-                status |= CO_CAN_ERRTX_WARNING | CO_CAN_ERRTX_PASSIVE;
-            } else if (rxErrors >= 96) {
-                status |= CO_CAN_ERRTX_WARNING;
-            }
-
-            /* if not tx passive clear also overflow */
-            if ((status & CO_CAN_ERRTX_PASSIVE) == 0) {
-                status &= 0xFFFF ^ CO_CAN_ERRTX_OVERFLOW;
-            }
-        }
-
-        if (overflow != 0) {
-            /* CAN RX bus overflow */
-            status |= CO_CAN_ERRRX_OVERFLOW;
-        }
-
-        CANmodule->CANerrorStatus = status;
-    }
-}
-
-
-/******************************************************************************/
-
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	//CAN_SendMessage();
-}
-void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	//CAN_SendMessage();
-}
-void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	//CAN_SendMessage();
-}
 
 static void  prv_read_can_received_msg(CAN_HandleTypeDef* can, uint32_t fifo)
 {
@@ -297,4 +287,6 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	prv_read_can_received_msg(hcan, CAN_RX_FIFO1);
 	return;
 }
+
+
 
