@@ -271,9 +271,13 @@ float fBatteryGet ( void )
 /*
  *
  */
+
+uint16_t TempData;
+
 float fTemperatureGet ( uint8_t chanel )
 {
-  return 0.0f;
+	return (float)(((float)TempData * K - 0.76) )/0.0025 + 25;
+  //return TempData/2 ;
 }
 /*
  *
@@ -401,6 +405,7 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
+uint16_t TempData;
 
 static void vDataConvertToFloat( void)
 {
@@ -411,6 +416,9 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 4U , ADC1_CHANNELS);
+
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&TempData, 8U, 0U, 1U , ADC1_CHANNELS);
+
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
 	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12

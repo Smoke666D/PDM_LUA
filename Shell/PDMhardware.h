@@ -42,7 +42,7 @@
 #define ADC3_READY         0x04
 #define OUT_BUSY		   0x08
 #define ADC_DATA_READY     0x10
-#define ADC1_CHANNELS      8U
+#define ADC1_CHANNELS      9U
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
 #define ADC_FRAME_SIZE     3U
