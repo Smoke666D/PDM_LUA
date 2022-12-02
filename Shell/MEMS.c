@@ -5,9 +5,11 @@
  *      Author: igor.dymov
  */
 
+
 #include "mems.h"
 #include "motion_di.h"
 #include "main.h"
+
 
 float freq = 100.0f;
 static MDI_knobs_t iKnobs;
@@ -77,12 +79,26 @@ void vmemsTask(void *argument)
 	   data_in.Gyro[0] = 0.1;
 	   data_in.Gyro[1] = 0.8;
 	   data_in.Gyro[2] = 0.2;
-	   data_in.Acc[0] = 50.0;
-	   data_in.Acc[1] = 0.0;
-	   data_in.Acc[2] = 0.0;
+	   data_in.Acc[0] = 40.0;
+	   data_in.Acc[1] = 20.0;
+	   data_in.Acc[2] = 10.0;
 	   data_in.Timestamp +=10;
 	   MotionDI_update(&data_out,&data_in);
 	}
 }
 
+float fAngleGet ( ANGLE_TYPE type )
+{
+	float data = 0.0f;
+	switch(type)
+	{
+	case ANGLE_TYPE_ROLL:
+		data = data_out.rotation[2];
+		break;
+	case ANGLE_TYPE_PITCH:
+		data = data_out.rotation[1];
+		break;
 
+	}
+  return (data);
+}

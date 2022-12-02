@@ -256,11 +256,6 @@ void vCanTXTask(void *argument)
 			xQueueReceive( pCanTXHandle, &TXPacket, 1);
 			uPDMCanSend(&TXPacket);
 		}
-	/*	else
-		{
-			vTaskDelay( 1 );
-		}
-*/
 	}
 }
 

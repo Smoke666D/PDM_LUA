@@ -16,6 +16,7 @@
 #include "system.h"
 #include "task.h"
 #include "semphr.h"
+#include "data.h"
 #include "stm32f4xx_hal.h"
 
 #define ALGO_FREQ  100U
@@ -23,5 +24,5 @@
 
 void vmemsTask(void *argument);
 void MX_DynamicInclinometer_Process();
-
+float fAngleGet ( ANGLE_TYPE type );
 #endif /* MEMS_H_ */

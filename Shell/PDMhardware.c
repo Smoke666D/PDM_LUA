@@ -15,15 +15,20 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim12;
+extern TIM_HandleTypeDef htim6;
 
 volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U };   //ADC1 input data buffer
 volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
 volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
+uint8_t  DMA_STATUS[3];
+
+#define TEMP_DATA    5
+
+uint16_t timedata = 0;
 
 PDM_OUTPUT_TYPE out[OUT_COUNT]  		__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT] __SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawVData[AIN_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
-static float mfVData[AIN_COUNT] 		__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawVData[AIN_COUNT + 2]   __SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
@@ -51,12 +56,19 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K0
 										};
 
 
-static void vADCCallBackSet(ADC_HandleTypeDef* hadc);
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin);
 static void vHWOutOFF( uint8_t ucChannel );
-static HAL_StatusTypeDef ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
-static HAL_StatusTypeDef ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
+static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
+static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
+static void ADC_STOP();
+
+static uint32_t ulRestartTimer()
+{
+	uint32_t data = htim6.Instance->CNT;
+	htim6.Instance->CNT = 0U;
+	return ( data );
+}
 /*
  *
  */
@@ -259,33 +271,29 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
- return  ( (channel < AIN_COUNT) ? mfVData[channel]* COOF : 0U ) ;
+ return  ( (channel < AIN_COUNT) ? (float) muRawVData[channel] * COOF : 0U ) ;
 }
 /*
  *
  */
 float fBatteryGet ( void )
 {
- return 0.0f;
+ return (float)timedata/10;
 }
 /*
  *
  */
 
-uint16_t TempData;
+
 
 float fTemperatureGet ( uint8_t chanel )
 {
-	return (float)(((float)TempData * K - 0.76) )/0.0025 + 25;
-  //return TempData/2 ;
+	return ((float)muRawVData[4] * K - 0.76) /0.0025 + 25;
 }
 /*
  *
  */
-float fAngleGet ( ANGLE_TYPE type )
-{
-  return 0.0f;
-}
+
 /*
  *
  */
@@ -363,7 +371,7 @@ static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
  */
-static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint16_t InIndex, uint16_t OutIndex, uint8_t Size, uint16_t BufferSize)
+static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize)
 {
 	uint32_t temp;
 	for (uint8_t i=0; i<Size; i++ )
@@ -405,7 +413,7 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
-uint16_t TempData;
+
 
 static void vDataConvertToFloat( void)
 {
@@ -415,10 +423,7 @@ static void vDataConvertToFloat( void)
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 4U , ADC1_CHANNELS);
-
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&TempData, 8U, 0U, 1U , ADC1_CHANNELS);
-
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
 	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
@@ -427,11 +432,6 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
-	 //Преобразование во флоат данных AIN
-	 for ( i = 0; i < AIN_COUNT; i++ )
-	 {
-		 mfVData[ i ] = (float) muRawVData[ i ] ;
-	 }
 	return;
 }
 /*
@@ -546,33 +546,56 @@ static void vDataConvertToFloat( void)
  }
 
 
+ static void vADCEnable(ADC_HandleTypeDef* hadc1,ADC_HandleTypeDef* hadc2,ADC_HandleTypeDef* hadc3)
+ {
+	     __HAL_ADC_ENABLE(hadc1);
+	     __HAL_ADC_ENABLE(hadc2);
+	     __HAL_ADC_ENABLE(hadc3);
+ }
  /*
   *
   */
  void vADCTask(void * argument)
  {
    /* USER CODE BEGIN vADCTask */
+	uint32_t ucdata[10];
+	uint8_t coint = 0;
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
    pxPDMstatusEvent = osLUAetPDMstatusHandle();
    TickType_t xLastWakeTime;
-   const TickType_t xPeriod = pdMS_TO_TICKS(1 );
+   const TickType_t xPeriod = pdMS_TO_TICKS( 1 );
    xLastWakeTime = xTaskGetTickCount();
-   vADCCallBackSet(&hadc1);
-   vADCCallBackSet(&hadc2);
-   vADCCallBackSet(&hadc3);
+   DMA_STATUS[0] = 0;
+   DMA_STATUS[1] = 0;
+   DMA_STATUS[2] = 0;
+   HAL_TIM_Base_Start(&htim6);
    for(;;)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
+
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
+
 	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
-	   ADC_Stop_DMA(&hadc1);
-	   ADC_Stop_DMA(&hadc2);
-	   ADC_Stop_DMA(&hadc3);
+	   ulRestartTimer();
+	   ADC_STOP();
+	   //ADC_Stop_DMA(&hadc1);
+	   //ADC_Stop_DMA(&hadc2);
+	   //ADC_Stop_DMA(&hadc3);
+	   ucdata[coint] = ulRestartTimer();
 	   vDataConvertToFloat();
+	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
+	   к моменту ее завершения, АЦП уже включаться*/
 	   vOutControlFSM();
+	   coint++;
+	   if (coint == 10)
+	   {
+		   coint = 0;
+		   timedata = (ucdata[0] +ucdata[1]+ucdata[2]+ucdata[3]+ucdata[4]+ucdata[5]+ucdata[6]+ucdata[7]+ucdata[8]+ucdata[9])/10;
+
+	   }
    }
    /* USER CODE END vADCTask */
  }
@@ -606,7 +629,6 @@ static void vDataConvertToFloat( void)
      /*       sequence disabled or with end of conversion flag set to        */
      /*       of end of sequence.                                            */
      if(ADC_IS_SOFTWARE_START_REGULAR(hadc)                   &&
-        (hadc->Init.ContinuousConvMode == DISABLE)            &&
         (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
          HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)  )   )
      {
@@ -630,28 +652,17 @@ static void vDataConvertToFloat( void)
      if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
      {
        /* Call HAL ADC Error Callback function */
-
-
      	HAL_ADC_ErrorCallback(hadc);
      }
  	else
  	{
        /* Call DMA error callback */
-       hadc->DMA_Handle->XferErrorCallback(hdma);
+ 		ADC_DMAError(hdma);
      }
    }
  }
 
-/*
- *
- */
- static void vADCCallBackSet(ADC_HandleTypeDef* hadc)
- {
- 	    hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
- 	    hadc->DMA_Handle->XferHalfCpltCallback = NULL;
- 	    hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
- 	    return;
- }
+
 #define HAL_TIMEOUT_DMA_ABORT    5U
  /* Private types -------------------------------------------------------------*/
 
@@ -668,10 +679,6 @@ static void vDataConvertToFloat( void)
    if(hdma->State != HAL_DMA_STATE_BUSY)
    {
      hdma->ErrorCode = HAL_DMA_ERROR_NO_XFER;
-
-     /* Process Unlocked */
-     __HAL_UNLOCK(hdma);
-
      return HAL_ERROR;
    }
    else
@@ -696,9 +703,6 @@ static void vDataConvertToFloat( void)
          /* Change the DMA state */
          hdma->State = HAL_DMA_STATE_TIMEOUT;
 
-         /* Process Unlocked */
-         __HAL_UNLOCK(hdma);
-
          return HAL_TIMEOUT;
        }
      }
@@ -709,18 +713,60 @@ static void vDataConvertToFloat( void)
      /* Change the DMA state*/
      hdma->State = HAL_DMA_STATE_READY;
 
-     /* Process Unlocked */
-     __HAL_UNLOCK(hdma);
    }
    return HAL_OK;
+ }
+
+
+ static void ADC_STOP()
+ {
+	   __HAL_ADC_DISABLE(&hadc1);
+	   __HAL_ADC_DISABLE(&hadc2);
+	   __HAL_ADC_DISABLE(&hadc3);
+	   hadc1.Instance->CR2 &= ~ADC_CR2_DMA;
+	   hadc2.Instance->CR2 &= ~ADC_CR2_DMA;
+	   hadc3.Instance->CR2 &= ~ADC_CR2_DMA;
+	   if (hadc1.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+	   {
+	        if (DMA_Abort(hadc1.DMA_Handle) != HAL_OK)
+	        {
+	          SET_BIT(hadc1.State, HAL_ADC_STATE_ERROR_DMA);
+	        }
+	   }
+	   if (hadc2.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+		   {
+		        if (DMA_Abort(hadc2.DMA_Handle) != HAL_OK)
+		        {
+		          SET_BIT(hadc2.State, HAL_ADC_STATE_ERROR_DMA);
+		        }
+		   }
+	   if (hadc3.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+		   {
+		        if (DMA_Abort(hadc3.DMA_Handle) != HAL_OK)
+		        {
+		          SET_BIT(hadc3.State, HAL_ADC_STATE_ERROR_DMA);
+		        }
+		   }
+	   __HAL_ADC_DISABLE_IT(&hadc1, ADC_IT_OVR);
+	   __HAL_ADC_DISABLE_IT(&hadc2, ADC_IT_OVR);
+	   __HAL_ADC_DISABLE_IT(&hadc3, ADC_IT_OVR);
+	      ADC_STATE_CLR_SET(hadc1.State,
+	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	                        HAL_ADC_STATE_READY);
+	      ADC_STATE_CLR_SET(hadc2.State,
+	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	      	                        HAL_ADC_STATE_READY);
+	      ADC_STATE_CLR_SET(hadc3.State,
+	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	      	                        HAL_ADC_STATE_READY);
+
  }
 
  /*
   *
   */
- static HAL_StatusTypeDef ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
+ static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
   {
-    __HAL_LOCK(hadc);
     __HAL_ADC_DISABLE(hadc);
     if(HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_ADON))
     {
@@ -737,98 +783,42 @@ static void vDataConvertToFloat( void)
                         HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
                         HAL_ADC_STATE_READY);
     }
-    __HAL_UNLOCK(hadc);
-    return ( HAL_OK );
   }
 
 
 
- HAL_StatusTypeDef DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
- {
-   HAL_StatusTypeDef status = HAL_OK;
 
-   /* calculate DMA base and stream number */
-   DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-
-
-   /* Process locked */
-   __HAL_LOCK(hdma);
-
-   if(HAL_DMA_STATE_READY == hdma->State)
-   {
-     /* Change DMA peripheral state */
-     hdma->State = HAL_DMA_STATE_BUSY;
-
-     /* Initialize the error code */
-     hdma->ErrorCode = HAL_DMA_ERROR_NONE;
-
-     /* Configure the source, destination address and the data length */
-
-     /* Clear DBM bit */
-      hdma->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
-
-      /* Configure DMA Stream data length */
-      hdma->Instance->NDTR = DataLength;
-
-
-        /* Configure DMA Stream source address */
-        hdma->Instance->PAR = SrcAddress;
-
-        /* Configure DMA Stream destination address */
-        hdma->Instance->M0AR = DstAddress;
-
-
-
-
-
-     /* Clear all interrupt flags at correct offset within the register */
-     regs->IFCR = 0x3FU << hdma->StreamIndex;
-
-     /* Enable Common interrupts*/
-     hdma->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
-
-
-     /* Enable the Peripheral */
-     __HAL_DMA_ENABLE(hdma);
-   }
-   else
-   {
-     /* Process unlocked */
-     __HAL_UNLOCK(hdma);
-
-     /* Return error status */
-     status = HAL_BUSY;
-   }
-
-   return status;
- }
 
 /*
  *
  */
- static HAL_StatusTypeDef ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
+ static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
  {
-   __HAL_LOCK(hadc);
-   if((hadc->Instance->CR2 & ADC_CR2_ADON) != ADC_CR2_ADON)
-   {
-     __HAL_ADC_ENABLE(hadc);
-     __IO uint32_t counter = (ADC_STAB_DELAY_US * (SystemCoreClock / 1000000U));
-     while(counter != 0U)
-     {
-       counter--;
-     }
-   }
+
    CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
    if(HAL_IS_BIT_SET(hadc->Instance->CR2, ADC_CR2_ADON))
    {
-     ADC_STATE_CLR_SET(hadc->State,
-                       HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR,
-                       HAL_ADC_STATE_REG_BUSY);
-     __HAL_UNLOCK(hadc);
+     ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR, HAL_ADC_STATE_REG_BUSY);
      __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
      __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
      hadc->Instance->CR2 |= ADC_CR2_DMA;
-     DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
+
+     DMA_Base_Registers *regs = (DMA_Base_Registers *)hadc->DMA_Handle->StreamBaseAddress;
+
+
+      if(HAL_DMA_STATE_READY == hadc->DMA_Handle->State)
+      {
+        	hadc->DMA_Handle->State = HAL_DMA_STATE_BUSY;
+        	hadc->DMA_Handle->ErrorCode = HAL_DMA_ERROR_NONE;
+            /* Clear DBM bit */
+        	hadc->DMA_Handle->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
+        	hadc->DMA_Handle->Instance->NDTR = Length;
+        	hadc->DMA_Handle->Instance->PAR = &hadc->Instance->DR;
+        	hadc->DMA_Handle->Instance->M0AR = pData;
+        	regs->IFCR = 0x3FU << hadc->DMA_Handle->StreamIndex;
+        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
+        	__HAL_DMA_ENABLE(hadc->DMA_Handle);
+        }
      hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
    }
    else
@@ -836,7 +826,7 @@ static void vDataConvertToFloat( void)
      SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
      SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
    }
-   return ( HAL_OK );
+
  }
 
 
@@ -909,14 +899,12 @@ static void vDataConvertToFloat( void)
          regs->IFCR = 0x3FU << hdma->StreamIndex;
          /* Change the DMA state */
          hdma->State = HAL_DMA_STATE_READY;
-         /* Process Unlocked */
-         __HAL_UNLOCK(hdma);
          return;
        }
 
        if(((hdma->Instance->CR) & (uint32_t)(DMA_SxCR_DBM)) != RESET)
        {
-           hdma->XferCpltCallback(hdma);
+    	   ADC_DMAConvCplt(hdma);
 
        }
        /* Disable the transfer complete interrupt if the DMA mode is not CIRCULAR */
@@ -929,11 +917,8 @@ static void vDataConvertToFloat( void)
 
            /* Change the DMA state */
            hdma->State = HAL_DMA_STATE_READY;
-
-           /* Process Unlocked */
-           __HAL_UNLOCK(hdma);
          }
-         hdma->XferCpltCallback(hdma);
+         ADC_DMAConvCplt(hdma);
 
        }
      }
@@ -961,9 +946,7 @@ static void vDataConvertToFloat( void)
        /* Change the DMA state */
        hdma->State = HAL_DMA_STATE_READY;
 
-       /* Process Unlocked */
-       __HAL_UNLOCK(hdma);
      }
-     hdma->XferErrorCallback(hdma);
+     ADC_DMAConvCplt(hdma);
    }
  }

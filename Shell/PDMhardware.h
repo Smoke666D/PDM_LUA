@@ -203,7 +203,7 @@ float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState ( AIN_NAME_TYPE channel );
 float fBatteryGet ( void );
 float fTemperatureGet ( uint8_t chanel );
-float fAngleGet ( ANGLE_TYPE type );
+
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
