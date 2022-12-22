@@ -78,6 +78,14 @@
 
 #define STATE_OUT_CONFIG		  0x20
 
+
+typedef enum {
+ ADC_DMA1 =0,
+ ADC_DMA2 =1,
+ ADC_DMA3 =2
+} ADC_DMA_NAME;
+
+
  typedef struct
  {
    __IO uint32_t ISR;   /*!< DMA interrupt status register */

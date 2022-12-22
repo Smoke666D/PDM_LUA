@@ -26,12 +26,12 @@ uint8_t  DMA_STATUS[3];
 
 uint16_t timedata = 0;
 
-PDM_OUTPUT_TYPE out[OUT_COUNT]  		__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawCurData[OUT_COUNT] __SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawVData[AIN_COUNT + 2]   __SECTION(RAM_SECTION_CCMRAM);
+PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawVData[AIN_COUNT + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
-static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
+static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 
 static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
 										{{0U,0.0}      ,{K0025O20,V0025O20},{K06O20,V06O20},{K10O20,V10O20},{K25O20,V25O20}},
@@ -278,7 +278,7 @@ float fAinGetState ( AIN_NAME_TYPE channel )
  */
 float fBatteryGet ( void )
 {
- return (float)timedata/10;
+ return (float)timedata;
 }
 /*
  *
@@ -573,22 +573,22 @@ static void vDataConvertToFloat( void)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-
+	   ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-
-	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
-	   ulRestartTimer();
-	   ADC_STOP();
-	   //ADC_Stop_DMA(&hadc1);
-	   //ADC_Stop_DMA(&hadc2);
-	   //ADC_Stop_DMA(&hadc3);
 	   ucdata[coint] = ulRestartTimer();
+	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
+
+	   ADC_STOP();
+
+
 	   vDataConvertToFloat();
+
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
 	   vOutControlFSM();
+
 	   coint++;
 	   if (coint == 10)
 	   {
@@ -761,32 +761,6 @@ static void vDataConvertToFloat( void)
 	      	                        HAL_ADC_STATE_READY);
 
  }
-
- /*
-  *
-  */
- static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
-  {
-    __HAL_ADC_DISABLE(hadc);
-    if(HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_ADON))
-    {
-      hadc->Instance->CR2 &= ~ADC_CR2_DMA;
-      if (hadc->DMA_Handle->State == HAL_DMA_STATE_BUSY)
-      {
-        if (DMA_Abort(hadc->DMA_Handle) != HAL_OK)
-        {
-          SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_DMA);
-        }
-      }
-      __HAL_ADC_DISABLE_IT(hadc, ADC_IT_OVR);
-      ADC_STATE_CLR_SET(hadc->State,
-                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-                        HAL_ADC_STATE_READY);
-    }
-  }
-
-
-
 
 
 /*
