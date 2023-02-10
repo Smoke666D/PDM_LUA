@@ -49,17 +49,23 @@
 #define R1  10000.0
 #define R2  3000.0
 #define R3  1500.0
+#define RA1  60400.0
+#define RA2  3000.0
+#define RA3  10000.0
+
+#define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
+#define INDIOD  0.2
 
 #define K   ( 3.3 / 0xFFF )
-#define RR  330.0
-#define K25O20   6420U
-#define V25O20   (float)(25.0/K25O20*RR)
-#define K10O20   6570U
+#define RR  300.0
+#define K15O20   16450U
+#define V15O20   (float)(15.0/K15O20*RR)
+#define K10O20   16450U
 #define V10O20	 (float)(10.0/K10O20*RR)
-#define K06O20    6749U
-#define V06O20	 (float)(6.0/K10O20*RR)
-#define K0025O20  7410U
-#define V0025O20  (float)(0.25/K0025O20*RR)
+#define K01O20    16650U
+#define V01O20	 (float)(1.0/K01O20*RR)
+#define K002O20  16800U
+#define V002O20  (float)(0.20/K002O20*RR)
 #define K10O08  2850U
 #define V10O08	(float)(10.0/K10O08*RR)
 #define K03O08  3000U
