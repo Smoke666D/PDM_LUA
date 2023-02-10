@@ -271,14 +271,14 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
- return  ( (channel < AIN_COUNT) ? (float) muRawVData[channel] * COOF : 0U ) ;
+ return  ( (channel < AIN_COUNT) ? (float) muRawVData[channel] * AINCOOF1 : 0U ) ;
 }
 /*
  *
  */
 float fBatteryGet ( void )
 {
- return (float)timedata;
+ return (float)muRawVData[3] * AINCOOF1 + INDIOD;
 }
 /*
  *
@@ -413,25 +413,90 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
+volatile uint8_t out_switch = 0;
+static void vOutSwitch(uint8_t o_s)
+{
+	switch (o_s)
+	{
+	case 0:
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, Cs_Dis20_7_Pin, GPIO_PIN_SET);
 
+		break;
+	case 1:
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, Cs_Dis20_7_Pin, GPIO_PIN_SET);
+		break;
+	case 2:
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOD, Cs_Dis20_7_Pin, GPIO_PIN_SET);
+		break;
+	case 3:
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOG, Cs_Dis20_3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, Cs_Dis20_7_Pin, GPIO_PIN_RESET);
+		break;
+	default:
+		break;
 
-static void vDataConvertToFloat( void)
+	}
+}
+
+static void vDataConvertToFloat(uint8_t o_s)
 {
 	uint8_t i;
+
+
+	switch (o_s)
+	{
+		case 0:
+			 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
+			vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 1U , ADC3_CHANNELS);
+			break;
+		case 1:
+			vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 1U, 1U , ADC3_CHANNELS);
+			break;
+		case 2:
+			vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 1U , ADC3_CHANNELS);
+			break;
+		case 3:
+			vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 1U , ADC1_CHANNELS);
+			break;
+	}
+
+
+
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
+//	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
+
+
+
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
+
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
-	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 4U, 2U , ADC2_CHANNELS);
 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
 	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
-	 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
+	 //vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
+
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+
+
+	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 2U, 1U , ADC3_CHANNELS);
+	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 7U, 1U , ADC1_CHANNELS);
+
+
 	return;
 }
 /*
@@ -563,7 +628,7 @@ static void vDataConvertToFloat( void)
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
    pxPDMstatusEvent = osLUAetPDMstatusHandle();
    TickType_t xLastWakeTime;
-   const TickType_t xPeriod = pdMS_TO_TICKS( 1 );
+   const TickType_t xPeriod = pdMS_TO_TICKS( 3 );
    xLastWakeTime = xTaskGetTickCount();
    DMA_STATUS[0] = 0;
    DMA_STATUS[1] = 0;
@@ -571,7 +636,7 @@ static void vDataConvertToFloat( void)
    HAL_TIM_Base_Start(&htim6);
    for(;;)
    {
-	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
+	// vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
@@ -583,12 +648,18 @@ static void vDataConvertToFloat( void)
 	   ADC_STOP();
 
 
-	   vDataConvertToFloat();
+	   vDataConvertToFloat(out_switch);
 
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
 	   vOutControlFSM();
-
+	   out_switch++;
+	   if ( out_switch> 3 )
+	   {
+			 out_switch = 0;
+	   }
+	   vOutSwitch(out_switch);
+	   osDelay(3);
 	   coint++;
 	   if (coint == 10)
 	   {

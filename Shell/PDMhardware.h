@@ -50,6 +50,11 @@
 #define R2  3000.0
 #define R3  1500.0
 
+#define RA1  60400.0
+#define RA2  3000.0
+#define RA3  10000.0
+
+
 #define K   ( 3.3 / 0xFFF )
 #define RR  330.0
 #define K25O20   6420U
@@ -75,6 +80,8 @@
 #define CIRCUT_BREAK_CURRENT  0.1
 #define COOF  ( ( R1 + R2 ) /R2) * K
 #define COOF1  ( ( R1 + R3 ) /R3) * K
+#define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
+#define INDIOD  0.2
 
 #define STATE_OUT_CONFIG		  0x20
 
