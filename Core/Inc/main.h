@@ -191,11 +191,11 @@ void Error_Handler(void);
 #define InCH8_17_GPIO_Port GPIOC
 #define InCH8_18_Pin GPIO_PIN_9
 #define InCH8_18_GPIO_Port GPIOC
-#define Cs_Dis8_15_16_Pin GPIO_PIN_10
+#define Cs_Dis8_15_16_Pin GPIO_PIN_9
 #define Cs_Dis8_15_16_GPIO_Port GPIOG
-#define Cs_Dis20_3_Pin GPIO_PIN_11
+#define Cs_Dis20_3_Pin GPIO_PIN_10
 #define Cs_Dis20_3_GPIO_Port GPIOG
-#define Cs_Dis20_4_Pin GPIO_PIN_12
+#define Cs_Dis20_4_Pin GPIO_PIN_11
 #define Cs_Dis20_4_GPIO_Port GPIOG
 #define InCH8_16_Pin GPIO_PIN_3
 #define InCH8_16_GPIO_Port GPIOB
@@ -211,6 +211,7 @@ void Error_Handler(void);
 #define Din1_GPIO_Port GPIOE
 #define Din2_Pin GPIO_PIN_1
 #define Din2_GPIO_Port GPIOE
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

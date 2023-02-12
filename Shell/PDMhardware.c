@@ -41,18 +41,18 @@ static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K002O20,V002O20},{K01O
 										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
-										{{K0005O08,V0005O08},{K005O08,V005O08},{K02O08,V02O08},{K03O08,V03O08},{K10O08,V10O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										};
 
 
@@ -75,10 +75,10 @@ static uint32_t ulRestartTimer()
 void vOutInit( void )
 {
 	//Инициализация портов упраления ключами
-	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
+	/*HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);*/
 	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin);
 	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin );
 	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin );
@@ -109,7 +109,7 @@ void vOutHWEnbale(OUT_NAME_TYPE out_name)
 {
 	if (out_name < OUT_COUNT)
 	{
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
 		out[out_name].EnableFlag	  =IS_ENABLE;
 	}
 	return;
@@ -167,6 +167,20 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 		{
 			vHWOutSet( out_name, MAX_PWM );
 		}
+		res = ERROR_OK;
+	}
+	return ( res );
+}
+/*
+ *
+ */
+ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power)
+{
+	ERROR_CODE res = INVALID_ARG;
+	if (out_name <  OUT_COUNT ) //Проверяем коректность агрументов
+	{
+		out[out_name].soft_start_timer = timer;
+		out[out_name].soft_start_power = power;
 		res = ERROR_OK;
 	}
 	return ( res );
@@ -347,7 +361,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
 		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
 		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , GPIO_PIN_SET);
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
 	}
 	return;
 }
@@ -492,10 +506,10 @@ static void vDataConvertToFloat( void)
  						}
  						else
  						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
- 						 		uint8_t ucCurrentPower =(uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*MAX_POWER);
- 						 		if (ucCurrentPower < START_POWER)
+ 						 		uint8_t ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
+ 						 		if (ucCurrentPower  > MAX_POWER)
  						 		{
- 						 			ucCurrentPower = START_POWER;
+ 						 			ucCurrentPower = MAX_POWER;
  						 		}
  						 		vHWOutSet( i, ucCurrentPower );
  						 }
@@ -544,7 +558,6 @@ static void vDataConvertToFloat( void)
    		 }
  	}
  }
-
 
  static void vADCEnable(ADC_HandleTypeDef* hadc1,ADC_HandleTypeDef* hadc2,ADC_HandleTypeDef* hadc3)
  {

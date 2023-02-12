@@ -370,6 +370,22 @@ int  iOutConfig( lua_State *L )
 	}
 	return ( NO_RESULT );
 }
+
+/*
+ *
+ */
+int iSoftStart( lua_State *L )
+{
+	if ( lua_gettop(L) >= THREE_ARGUMENTS)  //Проверяем, что при вызове нам передали нужное число аргументов
+	{
+		uint8_t out_number 		= ( uint8_t ) lua_tointeger( L, FIRST_ARGUMENT ) - 1U ; //Первым аргументом дожен передоваться номер канала
+		vOutSetSoftStart( out_number,
+						( uint16_t ) lua_tonumber(L, SECOND_ARGUMENT ),
+						( uint16_t ) lua_tointeger(L, THIRD_ARGUMENT));
+	}
+	return ( NO_RESULT );
+
+}
 /*
  *
  */
@@ -589,6 +605,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"setPID",iSetPID);
 	   	   lua_register(L1,"resetPID",iResetPID);
 	   	   lua_register(L1,"processPID",iProcessPID);
+	   	   lua_register(L1,"setOutSoftStart",iSoftStart);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

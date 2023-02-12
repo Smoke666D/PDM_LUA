@@ -102,7 +102,7 @@ const PIN_TYPE usbPullup = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_CAN1_Init(void);
@@ -113,7 +113,7 @@ static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM9_Init(void);
 static void MX_TIM12_Init(void);
-static void MX_DMA_Init(void);
+static void MX_ADC1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM5_Init(void);
@@ -161,7 +161,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
+  MX_DMA_Init();
   MX_ADC3_Init();
   MX_ADC2_Init();
   MX_CAN1_Init();
@@ -172,7 +172,7 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM9_Init();
   MX_TIM12_Init();
-  MX_DMA_Init();
+  MX_ADC1_Init();
   MX_I2C2_Init();
   MX_TIM11_Init();
   MX_TIM5_Init();
@@ -1087,7 +1087,7 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 84;
+  htim6.Init.Prescaler = 840;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 65535;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;

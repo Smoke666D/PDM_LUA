@@ -11,7 +11,14 @@
 #include "main.h"
 #include "luatask.h"
 
-#define AIN_COUNT			      3U		//Количесвто аналоговых входов
+
+#define REV_2 				1
+
+#define CS_ENABLE	   		GPIO_PIN_SET
+#define CS_DISABLE	   		GPIO_PIN_RESET
+
+
+#define AIN_COUNT			3U		//Количесвто аналоговых входов
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
@@ -57,7 +64,15 @@
 #define INDIOD  0.2
 
 #define K   ( 3.3 / 0xFFF )
-#define RR  300.0
+
+
+
+
+#ifdef REV_2
+	#define RR  300.0
+#else
+	#define RR  330.0
+#endif
 #define K15O20   16450U
 #define V15O20   (float)(15.0/K15O20*RR)
 #define K10O20   16450U
@@ -66,16 +81,15 @@
 #define V01O20	 (float)(1.0/K01O20*RR)
 #define K002O20  16800U
 #define V002O20  (float)(0.20/K002O20*RR)
-#define K10O08  2850U
+
+#define K30O08  15520U
+#define V30O08	(float)(30.0/K30O08*RR)
+#define K15O08  16910U
+#define V15O08	(float)(15.0/K15O08*RR)
+#define K10O08  16110U
 #define V10O08	(float)(10.0/K10O08*RR)
-#define K03O08  3000U
-#define V03O08	(float)(3.0/K03O08*RR)
-#define K02O08  3100U
-#define V02O08	(float)(2.0/K02O08*RR)
-#define K005O08  3150U
-#define V005O08	(float)(0.5/K005O08*RR)
-#define K0005O08  3350U
-#define V0005O08	(float)(0.05/K0005O08*RR)
+#define K05O08  15520U
+#define V05O08	(float)(5.0/K05O08*RR)
 #define ERROR_CURRENT  (uint16_t)(4000U)
 
 #define CIRCUT_BREAK_CURRENT  0.1
@@ -150,6 +164,7 @@ typedef struct __packed
    ENABLE_t EnableFlag;
    uint8_t error_counter;
    uint8_t PWM;
+   uint8_t soft_start_power;
    uint16_t GPIO_Pin;
    uint16_t soft_start_timer;
    uint16_t overload_config_timer;
@@ -217,7 +232,7 @@ float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState ( AIN_NAME_TYPE channel );
 float fBatteryGet ( void );
 float fTemperatureGet ( uint8_t chanel );
-
+ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
