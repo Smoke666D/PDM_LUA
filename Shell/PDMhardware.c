@@ -33,28 +33,33 @@ static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 
-static KAL_DATA CurSensData[OUT_COUNT][5] ={   {{0U,0.0},{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}      ,{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										{{0U,0.0}	   ,{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
-										};
 
+#ifdef REV_2
+
+
+
+static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
+										};
+#endif
 
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin);
@@ -336,7 +341,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		vOutSetPWM(out_name, DEFAULT_PWM);
 		out[out_name].EnableFlag = IS_DISABLE;
 		out[out_name].error_flag = ERROR_OFF;
-		for (j=0; j< 4U; j++)
+		for (j=0; j< KOOF_COUNT - 1 ; j++)
 		{
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
@@ -412,9 +417,9 @@ static void vHWOutOFF( uint8_t ucChannel )
 static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 {
 	float fRes;
-	for (uint8_t r = 0; r < 4U; r++)
+	for (uint8_t r = 0; r < ( KOOF_COUNT -1 ); r++)
     {
-		if (( fraw < xOut.CSC[r].data ) || (r ==3))
+		if (( fraw < xOut.CSC[r].data ) || (r == (KOOF_COUNT -2)) )
 		{
 			fRes =  fraw * xOut.CSC[r].k;
 			fRes += xOut.CSC[r].b ;

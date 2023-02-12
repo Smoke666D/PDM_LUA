@@ -98,6 +98,7 @@
 
 #define STATE_OUT_CONFIG		  0x20
 
+#define KOOF_COUNT 4
 
 typedef enum {
  ADC_DMA1 =0,
@@ -172,7 +173,7 @@ typedef struct __packed
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;
    PDM_OUT_STATE_t out_state;
-   LIN_COOF CSC[4];
+   LIN_COOF CSC[KOOF_COUNT -1 ];
 } PDM_OUTPUT_TYPE;
 
 typedef struct
