@@ -225,9 +225,10 @@ void vDinTask(void *argument)
 					if (uсDinState != xDinConfig[i].ucTempValue )
 					{
 						xDinConfig[i].ulCounter +=  ucTicTime ;
-						if (xDinConfig[i].ulCounter > (xDinConfig[i].ucTempValue == GPIO_PIN_RESET) ? xDinConfig[i].ulHighCounter : xDinConfig[i].ulLowCounter )
+						if (xDinConfig[i].ulCounter > ( (xDinConfig[i].ucTempValue == GPIO_PIN_RESET) ? xDinConfig[i].ulHighCounter : xDinConfig[i].ulLowCounter ) )
 						{
-							xDinConfig[i].ucValue = uсDinState  ^ xDinConfig[i].eInputType;
+
+							xDinConfig[i].ucValue = uсDinState  ^ ( (~xDinConfig[i].eInputType) & 0x1);
 							xDinConfig[i].ucTempValue = uсDinState ;
 						}
 					}
