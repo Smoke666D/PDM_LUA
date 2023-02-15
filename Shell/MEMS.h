@@ -21,6 +21,8 @@
 
 #define ALGO_FREQ  100U
 #define DECIMATION  4U
+#define ACC_ODR  ((float)ALGO_FREQ)
+#define ACC_FS  2 /* FS = <-2g, 2g> */
 
 void vmemsTask(void *argument);
 void MX_DynamicInclinometer_Process();

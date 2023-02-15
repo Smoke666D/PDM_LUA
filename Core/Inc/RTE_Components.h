@@ -24,5 +24,6 @@
 /* Defines ------------------------------------------------------------------*/
 /* STMicroelectronics.X-CUBE-MEMS1.9.3.0 */
 #define LSM6DSL_ACCGYR_SPI
+#define CUSTOM_DYNAMICINCLINOMETER_DEMO
 
 #endif /* __RTE_COMPONENTS_H__ */

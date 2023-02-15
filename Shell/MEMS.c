@@ -20,28 +20,36 @@ static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 //static MOTION_SENSOR_Axes_t AccValue;
 //static MOTION_SENSOR_Axes_t GyrValue;
 
-void BSP_SENSOR_ACC_GetOrientation(char *Orientation)
+/*void BSP_SENSOR_ACC_GetOrientation(char *Orientation)
 {
   Orientation[0] = 's';
   Orientation[1] = 'e';
   Orientation[2] = 'u';
-}
+}*/
 
 /**
   * @brief  Get gyroscope sensor orientation
   * @param  Orientation Pointer to sensor orientation
   * @retval None
   */
-void BSP_SENSOR_GYR_GetOrientation(char *Orientation)
+/*void BSP_SENSOR_GYR_GetOrientation(char *Orientation)
 {
   Orientation[0] = 's';
   Orientation[1] = 'e';
   Orientation[2] = 'u';
-}
+}*/
 
 static void Init_Sensors(void)
 {
+	BSP_SENSOR_ACC_Init();
+	  BSP_SENSOR_GYR_Init();
+	  BSP_SENSOR_MAG_Init();
+	  BSP_SENSOR_PRESS_Init();
+	  BSP_SENSOR_TEMP_Init();
+	  BSP_SENSOR_HUM_Init();
 
+	  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+	  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
 }
 
 static void MX_DynamicInclinometer_Init(void)

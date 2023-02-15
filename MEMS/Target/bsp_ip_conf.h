@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    custom_mems_conf.h
+  * @file    bsp_ip_conf.h
   * @author  MEMS Application Team
-  * @brief   This file contains definitions of the MEMS components bus interfaces for custom boards
+  * @brief   BSP IP configuration file
   ******************************************************************************
   * @attention
   *
@@ -17,35 +17,37 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __CUSTOM_MEMS_CONF_H__
-#define __CUSTOM_MEMS_CONF_H__
+#ifndef __BSP_IP_CONF_H__
+#define __BSP_IP_CONF_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
-#include "custom_bus.h"
-#include "custom_errno.h"
 
-/* USER CODE BEGIN 1 */
+#include "custom_mems_control.h"
+#include "custom_mems_control_ex.h"
 
-/* USER CODE END 1 */
+/* Exported defines ----------------------------------------------------------*/
 
-#define USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0        1U
+#define BOARD_NAME "CUSTOM"
+#define USE_CUSTOM_BOARD
 
-#define CUSTOM_LSM6DSL_0_SPI_Init BSP_SPI3_Init
-#define CUSTOM_LSM6DSL_0_SPI_DeInit BSP_SPI3_DeInit
-#define CUSTOM_LSM6DSL_0_SPI_Send BSP_SPI3_Send
-#define CUSTOM_LSM6DSL_0_SPI_Recv BSP_SPI3_Recv
+/* Exported variables --------------------------------------------------------*/
+/* Exported defines ----------------------------------------------------------*/
+extern TIM_HandleTypeDef htim12;
+#define BSP_IP_TIM_Handle htim12
+#define BSP_IP_TIM_Init MX_TIM12_Init
 
-#define CUSTOM_LSM6DSL_0_CS_PORT GPIOD
-#define CUSTOM_LSM6DSL_0_CS_PIN GPIO_PIN_2
+#define BSP_IP_MEMS_INT1_PIN_NUM GPIO_PIN_3
+#define BSP_IP_MEMS_INT1_GPIOX GPIOD
+
+extern RTC_HandleTypeDef hrtc;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CUSTOM_MEMS_CONF_H__*/
+#endif /* __BSP_IP_CONF_H__ */
 
