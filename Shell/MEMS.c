@@ -11,6 +11,10 @@
 #include "main.h"
 
 
+#define ALGO_FREQ  50U /* Algorithm frequency >= 50Hz */
+#define ACC_ODR  ((float)ALGO_FREQ)
+#define ACC_FS  4 /* FS = <-4g, 4g> */
+
 float freq = 100.0f;
 static MDI_knobs_t iKnobs;
 static MDI_knobs_t *ipKnobs = &iKnobs;
@@ -20,12 +24,7 @@ static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 //static MOTION_SENSOR_Axes_t AccValue;
 //static MOTION_SENSOR_Axes_t GyrValue;
 
-void BSP_SENSOR_ACC_GetOrientation(char *Orientation)
-{
-  Orientation[0] = 's';
-  Orientation[1] = 'e';
-  Orientation[2] = 'u';
-}
+
 
 /**
   * @brief  Get gyroscope sensor orientation
@@ -41,6 +40,12 @@ void BSP_SENSOR_GYR_GetOrientation(char *Orientation)
 
 static void Init_Sensors(void)
 {
+	  BSP_SENSOR_ACC_Init();
+	  BSP_SENSOR_GYR_Init();
+	  BSP_SENSOR_MAG_Init();
+
+	  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+	  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
 
 }
 
@@ -74,16 +79,16 @@ void vmemsTask(void *argument)
 	data_in.Timestamp = 0;
 	for(;;)
 	{
-	   osDelay(10);
+	   osDelay(200);
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-	   data_in.Gyro[0] = 0.1;
+	   /*data_in.Gyro[0] = 0.1;
 	   data_in.Gyro[1] = 0.8;
 	   data_in.Gyro[2] = 0.2;
 	   data_in.Acc[0] = 40.0;
 	   data_in.Acc[1] = 20.0;
 	   data_in.Acc[2] = 10.0;
 	   data_in.Timestamp +=10;
-	   MotionDI_update(&data_out,&data_in);
+	   MotionDI_update(&data_out,&data_in);*/
 	}
 }
 

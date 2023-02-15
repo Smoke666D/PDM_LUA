@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    custom_mems_conf.h
-  * @author  MEMS Application Team
-  * @brief   This file contains definitions of the MEMS components bus interfaces for custom boards
+  * File Name          : app_mems.h
+  * Description        : This file provides code for the configuration
+  *                      of the STMicroelectronics.X-CUBE-MEMS1.9.3.0 instances.
   ******************************************************************************
   * @attention
   *
@@ -17,35 +17,24 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __CUSTOM_MEMS_CONF_H__
-#define __CUSTOM_MEMS_CONF_H__
+#ifndef __APP_MEMS_H
+#define __APP_MEMS_H
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
-#include "custom_bus.h"
-#include "custom_errno.h"
 
-/* USER CODE BEGIN 1 */
+/* Exported defines ----------------------------------------------------------*/
 
-/* USER CODE END 1 */
-
-#define USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0        1U
-
-#define CUSTOM_LSM6DSL_0_SPI_Init BSP_SPI3_Init
-#define CUSTOM_LSM6DSL_0_SPI_DeInit BSP_SPI3_DeInit
-#define CUSTOM_LSM6DSL_0_SPI_Send BSP_SPI3_Send
-#define CUSTOM_LSM6DSL_0_SPI_Recv BSP_SPI3_Recv
-
-#define CUSTOM_LSM6DSL_0_CS_PORT GPIOD
-#define CUSTOM_LSM6DSL_0_CS_PIN GPIO_PIN_2
+/* Exported functions --------------------------------------------------------*/
+void MX_MEMS_Init(void);
+void MX_MEMS_Process(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CUSTOM_MEMS_CONF_H__*/
+#endif /* __APP_MEMS_H */
 
