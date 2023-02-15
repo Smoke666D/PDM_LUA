@@ -67,6 +67,9 @@ static void vHWOutOFF( uint8_t ucChannel );
 static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
 static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
 static void ADC_STOP();
+void vOutEnable(OUT_NAME_TYPE out_name);
+void vOutDisable(OUT_NAME_TYPE out_name);
+
 
 static uint32_t ulRestartTimer()
 {
@@ -80,10 +83,10 @@ static uint32_t ulRestartTimer()
 void vOutInit( void )
 {
 	//Инициализация портов упраления ключами
-	/*HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_SET);*/
+	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
+	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
 	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin);
 	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin );
 	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin );
@@ -200,6 +203,10 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 		case 0:
 			out[out_name].out_state = STATE_OUT_OFF;
 			vHWOutOFF(out_name);
+			/*if ( out_name > 7 )
+			{
+				HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+			}*/
 			break;
 		case 1:
 			if (out[out_name].out_state == STATE_OUT_OFF)
@@ -211,6 +218,23 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 			break;
 	}
 	return;
+}
+/*
+ *
+ */
+void vOutEnable(OUT_NAME_TYPE out_name)
+{
+	if ( out_name > 7 )
+	{
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+	}
+}
+void vOutDisable(OUT_NAME_TYPE out_name)
+{
+	if ( out_name > 7 )
+	{
+				HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+	}
 }
 /*
  *
@@ -409,6 +433,7 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t In
 static void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+	vOutDisable( ucChannel );
 	return;
 }
 /*
@@ -491,11 +516,20 @@ static void vDataConvertToFloat( void)
  			switch (out[i].out_state)
  			{
  				case STATE_OUT_OFF: //Состония входа - выключен
- 					out[i].current 	   		 = 0U;
+ 					if ( muRawCurData [ i ] == 0xFFF)
+ 					{
+ 						out[i].error_flag 		 = ERROR_VDD_SHORTCUT;
+ 					}
+ 					else
+ 					{
+ 						out[i].error_flag 		 = ERROR_OFF;
+ 					}
+ 					out[i].current 	   		 = fCurrent;//0U;
  					out[i].restart_timer   	 = 0U;
- 					out[i].error_flag 		 = ERROR_OFF;
+ 					//out[i].error_flag 		 = ERROR_OFF;
  					break;
  				case STATE_OUT_ON_PROCESS: //Состояния влючения
+ 					vOutEnable(i);
  					out[i].restart_timer++;
  					if (out[i].soft_start_timer !=0)
  					{

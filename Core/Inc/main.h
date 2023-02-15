@@ -191,6 +191,8 @@ void Error_Handler(void);
 #define InCH8_17_GPIO_Port GPIOC
 #define InCH8_18_Pin GPIO_PIN_9
 #define InCH8_18_GPIO_Port GPIOC
+#define InCH20_3_Pin GPIO_PIN_15
+#define InCH20_3_GPIO_Port GPIOA
 #define Cs_Dis8_15_16_Pin GPIO_PIN_9
 #define Cs_Dis8_15_16_GPIO_Port GPIOG
 #define Cs_Dis20_3_Pin GPIO_PIN_10
