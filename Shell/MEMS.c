@@ -9,64 +9,19 @@
 #include "mems.h"
 #include "motion_di.h"
 #include "main.h"
+#include "bsp_ip_conf.h"
+#include "motion_tl_manager.h"
 
+#include "app_mems.h"
 
-#define ALGO_FREQ  50U /* Algorithm frequency >= 50Hz */
-#define ACC_ODR  ((float)ALGO_FREQ)
-#define ACC_FS  4 /* FS = <-4g, 4g> */
-
-float freq = 100.0f;
-static MDI_knobs_t iKnobs;
-static MDI_knobs_t *ipKnobs = &iKnobs;
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 
 
-//static MOTION_SENSOR_Axes_t AccValue;
-//static MOTION_SENSOR_Axes_t GyrValue;
 
 
 
-/**
-  * @brief  Get gyroscope sensor orientation
-  * @param  Orientation Pointer to sensor orientation
-  * @retval None
-  */
-void BSP_SENSOR_GYR_GetOrientation(char *Orientation)
-{
-  Orientation[0] = 's';
-  Orientation[1] = 'e';
-  Orientation[2] = 'u';
-}
-
-static void Init_Sensors(void)
-{
-	  BSP_SENSOR_ACC_Init();
-	  BSP_SENSOR_GYR_Init();
-	  BSP_SENSOR_MAG_Init();
-
-	  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
-	  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
-
-}
-
-static void MX_DynamicInclinometer_Init(void)
-{
 
 
-  /* Initialize (disabled) sensors */
-
-  Init_Sensors();
-  /* DynamicInclinometer API initialization function */
-  MotionDI_Initialize(&freq);
-  MotionDI_getKnobs(ipKnobs);
-  ipKnobs->AccKnob.CalType = MDI_CAL_CONTINUOUS;
-  ipKnobs->GyrKnob.CalType = MDI_CAL_CONTINUOUS;
-  BSP_SENSOR_ACC_GetOrientation(ipKnobs->AccOrientation);
-  BSP_SENSOR_GYR_GetOrientation(ipKnobs->GyroOrientation);
-  ipKnobs->SFKnob.output_type = MDI_ENGINE_OUTPUT_ENU;
-  ipKnobs->SFKnob.modx = DECIMATION;
-  MotionDI_setKnobs(ipKnobs);
-}
 
 
 static MDI_output_t data_out;
@@ -74,21 +29,16 @@ static MDI_input_t data_in;
 
 void vmemsTask(void *argument)
 {
-	pxPDMstatusEvent = osLUAetPDMstatusHandle();
-	MX_DynamicInclinometer_Init();
-	data_in.Timestamp = 0;
+	static TMsg msg_dat;
+	MX_MEMS_Init();
+
 	for(;;)
 	{
-	   osDelay(200);
-	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-	   /*data_in.Gyro[0] = 0.1;
-	   data_in.Gyro[1] = 0.8;
-	   data_in.Gyro[2] = 0.2;
-	   data_in.Acc[0] = 40.0;
-	   data_in.Acc[1] = 20.0;
-	   data_in.Acc[2] = 10.0;
-	   data_in.Timestamp +=10;
-	   MotionDI_update(&data_out,&data_in);*/
+	   osDelay(100);
+	  // xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
+	   //MX_MEMS_Process();
+	   MX_MEMS_Init();
+
 	}
 }
 

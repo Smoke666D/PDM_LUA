@@ -42,7 +42,7 @@ extern "C" {
 
 /* Public variables ----------------------------------------------------------*/
 volatile uint8_t DataLoggerActive = 0;
-volatile uint32_t SensorsEnabled = 0;
+volatile uint32_t SensorsEnabled = 1;
 char LibVersion[35];
 int LibVersionLen;
 volatile uint8_t SensorReadRequest = 0;
@@ -60,9 +60,7 @@ MTL_angle_mode_t AngleMode = MODE_PITCH_ROLL_GRAVITY_INCLINATION;
 static MOTION_SENSOR_Axes_t AccValue;
 static MOTION_SENSOR_Axes_t GyrValue;
 static MOTION_SENSOR_Axes_t MagValue;
-static float PressValue;
-static float TempValue;
-static float HumValue;
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void MX_TiltSensing_Init(void);
@@ -73,10 +71,7 @@ static void RTC_Handler(TMsg *Msg);
 static void Accelero_Sensor_Handler(TMsg *Msg);
 static void Gyro_Sensor_Handler(TMsg *Msg);
 static void Magneto_Sensor_Handler(TMsg *Msg);
-static void Pressure_Sensor_Handler(TMsg *Msg);
-static void Temperature_Sensor_Handler(TMsg *Msg);
-static void Humidity_Sensor_Handler(TMsg *Msg);
-static void TIM_Config(uint32_t Freq);
+
 static void DWT_Init(void);
 static void DWT_Start(void);
 static uint32_t DWT_Stop(void);
@@ -215,9 +210,6 @@ static void MX_TiltSensing_Init(void)
   MEMS_INT1_Force_Low();
 #endif
 
-  /* Initialize LED */
-  BSP_LED_Init(LED2);
-
   /* Initialize Virtual COM Port */
   BSP_COM_Init(COM1);
 
@@ -225,7 +217,7 @@ static void MX_TiltSensing_Init(void)
  // BSP_IP_TIM_Init();
 
   /* Configure Timer to run with desired algorithm frequency */
-  TIM_Config(ALGO_FREQ);
+ // TIM_Config(ALGO_FREQ);
 
   /* Initialize (disabled) sensors */
   Init_Sensors();
@@ -244,12 +236,9 @@ static void MX_TiltSensing_Init(void)
 
   DWT_Init();
 
-  BSP_LED_On(LED2);
-  HAL_Delay(500);
-  BSP_LED_Off(LED2);
 
   /* Start receiving messages via DMA */
-  UART_StartReceiveMsg();
+  //UART_StartReceiveMsg();
 }
 
 /**
@@ -261,17 +250,14 @@ static void MX_TiltSensing_Process(void)
   static TMsg msg_dat;
   static TMsg msg_cmd;
 
-  if (UART_ReceivedMSG((TMsg *)&msg_cmd) == 1)
+  /*if (UART_ReceivedMSG((TMsg *)&msg_cmd) == 1)
   {
     if (msg_cmd.Data[0] == DEV_ADDR)
     {
       (void)HandleMSG((TMsg *)&msg_cmd);
     }
   }
-
-  if (SensorReadRequest == 1U)
-  {
-    SensorReadRequest = 0;
+*/
 
     /* Acquire data from enabled sensors and fill Msg stream */
     RTC_Handler(&msg_dat);
@@ -286,27 +272,9 @@ static void MX_TiltSensing_Process(void)
     INIT_STREAMING_HEADER(&msg_dat);
     msg_dat.Len = STREAMING_MSG_LENGTH;
 
-    if (UseOfflineData == 1U)
-    {
-      OfflineDataCount--;
-      if (OfflineDataCount < 0)
-      {
-        OfflineDataCount = 0;
-      }
 
-      OfflineDataReadIndex++;
-      if (OfflineDataReadIndex >= OFFLINE_DATA_SIZE)
-      {
-        OfflineDataReadIndex = 0;
-      }
-
-      if (OfflineDataCount > 0)
-      {
-        SensorReadRequest = 1;
-      }
-    }
-    UART_SendMsg(&msg_dat);
-  }
+  /*  UART_SendMsg(&msg_dat);
+  }*/
 }
 
 /**
@@ -317,11 +285,11 @@ static void MX_TiltSensing_Process(void)
 static void Init_Sensors(void)
 {
   BSP_SENSOR_ACC_Init();
-  BSP_SENSOR_GYR_Init();
-  BSP_SENSOR_MAG_Init();
+ // BSP_SENSOR_GYR_Init();
+ // BSP_SENSOR_MAG_Init();
 
-  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
-  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
+  //BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+  //BSP_SENSOR_ACC_SetFullScale(ACC_FS);
 }
 
 /**
@@ -395,19 +363,18 @@ static void TL_Data_Handler(TMsg *Msg)
     + (uint8_t)Msg->Data[5] * 1000U
     + (uint8_t)Msg->Data[6] * 10U;
 
-  if ((SensorsEnabled & ACCELEROMETER_SENSOR) == ACCELEROMETER_SENSOR)
-  {
+
     /* Convert acceleration from [mg] to [g] */
     data_in.acc_x = (float)AccValue.x / 1000.0f;
     data_in.acc_y = (float)AccValue.y / 1000.0f;
     data_in.acc_z = (float)AccValue.z / 1000.0f;
 
     /* Run Tilt Sensing algorithm */
-    BSP_LED_On(LED2);
+
     DWT_Start();
     MotionTL_manager_run(&data_in, timestamp_ms, &data_out);
     elapsed_time_us = DWT_Stop();
-    BSP_LED_Off(LED2);
+
 
     switch (AngleMode)
     {
@@ -428,7 +395,7 @@ static void TL_Data_Handler(TMsg *Msg)
     }
 
     Serialize_s32(&Msg->Data[67], (int32_t)elapsed_time_us, 4);
-  }
+
 }
 
 /**
@@ -438,8 +405,7 @@ static void TL_Data_Handler(TMsg *Msg)
  */
 static void Accelero_Sensor_Handler(TMsg *Msg)
 {
-  if ((SensorsEnabled & ACCELEROMETER_SENSOR) == ACCELEROMETER_SENSOR)
-  {
+
     if (UseOfflineData == 1)
     {
       AccValue.x = OfflineData[OfflineDataReadIndex].acceleration_x_mg;
@@ -454,7 +420,7 @@ static void Accelero_Sensor_Handler(TMsg *Msg)
     Serialize_s32(&Msg->Data[19], (int32_t)AccValue.x, 4);
     Serialize_s32(&Msg->Data[23], (int32_t)AccValue.y, 4);
     Serialize_s32(&Msg->Data[27], (int32_t)AccValue.z, 4);
-  }
+
 }
 
 /**
@@ -464,8 +430,7 @@ static void Accelero_Sensor_Handler(TMsg *Msg)
  */
 static void Gyro_Sensor_Handler(TMsg *Msg)
 {
-  if ((SensorsEnabled & GYROSCOPE_SENSOR) == GYROSCOPE_SENSOR)
-  {
+
     if (UseOfflineData == 1)
     {
       GyrValue.x = OfflineData[OfflineDataReadIndex].angular_rate_x_mdps;
@@ -480,7 +445,7 @@ static void Gyro_Sensor_Handler(TMsg *Msg)
     Serialize_s32(&Msg->Data[31], GyrValue.x, 4);
     Serialize_s32(&Msg->Data[35], GyrValue.y, 4);
     Serialize_s32(&Msg->Data[39], GyrValue.z, 4);
-  }
+
 }
 
 /**
@@ -490,8 +455,7 @@ static void Gyro_Sensor_Handler(TMsg *Msg)
  */
 static void Magneto_Sensor_Handler(TMsg *Msg)
 {
-  if ((SensorsEnabled & MAGNETIC_SENSOR) == MAGNETIC_SENSOR)
-  {
+
     if (UseOfflineData == 1)
     {
      MagValue.x = OfflineData[OfflineDataReadIndex].magnetic_field_x_mgauss;
@@ -506,96 +470,11 @@ static void Magneto_Sensor_Handler(TMsg *Msg)
     Serialize_s32(&Msg->Data[43], MagValue.x, 4);
     Serialize_s32(&Msg->Data[47], MagValue.y, 4);
     Serialize_s32(&Msg->Data[51], MagValue.z, 4);
-  }
+
 }
 
-/**
- * @brief  Handles the PRESS sensor data getting/sending.
- * @param  Msg the PRESS part of the stream
- * @retval None
- */
-static void Pressure_Sensor_Handler(TMsg *Msg)
-{
-  if ((SensorsEnabled & PRESSURE_SENSOR) == PRESSURE_SENSOR)
-  {
-    if (UseOfflineData == 1)
-    {
-      PressValue = OfflineData[OfflineDataReadIndex].pressure;
-    }
-    else
-    {
-      BSP_SENSOR_PRESS_GetValue(&PressValue);
-    }
 
-    (void)memcpy(&Msg->Data[7], (void *)&PressValue, sizeof(float));
-  }
-}
 
-/**
- * @brief  Handles the TEMP axes data getting/sending
- * @param  Msg the TEMP part of the stream
- * @retval None
- */
-static void Temperature_Sensor_Handler(TMsg *Msg)
-{
-  if ((SensorsEnabled & TEMPERATURE_SENSOR) == TEMPERATURE_SENSOR)
-  {
-    if (UseOfflineData == 1)
-    {
-      TempValue = OfflineData[OfflineDataReadIndex].temperature;
-    }
-    else
-    {
-      BSP_SENSOR_TEMP_GetValue(&TempValue);
-    }
-
-    (void)memcpy(&Msg->Data[11], (void *)&TempValue, sizeof(float));
-  }
-}
-
-/**
- * @brief  Handles the HUM axes data getting/sending
- * @param  Msg the HUM part of the stream
- * @retval None
- */
-static void Humidity_Sensor_Handler(TMsg *Msg)
-{
-  if ((SensorsEnabled & HUMIDITY_SENSOR) == HUMIDITY_SENSOR)
-  {
-    if (UseOfflineData == 1)
-    {
-      HumValue = OfflineData[OfflineDataReadIndex].humidity;
-    }
-    else
-    {
-      BSP_SENSOR_HUM_GetValue(&HumValue);
-    }
-
-    (void)memcpy(&Msg->Data[15], (void *)&HumValue, sizeof(float));;
-  }
-}
-
-/**
- * @brief  Timer configuration
- * @param  Freq the desired Timer frequency
- * @retval None
- */
-static void TIM_Config(uint32_t Freq)
-{
-  const uint32_t tim_counter_clock = 2000; /* TIM counter clock 2 kHz */
-  uint32_t prescaler_value = (uint32_t)((SystemCoreClock / tim_counter_clock) - 1);
-  uint32_t period = (tim_counter_clock / Freq) - 1;
-
-  BSP_IP_TIM_Handle.Init.Prescaler = prescaler_value;
-  BSP_IP_TIM_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
-  BSP_IP_TIM_Handle.Init.Period = period;
-  BSP_IP_TIM_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  BSP_IP_TIM_Handle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&BSP_IP_TIM_Handle) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
 /**

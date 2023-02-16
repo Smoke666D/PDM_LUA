@@ -94,67 +94,8 @@ int32_t BSP_GetVersion(void)
  *              @arg  LED2, LED4, ...
  * @retval HAL status
  */
-int32_t BSP_LED_Init(Led_TypeDef Led)
-{
-  static const BSP_LED_GPIO_Init LedGpioInit[LEDn] = {LED_USER_GPIO_Init};
-  LedGpioInit[Led]();
-  return BSP_ERROR_NONE;
-}
 
-/**
- * @brief  DeInit LEDs.
- * @param  Led: LED to be configured.
- *              This parameter can be one of the following values:
- *              @arg  LED2, LED4, ...
- * @note Led DeInit does not disable the GPIO clock nor disable the Mfx
- * @retval HAL status
- */
-int32_t BSP_LED_DeInit(Led_TypeDef Led)
-{
-  GPIO_InitTypeDef  gpio_init_structure;
 
-  /* Turn off LED */
-  HAL_GPIO_WritePin(LED_PORT[Led], LED_PIN[Led], GPIO_PIN_RESET);
-  /* DeInit the GPIO_LED pin */
-  gpio_init_structure.Pin = LED_PIN[Led];
-  HAL_GPIO_DeInit(LED_PORT[Led], gpio_init_structure.Pin);
-
-  return BSP_ERROR_NONE;
-}
-
-/**
- * @brief  Turns selected LED On.
- * @param  Led: LED to be set on
- *              This parameter can be one of the following values:
- *              @arg  LED1
- *              @arg  LED2
- *              @arg  LED3
- *              @arg  LED4
- * @retval HAL status
- */
-int32_t BSP_LED_On(Led_TypeDef Led)
-{
-  HAL_GPIO_WritePin(LED_PORT [Led], LED_PIN [Led], GPIO_PIN_SET);
-
-  return BSP_ERROR_NONE;
-}
-
-/**
- * @brief  Turns selected LED Off.
- * @param  Led: LED to be set off
- *              This parameter can be one of the following values:
- *              @arg  LED1
- *              @arg  LED2
- *              @arg  LED3
- *              @arg  LED4
- * @retval HAL status
- */
-int32_t BSP_LED_Off(Led_TypeDef Led)
-{
-  HAL_GPIO_WritePin(LED_PORT [Led], LED_PIN [Led], GPIO_PIN_RESET);
-
-  return BSP_ERROR_NONE;
-}
 
 /**
  * @brief  Toggles the selected LED.
