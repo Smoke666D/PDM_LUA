@@ -32,7 +32,7 @@ extern "C" {
 #include "bsp_ip_conf.h"
 #include "fw_version.h"
 #include "motion_tl_manager.h"
-
+#include "custom_motion_sensors.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define DWT_LAR_KEY  0xC5ACCE55 /* DWT register unlock key */
@@ -201,17 +201,19 @@ void GetEstimatedMeasTime(float *time_s, uint32_t num_records)
   */
 static void MX_TiltSensing_Init(void)
 {
+	LSM6DSL_0_Probe( 2U);
+
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
   /* Force MEMS INT1 pin of the sensor low during startup in order to disable I3C and enable I2C. This function needs
    * to be called only if user wants to disable I3C / enable I2C and didn't put the pull-down resistor to MEMS INT1 pin
    * on his HW setup. This is also the case of usage X-NUCLEO-IKS01A2 or X-NUCLEO-IKS01A3 expansion board together with
    * sensor in DIL24 adapter board where the LDO with internal pull-up is used.
    */
-  MEMS_INT1_Force_Low();
+ // MEMS_INT1_Force_Low();
 #endif
 
   /* Initialize Virtual COM Port */
-  BSP_COM_Init(COM1);
+//  BSP_COM_Init(COM1);
 
   /* Initialize Timer */
  // BSP_IP_TIM_Init();
@@ -220,21 +222,21 @@ static void MX_TiltSensing_Init(void)
  // TIM_Config(ALGO_FREQ);
 
   /* Initialize (disabled) sensors */
-  Init_Sensors();
+//  Init_Sensors();
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
   /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
-  MEMS_INT1_Init();
+ // MEMS_INT1_Init();
 #endif
 
   /* TiltSensing API initialization function */
-  MotionTL_manager_init();
+ // MotionTL_manager_init();
 
   /* OPTIONAL */
   /* Get library version */
-  MotionTL_manager_get_version(LibVersion, &LibVersionLen);
+ // MotionTL_manager_get_version(LibVersion, &LibVersionLen);
 
-  DWT_Init();
+ // DWT_Init();
 
 
   /* Start receiving messages via DMA */
@@ -284,7 +286,9 @@ static void MX_TiltSensing_Process(void)
  */
 static void Init_Sensors(void)
 {
-  BSP_SENSOR_ACC_Init();
+  //BSP_SENSOR_ACC_Init();
+	LSM6DSL_0_Probe( 2U);
+  //(void)CUSTOM_MOTION_SENSOR_Init(CUSTOM_ACC_INSTANCE_0, MOTION_ACCELERO);
  // BSP_SENSOR_GYR_Init();
  // BSP_SENSOR_MAG_Init();
 

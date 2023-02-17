@@ -30,7 +30,7 @@ static MOTION_SENSOR_CommonDrv_t *MotionDrv[CUSTOM_MOTION_INSTANCES_NBR];
 static CUSTOM_MOTION_SENSOR_Ctx_t MotionCtx[CUSTOM_MOTION_INSTANCES_NBR];
 
 #if (USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0 == 1)
-static int32_t LSM6DSL_0_Probe(uint32_t Functions);
+int32_t LSM6DSL_0_Probe(uint32_t Functions);
 #endif
 
 #if (USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0 == 1)
@@ -550,7 +550,7 @@ int32_t CUSTOM_MOTION_SENSOR_SetFullScale(uint32_t Instance, uint32_t Function, 
  *         - MOTION_GYRO and/or MOTION_ACCELERO
  * @retval BSP status
  */
-static int32_t LSM6DSL_0_Probe(uint32_t Functions)
+ int32_t LSM6DSL_0_Probe(uint32_t Functions)
 {
   LSM6DSL_IO_t            io_ctx;
   uint8_t                 id;

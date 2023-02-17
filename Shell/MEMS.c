@@ -30,15 +30,20 @@ static MDI_input_t data_in;
 void vmemsTask(void *argument)
 {
 	static TMsg msg_dat;
+	uint8_t pData[2] = {0x8F,18};
+	uint8_t pData1[2] = {0x8F,18};
 	MX_MEMS_Init();
 
 	for(;;)
 	{
-	   osDelay(100);
+	   osDelay(1);
+	   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
 	  // xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   //MX_MEMS_Process();
-	   MX_MEMS_Init();
-
+	//   MX_MEMS_Init();
+	   HAL_SPI_Transmit(&hspi3, &pData, 1 , 100);
+	   HAL_SPI_Receive(&hspi3, &pData1, 1, 100);
+	   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
 	}
 }
 
