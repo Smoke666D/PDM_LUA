@@ -209,7 +209,7 @@ static void MX_TiltSensing_Init(void)
    * on his HW setup. This is also the case of usage X-NUCLEO-IKS01A2 or X-NUCLEO-IKS01A3 expansion board together with
    * sensor in DIL24 adapter board where the LDO with internal pull-up is used.
    */
- // MEMS_INT1_Force_Low();
+   MEMS_INT1_Force_Low();
 #endif
 
   /* Initialize Virtual COM Port */
@@ -222,11 +222,11 @@ static void MX_TiltSensing_Init(void)
  // TIM_Config(ALGO_FREQ);
 
   /* Initialize (disabled) sensors */
-//  Init_Sensors();
+  Init_Sensors();
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
   /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
- // MEMS_INT1_Init();
+  MEMS_INT1_Init();
 #endif
 
   /* TiltSensing API initialization function */
@@ -286,10 +286,8 @@ static void MX_TiltSensing_Process(void)
  */
 static void Init_Sensors(void)
 {
-  //BSP_SENSOR_ACC_Init();
-	LSM6DSL_0_Probe( 2U);
-  //(void)CUSTOM_MOTION_SENSOR_Init(CUSTOM_ACC_INSTANCE_0, MOTION_ACCELERO);
- // BSP_SENSOR_GYR_Init();
+  BSP_SENSOR_ACC_Init();
+  BSP_SENSOR_GYR_Init();
  // BSP_SENSOR_MAG_Init();
 
   //BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
