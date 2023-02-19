@@ -39,7 +39,7 @@ extern "C" {
 #include "stm32f4xx_ll_pwr.h"
 #include "stm32f4xx_ll_gpio.h"
 
-//#include "custom.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

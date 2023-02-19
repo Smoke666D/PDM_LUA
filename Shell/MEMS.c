@@ -10,18 +10,9 @@
 #include "motion_di.h"
 #include "main.h"
 #include "bsp_ip_conf.h"
-#include "motion_tl_manager.h"
-
 #include "app_mems.h"
 
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
-
-
-
-
-
-
-
 
 
 static MDI_output_t data_out;
@@ -32,11 +23,11 @@ void vmemsTask(void *argument)
 	static TMsg msg_dat;
 	uint8_t pData[2] = {0x8F,18};
 	uint8_t pData1[2] = {0x8F,18};
-	MX_MEMS_Init();
 
 	for(;;)
 	{
-	   osDelay(1);
+	   osDelay(10);
+
 	   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
 	  // xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   //MX_MEMS_Process();

@@ -74,10 +74,9 @@
 #if !defined (USE_CUSTOM)
  #define USE_CUSTOM
 #endif
-
-//#ifndef USE_BSP_COM_FEATURE
- //  #define USE_BSP_COM_FEATURE                  0U
-//#endif
+#ifndef USE_BSP_COM_FEATURE
+   #define USE_BSP_COM_FEATURE                  0U
+#endif
 
 /** @defgroup CUSTOM_LOW_LEVEL_LED CUSTOM LOW LEVEL LED
  * @{
@@ -127,7 +126,7 @@
   * @{
   */
 #ifndef USE_BSP_COM
-  #define USE_BSP_COM                           1U
+  #define USE_BSP_COM                           0U
 #endif
 
 #ifndef USE_COM_LOG

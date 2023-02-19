@@ -24,8 +24,8 @@
 #include "com.h"
 #include "demo_serial.h"
 #include "fw_version.h"
-#include "motion_tl_manager.h"
-#include "motion_tl.h"
+#include "motion_di_manager.h"
+
 #ifdef USE_CUSTOM_BOARD
 #include "custom_mems_conf_app.h"
 #endif
@@ -116,45 +116,11 @@ int HandleMSG(TMsg *Msg)
   char ps[64];
   uint32_t ps_len = 0;
   static uint32_t sensors_enabled_prev = 0;
-  int32_t msg_offset;
-  uint32_t msg_count;
 
-  float time_s;
-  MTL_cal_result_t cal_result = CAL_FAIL;
-  MTL_acc_cal_t acc_cal;
-
-  if (Msg->Len < 2U)
-  {
-    return 0;
-  }
-
-  if (Msg->Data[0] != DEV_ADDR)
-  {
-    return 0;
-  }
 
   switch (Msg->Data[2])   /* CMD */
   {
-    case CMD_Ping:
-      if (Msg->Len != 3U)
-      {
-        return 0;
-      }
 
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 3;
-      UART_SendMsg(Msg);
-      break;
-
-    case CMD_Enter_DFU_Mode:
-      if (Msg->Len != 3U)
-      {
-        return 0;
-      }
-
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 3;
-      break;
 
     case CMD_Read_PresString:
       if (Msg->Len != 3U)
@@ -177,29 +143,6 @@ int HandleMSG(TMsg *Msg)
       UART_SendMsg(Msg);
       break;
 
-    case CMD_PRESSURE_Init:
-      if (Msg->Len < 3U)
-      {
-        return 0;
-      }
-
-      BUILD_REPLY_HEADER(Msg);
-      Serialize_s32(&Msg->Data[3], PRESS_UNICLEO_ID, 4);
-      Msg->Len = 3 + 4;
-      UART_SendMsg(Msg);
-      break;
-
-    case CMD_HUMIDITY_TEMPERATURE_Init:
-      if (Msg->Len < 3U)
-      {
-        return 0;
-      }
-
-      BUILD_REPLY_HEADER(Msg);
-      Serialize_s32(&Msg->Data[3], HUM_TEMP_UNICLEO_ID, 4);
-      Msg->Len = 3 + 4;
-      UART_SendMsg(Msg);
-      break;
 
     case CMD_ACCELERO_GYRO_Init:
       if (Msg->Len < 3U)
@@ -213,18 +156,6 @@ int HandleMSG(TMsg *Msg)
       UART_SendMsg(Msg);
       break;
 
-    case CMD_MAGNETO_Init:
-      if (Msg->Len < 3U)
-      {
-        return 0;
-      }
-
-      BUILD_REPLY_HEADER(Msg);
-      Serialize_s32(&Msg->Data[3], MAG_UNICLEO_ID, 4);
-      Msg->Len = 3 + 4;
-      UART_SendMsg(Msg);
-      break;
-
     case CMD_Start_Data_Streaming:
       if (Msg->Len < 3U)
       {
@@ -233,21 +164,8 @@ int HandleMSG(TMsg *Msg)
 
       SensorsEnabled = Deserialize(&Msg->Data[3], 4);
 
-      /* Start enabled sensors */
-      if ((SensorsEnabled & PRESSURE_SENSOR) == PRESSURE_SENSOR)
-      {
-        BSP_SENSOR_PRESS_Enable();
-      }
 
-      if ((SensorsEnabled & TEMPERATURE_SENSOR) == TEMPERATURE_SENSOR)
-      {
-        BSP_SENSOR_TEMP_Enable();
-      }
 
-      if ((SensorsEnabled & HUMIDITY_SENSOR) == HUMIDITY_SENSOR)
-      {
-        BSP_SENSOR_HUM_Enable();
-      }
 
       if ((SensorsEnabled & ACCELEROMETER_SENSOR) == ACCELEROMETER_SENSOR)
       {
@@ -259,110 +177,11 @@ int HandleMSG(TMsg *Msg)
         BSP_SENSOR_GYR_Enable();
       }
 
-      if ((SensorsEnabled & MAGNETIC_SENSOR) == MAGNETIC_SENSOR)
-      {
-        BSP_SENSOR_MAG_Enable();
-      }
 
-      (void)HAL_TIM_Base_Start_IT(&BSP_IP_TIM_Handle);
-      DataLoggerActive = 1;
 
-      DataStreamingDest = Msg->Data[1];
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 3;
-      UART_SendMsg(Msg);
+
       break;
 
-    case CMD_Stop_Data_Streaming:
-      if (Msg->Len < 3U)
-      {
-        return 0;
-      }
-
-      DataLoggerActive = 0;
-      (void)HAL_TIM_Base_Stop_IT(&BSP_IP_TIM_Handle);
-
-      /* Disable all sensors */
-      BSP_SENSOR_ACC_Disable();
-      BSP_SENSOR_GYR_Disable();
-      BSP_SENSOR_MAG_Disable();
-      BSP_SENSOR_PRESS_Disable();
-      BSP_SENSOR_TEMP_Disable();
-      BSP_SENSOR_HUM_Disable();
-
-      SensorsEnabled = 0;
-      UseOfflineData = 0;
-
-      BUILD_REPLY_HEADER(Msg);
-      UART_SendMsg(Msg);
-      break;
-
-    case CMD_Set_DateTime:
-      if (Msg->Len < 3U)
-      {
-        return 0;
-      }
-
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 3;
-      RTC_TimeRegulate(Msg->Data[3], Msg->Data[4], Msg->Data[5]);
-      RTC_DateRegulate(Msg->Data[6], Msg->Data[7], Msg->Data[8], Msg->Data[9]);
-      UART_SendMsg(Msg);
-      break;
-
-    case CMD_Offline_Data:
-      if (Msg->Len < 55U)
-      {
-        return 0;
-      }
-
-      msg_offset = 4;
-      msg_count = (uint32_t)Msg->Data[3];
-
-      for (i = 0; i < msg_count; i++)
-      {
-        memcpy(&OfflineData[OfflineDataWriteIndex].hours, &Msg->Data[msg_offset], 1);
-        memcpy(&OfflineData[OfflineDataWriteIndex].minutes, &Msg->Data[msg_offset + 1], 1);
-        memcpy(&OfflineData[OfflineDataWriteIndex].seconds, &Msg->Data[msg_offset + 2], 1);
-        memcpy(&OfflineData[OfflineDataWriteIndex].subsec, &Msg->Data[msg_offset + 3], 1);
-
-        memcpy(&OfflineData[OfflineDataWriteIndex].pressure, &Msg->Data[msg_offset + 4], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].temperature, &Msg->Data[msg_offset + 8], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].humidity, &Msg->Data[msg_offset + 12], 4);
-
-        memcpy(&OfflineData[OfflineDataWriteIndex].acceleration_x_mg, &Msg->Data[msg_offset + 16], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].acceleration_y_mg, &Msg->Data[msg_offset + 20], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].acceleration_z_mg, &Msg->Data[msg_offset + 24], 4);
-
-        memcpy(&OfflineData[OfflineDataWriteIndex].angular_rate_x_mdps, &Msg->Data[msg_offset + 28], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].angular_rate_y_mdps, &Msg->Data[msg_offset + 32], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].angular_rate_z_mdps, &Msg->Data[msg_offset + 36], 4);
-
-        memcpy(&OfflineData[OfflineDataWriteIndex].magnetic_field_x_mgauss, &Msg->Data[msg_offset + 40], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].magnetic_field_y_mgauss, &Msg->Data[msg_offset + 44], 4);
-        memcpy(&OfflineData[OfflineDataWriteIndex].magnetic_field_z_mgauss, &Msg->Data[msg_offset + 48], 4);
-
-        msg_offset += 52;
-
-        OfflineDataCount++;
-        if (OfflineDataCount > OFFLINE_DATA_SIZE)
-        {
-          OfflineDataCount = OFFLINE_DATA_SIZE;
-        }
-
-        OfflineDataWriteIndex++;
-        if (OfflineDataWriteIndex >= OFFLINE_DATA_SIZE)
-        {
-          OfflineDataWriteIndex = 0;
-        }
-      }
-
-      SensorReadRequest = 1;
-
-      /* Mark Msg as read */
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 3;
-      break;
 
     case CMD_Use_Offline_Data:
       if (Msg->Len < 4U)
@@ -401,72 +220,53 @@ int HandleMSG(TMsg *Msg)
       UART_SendMsg(Msg);
       break;
 
-    case CMD_Angle_Mode_Cal_Pos:
-      if (Msg->Len < 3U)
+    case CMD_Calibration_Mode:
+      if (Msg->Len < 5U)
       {
         return 0;
       }
 
-      BUILD_REPLY_HEADER(Msg);
-      Msg->Len = 4;
-
-      /* Commands */
-      switch (Msg->Data[3])
+      switch ((uint32_t)Msg->Data[3])
       {
-        case CMD_ANGLE_MODE_PITCH_ROLL_GRAVITY_INCLINATION:
-          AngleMode = MODE_PITCH_ROLL_GRAVITY_INCLINATION;
-          MotionTL_manager_setAngleMode(AngleMode);
+        case ACCELEROMETER_SENSOR:
+          MotionDI_set_acc_calibration_mode((MDI_cal_type_t)Msg->Data[4]);
           break;
 
-        case CMD_ANGLE_MODE_THETA_PSI_PHI:
-          AngleMode = MODE_THETA_PSI_PHI;
-          MotionTL_manager_setAngleMode(AngleMode);
-          break;
-
-        case CMD_CAL_POS_LYING_NORMAL_ON_TABLE:
-          MotionTL_manager_calibratePosition(Z_UP);
-          break;
-
-        case CMD_CAL_POS_LYING_UPSIDEDOWN_ON_TABLE:
-          MotionTL_manager_calibratePosition(Z_DOWN);
-          break;
-
-        case CMD_CAL_POS_NUCLEO_CONNECTOR_DOWN:
-          MotionTL_manager_calibratePosition(Y_UP);
-          break;
-
-        case CMD_CAL_POS_NUCLEO_CONNECTOR_LEFT:
-          MotionTL_manager_calibratePosition(X_DOWN);
-          break;
-
-        case CMD_CAL_POS_NUCLEO_CONNECTOR_UP:
-          MotionTL_manager_calibratePosition(Y_DOWN);
-          break;
-
-        case CMD_CAL_POS_NUCLEO_CONNECTOR_RIGHT:
-          MotionTL_manager_calibratePosition(X_UP);
-          break;
-
-        case CMD_GET_CALIBRATION_COEFFICIENTS:
-          cal_result = MotionTL_manager_getCalibrationValues(&acc_cal);
-          /* Leave byte [4] unused due to compatibility with other FWs */
-          memcpy(&Msg->Data[5], acc_cal.offset, 3 * sizeof(float));
-          memcpy(&Msg->Data[5 + 3 * sizeof(float)], acc_cal.gain, 3 * sizeof(float));
-          Serialize_s32(&Msg->Data[5 + 6 * sizeof(float)], (uint8_t)cal_result, 1);
-          Msg->Len = 5 + 6 * sizeof(float) + 1;
-          break;
-
-        case CMD_GET_ESTIMATED_MEASUREMENT_TIME:
-          MotionTL_manager_getEstimatedMeasTime(&time_s);
-          /* Leave byte [4] unused due to compatibility with other FWs */
-          memcpy(&Msg->Data[5], &time_s, sizeof(float));
-          Msg->Len = 5 + 1 * sizeof(float);
+        case GYROSCOPE_SENSOR:
+          MotionDI_set_gyro_calibration_mode((MDI_cal_type_t)Msg->Data[4]);
           break;
 
         default:
           break;
       }
 
+      BUILD_REPLY_HEADER(Msg);
+      Msg->Len = 5;
+      UART_SendMsg(Msg);
+      break;
+
+    case CMD_Calibration_Reset:
+      if (Msg->Len < 4U)
+      {
+        return 0;
+      }
+
+      switch ((uint32_t)Msg->Data[3])
+      {
+        case ACCELEROMETER_SENSOR:
+          MotionDI_reset_acc_calibration();
+          break;
+
+        case GYROSCOPE_SENSOR:
+          MotionDI_reset_gyro_calibration();
+          break;
+
+        default:
+          break;
+      }
+
+      BUILD_REPLY_HEADER(Msg);
+      Msg->Len = 4;
       UART_SendMsg(Msg);
       break;
 
@@ -540,9 +340,9 @@ void Get_PresentationString(char *PresentationString, uint32_t *Length)
   char *lib_version_num;
   char lib_version_string[64];
   int lib_version_len = 0;
-  const char ps[] = {"MEMS shield demo,16,"FW_VERSION",%s,"BOARD_NAME};
+  const char ps[] = {"MEMS shield demo,26,"FW_VERSION",%s,"BOARD_NAME};
 
-  MotionTL_manager_get_version(lib_version_string, &lib_version_len);
+  MotionDI_manager_get_version(lib_version_string, &lib_version_len);
 
   /* Shorten library version string (e.g.: ST MotionXX v1.0.0 resp. ST MotionXXX v1.0.0) to contain version number only (e.g.: 1.0.0) */
   if (lib_version_len > string_pointer_shift)

@@ -29,7 +29,7 @@ extern "C" {
 
 #include "custom_mems_conf.h"
 #include "motion_sensor.h"
-int32_t LSM6DSL_0_Probe(uint32_t Functions);
+
 #ifndef USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0
 #define USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0          1
 #endif

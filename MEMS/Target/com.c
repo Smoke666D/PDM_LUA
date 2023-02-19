@@ -19,11 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "com.h"
 #include "custom.h"
-
 /** @addtogroup MOTION_APPLICATIONS MOTION APPLICATIONS
  * @{
  */
-//extern UART_HandleTypeDef hcom_uart[COMn];
 
 /* Private types -------------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/

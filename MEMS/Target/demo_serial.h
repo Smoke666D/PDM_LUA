@@ -28,7 +28,7 @@ extern "C" {
 #include "serial_protocol.h"
 #include "serial_cmd.h"
 #include "bsp_ip_conf.h"
-#include "motion_tl_manager.h"
+#include "motion_di_manager.h"
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
@@ -69,21 +69,9 @@ typedef struct {
 #define GYROSCOPE_SENSOR      0x00000020U
 #define MAGNETIC_SENSOR       0x00000040U
 
-#define STREAMING_MSG_LENGTH  71
+#define STREAMING_MSG_LENGTH  149
 
-/* Algorithm-based defines */
-#define CMD_ANGLE_MODE_PITCH_ROLL_GRAVITY_INCLINATION  0x01
-#define CMD_ANGLE_MODE_THETA_PSI_PHI                   0x02
-#define CMD_CAL_POS_LYING_NORMAL_ON_TABLE              0x03
-#define CMD_CAL_POS_LYING_UPSIDEDOWN_ON_TABLE          0x04
-#define CMD_CAL_POS_NUCLEO_CONNECTOR_DOWN              0x05
-#define CMD_CAL_POS_NUCLEO_CONNECTOR_LEFT              0x06
-#define CMD_CAL_POS_NUCLEO_CONNECTOR_UP                0x07
-#define CMD_CAL_POS_NUCLEO_CONNECTOR_RIGHT             0x08
-#define CMD_GET_CALIBRATION_COEFFICIENTS               0x09
-#define CMD_GET_ESTIMATED_MEASUREMENT_TIME             0x0A
-
-#define REQUIRED_DATA  (ACCELEROMETER_SENSOR)
+#define REQUIRED_DATA  (ACCELEROMETER_SENSOR + GYROSCOPE_SENSOR)
 
 /* Exported variables --------------------------------------------------------*/
 extern volatile uint8_t DataLoggerActive;
@@ -95,8 +83,6 @@ extern int OfflineDataReadIndex;
 extern int OfflineDataWriteIndex;
 extern int OfflineDataCount;
 extern uint32_t AlgoFreq;
-
-extern MTL_angle_mode_t AngleMode;
 
 /* Exported functions ------------------------------------------------------- */
 void BUILD_REPLY_HEADER(TMsg *Msg);

@@ -31,18 +31,25 @@ extern "C" {
 #include "demo_serial.h"
 #include "bsp_ip_conf.h"
 #include "fw_version.h"
-#include "motion_tl_manager.h"
-#include "custom_motion_sensors.h"
+#include "motion_di_manager.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define DWT_LAR_KEY  0xC5ACCE55 /* DWT register unlock key */
-#define ALGO_FREQ  50U /* Algorithm frequency >= 50Hz */
+#define ALGO_FREQ  100U /* Algorithm frequency 100Hz */
 #define ACC_ODR  ((float)ALGO_FREQ)
-#define ACC_FS  4 /* FS = <-4g, 4g> */
+#define ACC_FS  2 /* FS = <-2g, 2g> */
+#define ALGO_PERIOD  (1000000U / ALGO_FREQ) /* Algorithm period [us] */
+#define FROM_MG_TO_G  0.001f
+#define FROM_G_TO_MG  1000.0f
+#define FROM_MDPS_TO_DPS  0.001f
+#define FROM_DPS_TO_MDPS  1000.0f
+#define FROM_MGAUSS_TO_UT50  (0.1f/50.0f)
+#define FROM_UT50_TO_MGAUSS  500.0f
 
 /* Public variables ----------------------------------------------------------*/
 volatile uint8_t DataLoggerActive = 0;
-volatile uint32_t SensorsEnabled = 1;
+volatile uint32_t SensorsEnabled = 0;
 char LibVersion[35];
 int LibVersionLen;
 volatile uint8_t SensorReadRequest = 0;
@@ -52,26 +59,24 @@ int OfflineDataReadIndex = 0;
 int OfflineDataWriteIndex = 0;
 int OfflineDataCount = 0;
 uint32_t AlgoFreq = ALGO_FREQ;
-MTL_angle_mode_t AngleMode = MODE_PITCH_ROLL_GRAVITY_INCLINATION;
+MDI_cal_type_t AccCalMode = MDI_CAL_NONE;
+MDI_cal_type_t GyrCalMode = MDI_CAL_NONE;
 
 /* Extern variables ----------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static MOTION_SENSOR_Axes_t AccValue;
 static MOTION_SENSOR_Axes_t GyrValue;
-static MOTION_SENSOR_Axes_t MagValue;
-
+static int64_t Timestamp = 0;
 
 /* Private function prototypes -----------------------------------------------*/
-static void MX_TiltSensing_Init(void);
-static void MX_TiltSensing_Process(void);
-static void TL_Data_Handler(TMsg *Msg);
+static void MX_DynamicInclinometer_Init(void);
+static void MX_DynamicInclinometer_Process(void);
+static void DI_Data_Handler(TMsg *Msg, TMsg *Cmd);
 static void Init_Sensors(void);
 static void RTC_Handler(TMsg *Msg);
 static void Accelero_Sensor_Handler(TMsg *Msg);
 static void Gyro_Sensor_Handler(TMsg *Msg);
-static void Magneto_Sensor_Handler(TMsg *Msg);
-
 static void DWT_Init(void);
 static void DWT_Start(void);
 static uint32_t DWT_Stop(void);
@@ -83,21 +88,8 @@ static void MEMS_INT1_Init(void);
 
 void MX_MEMS_Init(void)
 {
-  /* USER CODE BEGIN SV */
 
-  /* USER CODE END SV */
-
-  /* USER CODE BEGIN MEMS_Init_PreTreatment */
-
-  /* USER CODE END MEMS_Init_PreTreatment */
-
-  /* Initialize the peripherals and the MEMS components */
-
-  MX_TiltSensing_Init();
-
-  /* USER CODE BEGIN MEMS_Init_PostTreatment */
-
-  /* USER CODE END MEMS_Init_PostTreatment */
+  MX_DynamicInclinometer_Init();
 }
 
 /*
@@ -105,121 +97,30 @@ void MX_MEMS_Init(void)
  */
 void MX_MEMS_Process(void)
 {
-  /* USER CODE BEGIN MEMS_Process_PreTreatment */
 
-  /* USER CODE END MEMS_Process_PreTreatment */
+  MX_DynamicInclinometer_Process();
 
-  MX_TiltSensing_Process();
-
-  /* USER CODE BEGIN MEMS_Process_PostTreatment */
-
-  /* USER CODE END MEMS_Process_PostTreatment */
 }
 
-/* Exported functions --------------------------------------------------------*/
-/**
- * @brief  Period elapsed callback
- * @param  htim pointer to a TIM_HandleTypeDef structure that contains
- *              the configuration information for TIM module.
- * @retval None
- */
-void BSB_HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if (htim->Instance == BSP_IP_TIM_Handle.Instance)
-  {
-    SensorReadRequest = 1;
-  }
-}
-
-/**
- * @brief  Collect accelerometer data
- * @param  cal_data Pointer to 2D array of calibration data cal_data[num_records][3]
- * @param  num_records Number of records to be taken (3 axes per record)
- * @retval 0  Ok
- * @retval 1  Accelerometer error
- */
-uint8_t CollectData(float cal_data[][3], uint32_t num_records)
-{
-  uint32_t i = 0;
-
-  if ((SensorsEnabled & ACCELEROMETER_SENSOR) != ACCELEROMETER_SENSOR)
-  {
-    return 1;
-  }
-
-  /* Discard previous data */
-  SensorReadRequest = 0;
-
-  while (i < num_records)
-  {
-    if (SensorReadRequest == 1)
-    {
-      SensorReadRequest = 0;
-
-      BSP_SENSOR_ACC_GetAxes(&AccValue);
-
-      cal_data[i][0] = (float)AccValue.x / 1000.0f;
-      cal_data[i][1] = (float)AccValue.y / 1000.0f;
-      cal_data[i][2] = (float)AccValue.z / 1000.0f;
-      i++;
-    }
-  }
-
-  return 0;
-}
-
-/**
- * @brief  Get estimated measurement time
- * @param  time_s Pointer to time in [s]
- * @param  num_records Number of records taken
- * @retval None
- */
-void GetEstimatedMeasTime(float *time_s, uint32_t num_records)
-{
-  float odr = 0.0f;
-
-  if ((SensorsEnabled & ACCELEROMETER_SENSOR) != ACCELEROMETER_SENSOR)
-  {
-    *time_s = 0.0f;
-    return;
-  }
-
-  BSP_SENSOR_ACC_Enable();
-
-  BSP_SENSOR_ACC_GetOutputDataRate(&odr);
-
-  if (odr > 0.001f)
-  {
-    *time_s = (float)num_records / odr;
-  }
-}
 
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  Initialize the application
   * @retval None
   */
-static void MX_TiltSensing_Init(void)
+static void MX_DynamicInclinometer_Init(void)
 {
-	LSM6DSL_0_Probe( 2U);
-
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
   /* Force MEMS INT1 pin of the sensor low during startup in order to disable I3C and enable I2C. This function needs
    * to be called only if user wants to disable I3C / enable I2C and didn't put the pull-down resistor to MEMS INT1 pin
    * on his HW setup. This is also the case of usage X-NUCLEO-IKS01A2 or X-NUCLEO-IKS01A3 expansion board together with
    * sensor in DIL24 adapter board where the LDO with internal pull-up is used.
    */
-   MEMS_INT1_Force_Low();
+  MEMS_INT1_Force_Low();
 #endif
 
   /* Initialize Virtual COM Port */
-//  BSP_COM_Init(COM1);
-
-  /* Initialize Timer */
- // BSP_IP_TIM_Init();
-
-  /* Configure Timer to run with desired algorithm frequency */
- // TIM_Config(ALGO_FREQ);
+  BSP_COM_Init(COM1);
 
   /* Initialize (disabled) sensors */
   Init_Sensors();
@@ -229,54 +130,34 @@ static void MX_TiltSensing_Init(void)
   MEMS_INT1_Init();
 #endif
 
-  /* TiltSensing API initialization function */
- // MotionTL_manager_init();
+  /* DynamicInclinometer API initialization function */
+  MotionDI_manager_init((int)ALGO_FREQ);
 
   /* OPTIONAL */
   /* Get library version */
- // MotionTL_manager_get_version(LibVersion, &LibVersionLen);
+  MotionDI_manager_get_version(LibVersion, &LibVersionLen);
 
- // DWT_Init();
+  DWT_Init();
 
-
-  /* Start receiving messages via DMA */
-  //UART_StartReceiveMsg();
 }
 
 /**
   * @brief  Process of the application
   * @retval None
   */
-static void MX_TiltSensing_Process(void)
+static void MX_DynamicInclinometer_Process(void)
 {
   static TMsg msg_dat;
   static TMsg msg_cmd;
 
-  /*if (UART_ReceivedMSG((TMsg *)&msg_cmd) == 1)
-  {
-    if (msg_cmd.Data[0] == DEV_ADDR)
-    {
-      (void)HandleMSG((TMsg *)&msg_cmd);
-    }
-  }
-*/
-
     /* Acquire data from enabled sensors and fill Msg stream */
-    RTC_Handler(&msg_dat);
-    Accelero_Sensor_Handler(&msg_dat);
-    Gyro_Sensor_Handler(&msg_dat);
-    Magneto_Sensor_Handler(&msg_dat);
+ RTC_Handler(&msg_dat);
+ Accelero_Sensor_Handler(&msg_dat);
+ Gyro_Sensor_Handler(&msg_dat);
 
-    /* TiltSensing specific part */
-    TL_Data_Handler(&msg_dat);
+    /* DynamicInclinometer specific part */
+ DI_Data_Handler(&msg_dat, &msg_cmd);
 
-    /* Send data stream */
-    INIT_STREAMING_HEADER(&msg_dat);
-    msg_dat.Len = STREAMING_MSG_LENGTH;
-
-
-  /*  UART_SendMsg(&msg_dat);
-  }*/
 }
 
 /**
@@ -288,10 +169,9 @@ static void Init_Sensors(void)
 {
   BSP_SENSOR_ACC_Init();
   BSP_SENSOR_GYR_Init();
- // BSP_SENSOR_MAG_Init();
 
-  //BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
-  //BSP_SENSOR_ACC_SetFullScale(ACC_FS);
+  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
 }
 
 /**
@@ -308,14 +188,7 @@ static void RTC_Handler(TMsg *Msg)
   int32_t ans_int32;
   uint32_t RtcSynchPrediv = hrtc.Init.SynchPrediv;
 
-  if (UseOfflineData == 1)
-  {
-    Msg->Data[3] = (uint8_t)OfflineData[OfflineDataReadIndex].hours;
-    Msg->Data[4] = (uint8_t)OfflineData[OfflineDataReadIndex].minutes;
-    Msg->Data[5] = (uint8_t)OfflineData[OfflineDataReadIndex].seconds;
-    Msg->Data[6] = (uint8_t)OfflineData[OfflineDataReadIndex].subsec;
-  }
-  else
+
   {
     (void)HAL_RTC_GetTime(&hrtc, &stimestructure, FORMAT_BIN);
     (void)HAL_RTC_GetDate(&hrtc, &sdatestructureget, FORMAT_BIN);
@@ -336,68 +209,104 @@ static void RTC_Handler(TMsg *Msg)
 }
 
 /**
- * @brief  Tilt Sensing data handler
- * @param  Msg the Tilt Sensing data part of the stream
+ * @brief  Dynamic Inclinometer data handler
+ * @param  Msg the Dynamic Inclinometer data part of the stream
+ * @param  Cmd the Dynamic Inclinometer command to GUI
  * @retval None
  */
-static void TL_Data_Handler(TMsg *Msg)
+static void DI_Data_Handler(TMsg *Msg, TMsg *Cmd)
 {
-  uint32_t elapsed_time_us = 0U;
-  MTL_input_t data_in = {
-    .acc_x = 0.0f,
-    .acc_y = 0.0f,
-    .acc_z = 0.0f,
-  };
+  uint32_t         elapsed_time_us = 0U;
+  MDI_input_t      data_in;
+  MDI_output_t     data_out;
+  MDI_cal_type_t   acc_cal_mode;
+  MDI_cal_type_t   gyro_cal_mode;
+  MDI_cal_output_t acc_cal;
+  MDI_cal_output_t gyro_cal;
 
-  static MTL_output_t data_out = {
-    .theta_3x = 0.0f,
-    .psi_3x   = 0.0f,
-    .phi_3x   = 0.0f,
-    .roll_3x  = 0.0f,
-    .pitch_3x = 0.0f,
-    .err_deg  = 0.0f,
-    .valid    = 0,
-  };
-
-  uint64_t timestamp_ms
-    = (uint8_t)Msg->Data[3] * 3600000U
-    + (uint8_t)Msg->Data[4] * 60000U
-    + (uint8_t)Msg->Data[5] * 1000U
-    + (uint8_t)Msg->Data[6] * 10U;
-
-
-    /* Convert acceleration from [mg] to [g] */
-    data_in.acc_x = (float)AccValue.x / 1000.0f;
-    data_in.acc_y = (float)AccValue.y / 1000.0f;
-    data_in.acc_z = (float)AccValue.z / 1000.0f;
-
-    /* Run Tilt Sensing algorithm */
-
-    DWT_Start();
-    MotionTL_manager_run(&data_in, timestamp_ms, &data_out);
-    elapsed_time_us = DWT_Stop();
-
-
-    switch (AngleMode)
+  if ((SensorsEnabled & ACCELEROMETER_SENSOR) == ACCELEROMETER_SENSOR)
+  {
+    if ((SensorsEnabled & GYROSCOPE_SENSOR) == GYROSCOPE_SENSOR)
     {
-      default:
-      case MODE_PITCH_ROLL_GRAVITY_INCLINATION:
-        /* Get angles (pitch, roll and gravity inclination) */
-        FloatToArray(&Msg->Data[55], data_out.pitch_3x);
-        FloatToArray(&Msg->Data[59], data_out.roll_3x);
-        FloatToArray(&Msg->Data[63], data_out.phi_3x);  /* Gravity Inclination */
-        break;
+      /* Convert acceleration from [mg] to [g] */
+      data_in.Acc[0] = (float)AccValue.x * FROM_MG_TO_G;
+      data_in.Acc[1] = (float)AccValue.y * FROM_MG_TO_G;
+      data_in.Acc[2] = (float)AccValue.z * FROM_MG_TO_G;
 
-      case MODE_THETA_PSI_PHI:
-        /* Get angles (theta, psi and phi) */
-        FloatToArray(&Msg->Data[55], data_out.theta_3x);
-        FloatToArray(&Msg->Data[59], data_out.psi_3x);
-        FloatToArray(&Msg->Data[63], data_out.phi_3x);
-        break;
+      /* Convert angular velocity from [mdps] to [dps] */
+      data_in.Gyro[0] = (float)GyrValue.x * FROM_MDPS_TO_DPS;
+      data_in.Gyro[1] = (float)GyrValue.y * FROM_MDPS_TO_DPS;
+      data_in.Gyro[2] = (float)GyrValue.z * FROM_MDPS_TO_DPS;
+
+      data_in.Timestamp = Timestamp;
+      Timestamp += ALGO_PERIOD;
+
+      /* Run Dynamic Inclinometer algorithm */
+
+      DWT_Start();
+      MotionDI_manager_run(&data_in, &data_out);
+      elapsed_time_us = DWT_Stop();
+
+
+      /* Check calibration mode */
+      MotionDI_get_acc_calibration_mode(&acc_cal_mode);
+      MotionDI_get_gyro_calibration_mode(&gyro_cal_mode);
+
+      if (acc_cal_mode != AccCalMode)
+      {
+        AccCalMode = acc_cal_mode;
+
+        INIT_STREAMING_HEADER(Cmd);
+        Cmd->Data[2] = CMD_Calibration_Mode + CMD_Reply_Add;
+        Cmd->Data[3] = (uint8_t)ACCELEROMETER_SENSOR;
+        Cmd->Data[4] = (uint8_t)AccCalMode;
+        Cmd->Len = 5;
+        UART_SendMsg(Cmd);
+      }
+
+      if (gyro_cal_mode != GyrCalMode)
+      {
+        GyrCalMode = gyro_cal_mode;
+
+        INIT_STREAMING_HEADER(Cmd);
+        Cmd->Data[2] = CMD_Calibration_Mode + CMD_Reply_Add;
+        Cmd->Data[3] = (uint8_t)GYROSCOPE_SENSOR;
+        Cmd->Data[4] = (uint8_t)GyrCalMode;
+        Cmd->Len = 5;
+        UART_SendMsg(Cmd);
+      }
+
+      /* Get calibration parameters */
+      MotionDI_get_acc_calibration(&acc_cal);
+      MotionDI_get_gyro_calibration(&gyro_cal);
+
+      /* Convert accelerometer calibration parameters from [g] to [mg] */
+      acc_cal.Bias[0] *= FROM_G_TO_MG;
+      acc_cal.Bias[1] *= FROM_G_TO_MG;
+      acc_cal.Bias[2] *= FROM_G_TO_MG;
+
+      /* Convert gyroscope calibration parameters from [dps] to [mdps] */
+      gyro_cal.Bias[0] *= FROM_DPS_TO_MDPS;
+      gyro_cal.Bias[1] *= FROM_DPS_TO_MDPS;
+      gyro_cal.Bias[2] *= FROM_DPS_TO_MDPS;
+
+      (void)memcpy(&Msg->Data[55], (void *)data_out.quaternion, 4U * sizeof(float));
+      (void)memcpy(&Msg->Data[71], (void *)data_out.rotation, 3U * sizeof(float));
+      (void)memcpy(&Msg->Data[83], (void *)data_out.gravity, 3U * sizeof(float));
+      (void)memcpy(&Msg->Data[95], (void *)data_out.linear_acceleration, 3U * sizeof(float));
+
+      (void)memcpy(&Msg->Data[107], (void *)acc_cal.Bias, 3U * sizeof(float));
+      (void)memcpy(&Msg->Data[119], (void *) & (acc_cal.SF_Matrix[0][0]), sizeof(float));
+      (void)memcpy(&Msg->Data[123], (void *) & (acc_cal.SF_Matrix[1][1]), sizeof(float));
+      (void)memcpy(&Msg->Data[127], (void *) & (acc_cal.SF_Matrix[2][2]), sizeof(float));
+      Msg->Data[131] = (uint8_t)acc_cal.CalQuality;
+
+      (void)memcpy(&Msg->Data[132], (void *)gyro_cal.Bias, 3U * sizeof(float));
+      Msg->Data[144] = (uint8_t)gyro_cal.CalQuality;
+
+      Serialize_s32(&Msg->Data[145], (int32_t)elapsed_time_us, 4);
     }
-
-    Serialize_s32(&Msg->Data[67], (int32_t)elapsed_time_us, 4);
-
+  }
 }
 
 /**
@@ -407,22 +316,14 @@ static void TL_Data_Handler(TMsg *Msg)
  */
 static void Accelero_Sensor_Handler(TMsg *Msg)
 {
-
-    if (UseOfflineData == 1)
-    {
-      AccValue.x = OfflineData[OfflineDataReadIndex].acceleration_x_mg;
-      AccValue.y = OfflineData[OfflineDataReadIndex].acceleration_y_mg;
-      AccValue.z = OfflineData[OfflineDataReadIndex].acceleration_z_mg;
-    }
-    else
-    {
-      BSP_SENSOR_ACC_GetAxes(&AccValue);
-    }
+  if ((SensorsEnabled & ACCELEROMETER_SENSOR) == ACCELEROMETER_SENSOR)
+  {
+    BSP_SENSOR_ACC_GetAxes(&AccValue);
 
     Serialize_s32(&Msg->Data[19], (int32_t)AccValue.x, 4);
     Serialize_s32(&Msg->Data[23], (int32_t)AccValue.y, 4);
     Serialize_s32(&Msg->Data[27], (int32_t)AccValue.z, 4);
-
+  }
 }
 
 /**
@@ -432,49 +333,14 @@ static void Accelero_Sensor_Handler(TMsg *Msg)
  */
 static void Gyro_Sensor_Handler(TMsg *Msg)
 {
-
-    if (UseOfflineData == 1)
-    {
-      GyrValue.x = OfflineData[OfflineDataReadIndex].angular_rate_x_mdps;
-      GyrValue.y = OfflineData[OfflineDataReadIndex].angular_rate_y_mdps;
-      GyrValue.z = OfflineData[OfflineDataReadIndex].angular_rate_z_mdps;
-    }
-    else
-    {
-      BSP_SENSOR_GYR_GetAxes(&GyrValue);
-    }
-
+  if ((SensorsEnabled & GYROSCOPE_SENSOR) == GYROSCOPE_SENSOR)
+  {
+    BSP_SENSOR_GYR_GetAxes(&GyrValue);
     Serialize_s32(&Msg->Data[31], GyrValue.x, 4);
     Serialize_s32(&Msg->Data[35], GyrValue.y, 4);
     Serialize_s32(&Msg->Data[39], GyrValue.z, 4);
-
+  }
 }
-
-/**
- * @brief  Handles the MAG axes data getting/sending
- * @param  Msg the MAG part of the stream
- * @retval None
- */
-static void Magneto_Sensor_Handler(TMsg *Msg)
-{
-
-    if (UseOfflineData == 1)
-    {
-     MagValue.x = OfflineData[OfflineDataReadIndex].magnetic_field_x_mgauss;
-     MagValue.y = OfflineData[OfflineDataReadIndex].magnetic_field_y_mgauss;
-     MagValue.z = OfflineData[OfflineDataReadIndex].magnetic_field_z_mgauss;
-    }
-    else
-    {
-      BSP_SENSOR_MAG_GetAxes(&MagValue);
-    }
-
-    Serialize_s32(&Msg->Data[43], MagValue.x, 4);
-    Serialize_s32(&Msg->Data[47], MagValue.y, 4);
-    Serialize_s32(&Msg->Data[51], MagValue.z, 4);
-
-}
-
 
 
 
