@@ -36,9 +36,7 @@ extern "C" {
 
 /* Exported variables --------------------------------------------------------*/
 /* Exported defines ----------------------------------------------------------*/
-extern TIM_HandleTypeDef htim5;
-#define BSP_IP_TIM_Handle htim5
-#define BSP_IP_TIM_Init MX_TIM5_Init
+
 
 #define BSP_IP_MEMS_INT1_PIN_NUM GPIO_PIN_3
 #define BSP_IP_MEMS_INT1_GPIOX GPIOD

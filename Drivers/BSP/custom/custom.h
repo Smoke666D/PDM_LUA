@@ -78,22 +78,7 @@
    #define USE_BSP_COM_FEATURE                  0U
 #endif
 
-/** @defgroup CUSTOM_LOW_LEVEL_LED CUSTOM LOW LEVEL LED
- * @{
- */
-/** Define number of LED            **/
-#define LEDn                              1U
-/**  Definition for BSP USER LED 2   **/
-#define LED2_PIN                     	  GPIO_PIN_4
-#define LED2_GPIO_PORT                    GPIOD
-#define LED2_GPIO_CLK_ENABLE()            __HAL_RCC_GPIOD_CLK_ENABLE()
-#define LED2_GPIO_CLK_DISABLE()           __HAL_RCC_GPIOD_CLK_DISABLE()
 
-#define BUS_GPIO_INSTANCE GPIO
-#define BUS_BSP_LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOD_CLK_ENABLE()
-#define BUS_BSP_LED_GPIO_PORT GPIOD
-#define BUS_BSP_LED_GPIO_CLK_DISABLE() __HAL_RCC_GPIOD_CLK_DISABLE()
-#define BUS_BSP_LED_GPIO_PIN GPIO_PIN_4
 
 /**
  * @}

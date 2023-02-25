@@ -29,17 +29,7 @@
   */
 void BSP_SENSOR_ACC_Read_Register(uint8_t Reg, uint8_t *Data)
 {
-#if (defined BSP_HYBRID_SENSORS)
-  #ifdef CUSTOM_ACC_INSTANCE_0
-  (void)CUSTOM_HYBRID_SENSOR_Read_Register(CUSTOM_ACC_INSTANCE_0, Reg, Data);
-  #endif
-#else
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_ACC_INSTANCE_0
   (void)CUSTOM_MOTION_SENSOR_Read_Register(CUSTOM_ACC_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-#endif
 }
 
 /**
@@ -50,78 +40,9 @@ void BSP_SENSOR_ACC_Read_Register(uint8_t Reg, uint8_t *Data)
   */
 void BSP_SENSOR_GYR_Read_Register(uint8_t Reg, uint8_t *Data)
 {
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_GYR_INSTANCE_0
   (void)CUSTOM_MOTION_SENSOR_Read_Register(CUSTOM_GYR_INSTANCE_0, Reg, Data);
-  #endif
-#endif
 }
 
-/**
-  * @brief  Get the register value from magnetometer
-  * @param  Reg address to be read
-  * @param  Data pointer where the value is written to
-  * @retval None
-  */
-void BSP_SENSOR_MAG_Read_Register(uint8_t Reg, uint8_t *Data)
-{
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_MAG_INSTANCE_0
-  (void)CUSTOM_MOTION_SENSOR_Read_Register(CUSTOM_MAG_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
-
-/**
-  * @brief  Get the register value from pressure sensor
-  * @param  Reg address to be read
-  * @param  Data pointer where the value is written to
-  * @retval None
-  */
-void BSP_SENSOR_PRESS_Read_Register(uint8_t Reg, uint8_t *Data)
-{
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_PRESS_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Read_Register(CUSTOM_PRESS_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
-
-/**
-  * @brief  Get the register value from temperature sensor
-  * @param  Reg address to be read
-  * @param  Data pointer where the value is written to
-  * @retval None
-  */
-void BSP_SENSOR_TEMP_Read_Register(uint8_t Reg, uint8_t *Data)
-{
-#if (defined BSP_HYBRID_SENSORS)
-  #ifdef CUSTOM_TEMP_INSTANCE_0
-  (void)CUSTOM_HYBRID_SENSOR_Read_Register(CUSTOM_TEMP_INSTANCE_0, Reg, Data);
-  #endif
-#else
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_TEMP_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Read_Register(CUSTOM_TEMP_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-#endif
-}
-
-/**
-  * @brief  Get the register value from humidity sensor
-  * @param  Reg address to be read
-  * @param  Data pointer where the value is written to
-  * @retval None
-  */
-void BSP_SENSOR_HUM_Read_Register(uint8_t Reg, uint8_t *Data)
-{
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_HUM_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Read_Register(CUSTOM_HUM_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
 
 /**
   * @brief  Set the register value
@@ -131,17 +52,7 @@ void BSP_SENSOR_HUM_Read_Register(uint8_t Reg, uint8_t *Data)
   */
 void BSP_SENSOR_ACC_Write_Register(uint8_t Reg, uint8_t Data)
 {
-#if (defined BSP_HYBRID_SENSORS)
-  #ifdef CUSTOM_ACC_INSTANCE_0
-  (void)CUSTOM_HYBRID_SENSOR_Write_Register(CUSTOM_ACC_INSTANCE_0, Reg, Data);
-  #endif
-#else
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_ACC_INSTANCE_0
   (void)CUSTOM_MOTION_SENSOR_Write_Register(CUSTOM_ACC_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-#endif
 }
 
 /**
@@ -152,78 +63,10 @@ void BSP_SENSOR_ACC_Write_Register(uint8_t Reg, uint8_t Data)
   */
 void BSP_SENSOR_GYR_Write_Register(uint8_t Reg, uint8_t Data)
 {
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_GYR_INSTANCE_0
   (void)CUSTOM_MOTION_SENSOR_Write_Register(CUSTOM_GYR_INSTANCE_0, Reg, Data);
-  #endif
-#endif
 }
 
-/**
-  * @brief  Set the register value
-  * @param  Reg address to be read
-  * @param  Data value to be written
-  * @retval None
-  */
-void BSP_SENSOR_MAG_Write_Register(uint8_t Reg, uint8_t Data)
-{
-#if (defined BSP_MOTION_SENSORS)
-  #ifdef CUSTOM_MAG_INSTANCE_0
-  (void)CUSTOM_MOTION_SENSOR_Write_Register(CUSTOM_MAG_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
 
-/**
-  * @brief  Set the register value in pressure sensor
-  * @param  Reg address to be read
-  * @param  Data value to be written
-  * @retval None
-  */
-void BSP_SENSOR_PRESS_Write_Register(uint8_t Reg, uint8_t Data)
-{
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_PRESS_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Write_Register(CUSTOM_PRESS_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
-
-/**
-  * @brief  Set the register value in temperature sensor
-  * @param  Reg address to be read
-  * @param  Data value to be written
-  * @retval None
-  */
-void BSP_SENSOR_TEMP_Write_Register(uint8_t Reg, uint8_t Data)
-{
-#if (defined BSP_HYBRID_SENSORS)
-  #ifdef CUSTOM_TEMP_INSTANCE_0
-  (void)CUSTOM_HYBRID_SENSOR_Write_Register(CUSTOM_TEMP_INSTANCE_0, Reg, Data);
-  #endif
-#else
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_TEMP_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Write_Register(CUSTOM_TEMP_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-#endif
-}
-
-/**
-  * @brief  Set the register value in humidity sensor
-  * @param  Reg address to be read
-  * @param  Data value to be written
-  * @retval None
-  */
-void BSP_SENSOR_HUM_Write_Register(uint8_t Reg, uint8_t Data)
-{
-#if (defined BSP_ENV_SENSORS)
-  #ifdef CUSTOM_HUM_INSTANCE_0
-  (void)CUSTOM_ENV_SENSOR_Write_Register(CUSTOM_HUM_INSTANCE_0, Reg, Data);
-  #endif
-#endif
-}
 
 #if ((defined CUSTOM_ALGOBUILDER_FW_TEMPLATE) || (defined CUSTOM_DATALOGFUSION_DEMO) || (defined CUSTOM_TILTSENSING_DEMO) || (defined CUSTOM_GESTURERECOGNITION_DEMO) || (defined CUSTOM_CARRYPOSITION_DEMO) || (defined CUSTOM_ECOMPASS_DEMO) || (defined CUSTOM_DYNAMICINCLINOMETER_DEMO) || (defined CUSTOM_ACTIVITYRECOGNITION_DEMO) || (defined CUSTOM_ACTIVITYRECOGNITIONWRIST_DEMO) || (defined CUSTOM_FITNESSACTIVITIES_DEMO) || (defined CUSTOM_PEDOMETERWRIST_DEMO) || (defined CUSTOM_POSEESTIMATION_DEMO) || (defined CUSTOM_STANDINGSITTINGDESK_DEMO))
 /**
