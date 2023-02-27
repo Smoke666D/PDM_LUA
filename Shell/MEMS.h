@@ -19,6 +19,7 @@
 #include "data.h"
 #include "stm32f4xx_hal.h"
 
+
 #define ALGO_FREQ  100U
 #define DECIMATION  4U
 #define TMsg_MaxLen             256
@@ -82,10 +83,10 @@ typedef struct {
 #define CMD_GET_ESTIMATED_MEASUREMENT_TIME             0x0A
 
 #define REQUIRED_DATA  (ACCELEROMETER_SENSOR)
-
+float fAngleGet ( ANGLE_TYPE type );
 void vmemsTask(void *argument);
 void MX_DynamicInclinometer_Process();
-float fAngleGet ( ANGLE_TYPE type );
+
 
 
 

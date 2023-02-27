@@ -23,7 +23,7 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-
+#include "PDMhardware.h"
 /* Includes ------------------------------------------------------------------*/
 
 /* Exported defines ----------------------------------------------------------*/
@@ -31,7 +31,7 @@
 /* Exported functions --------------------------------------------------------*/
 void MX_MEMS_Init(void);
 void MX_MEMS_Process(void);
-
+float fAngleGet1 ( ANGLE_TYPE type );
 #ifdef __cplusplus
 }
 #endif

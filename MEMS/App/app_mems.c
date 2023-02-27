@@ -85,6 +85,28 @@ void MX_MEMS_Init(void)
 	  BSP_SENSOR_GYR_Enable();
 }
 
+
+float YAW = 0;
+float PITCH = 0;
+float ROLL = 0;
+
+float fAngleGet1 ( ANGLE_TYPE type )
+{
+	float data = 0.0f;
+	switch(type)
+	{
+	case ANGLE_TYPE_ROLL:
+		data = ROLL;
+		break;
+	case ANGLE_TYPE_PITCH:
+		data = PITCH;
+		break;
+	default:
+		break;
+	}
+  return (data);
+}
+
 /*
  * LM background task
  */
@@ -146,6 +168,9 @@ void MX_MEMS_Process(void)
 	gyro_cal.Bias[0] *= FROM_DPS_TO_MDPS;
 	gyro_cal.Bias[1] *= FROM_DPS_TO_MDPS;
 	gyro_cal.Bias[2] *= FROM_DPS_TO_MDPS;
+	ROLL = data_out.rotation[1];
+	PITCH = data_out.rotation[2];
+	YAW = data_out.rotation[0];
 }
 
 

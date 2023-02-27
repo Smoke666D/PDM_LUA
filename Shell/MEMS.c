@@ -14,33 +14,21 @@
 
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 
-
-static MDI_output_t data_out;
+float fAngleGet ( ANGLE_TYPE type )
+{
+	return  fAngleGet1 (  type );
+}
 
 void vmemsTask(void *argument)
 {
-
+	 pxPDMstatusEvent = osLUAetPDMstatusHandle();
 
 	for(;;)
 	{
 	   osDelay(10);
-	  // xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
+	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   MX_MEMS_Process();
 	}
 }
 
-float fAngleGet ( ANGLE_TYPE type )
-{
-	float data = 0.0f;
-	switch(type)
-	{
-	case ANGLE_TYPE_ROLL:
-		data = data_out.rotation[2];
-		break;
-	case ANGLE_TYPE_PITCH:
-		data = data_out.rotation[1];
-		break;
 
-	}
-  return (data);
-}

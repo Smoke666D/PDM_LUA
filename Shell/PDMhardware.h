@@ -28,7 +28,7 @@
 #define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
 #define MAX_HOVERLOAD_POWER 60.0
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
-#define MAX_LPOWER			10.0  //Максимальный номинальый ток для маломощных каналов
+#define MAX_LPOWER			25.0  //Максимальный номинальый ток для маломощных каналов
 #define MAX_LOVERLOAD_POWER 20.0
 #define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
 #define MAX_OVERLOAD_TIMER             32767U //Максимальное время плавного пуска для мощных каналов
@@ -36,7 +36,7 @@
 #define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
 #define MAX_OVERLOAD_HPOWER             60.0 // Максиальный пусковой ток мощных каналов
 #define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
-#define MAX_OVERLOAD_LPOWER             10.0 // Максиальный пусковой ток маломощных каналов
+#define MAX_OVERLOAD_LPOWER             30.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
 #define MAX_PWM					100U
 #define MAX_POWER				100U

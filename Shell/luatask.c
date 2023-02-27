@@ -18,7 +18,7 @@
 #include "CO_driver_ST32F4xx.h"
 #include "datastorage.h"
 #include "pdm_math.h"
-
+#include "mems.h"
 
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -637,8 +637,12 @@ void vLuaTask(void *argument)
            lua_pushnumber( L1, fAinGetState(1));
            lua_pushnumber( L1, fAinGetState(2));
            lua_pushnumber( L1, fBatteryGet() );
+
+           lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_ROLL) );
+           lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_PITCH) );
+           lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_YAW) );
            int temp;
-           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+4), &temp) )
+           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+4+3), &temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)
