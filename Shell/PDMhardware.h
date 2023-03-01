@@ -167,6 +167,8 @@ typedef struct __packed
    ENABLE_t EnableFlag;
    uint8_t error_counter;
    uint8_t PWM;
+   uint8_t PWM_err_counter;
+   uint8_t POWER_SOFT;
    uint8_t soft_start_power;
    uint16_t GPIO_Pin;
    uint16_t soft_start_timer;

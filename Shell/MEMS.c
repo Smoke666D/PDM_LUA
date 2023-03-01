@@ -21,8 +21,7 @@ float fAngleGet ( ANGLE_TYPE type )
 
 void vmemsTask(void *argument)
 {
-	 pxPDMstatusEvent = osLUAetPDMstatusHandle();
-
+	pxPDMstatusEvent = osLUAetPDMstatusHandle();
 	for(;;)
 	{
 	   osDelay(10);

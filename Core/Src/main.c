@@ -187,7 +187,7 @@ int main(void)
   MX_TIM6_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
-  MX_MEMS_Init();
+// MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
   vSERIALinit( &huart2 );
@@ -1026,7 +1026,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 43;
+  htim4.Init.Prescaler =150;// 672;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 1000;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -1044,7 +1044,7 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
   {
