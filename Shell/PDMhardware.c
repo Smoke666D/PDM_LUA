@@ -172,7 +172,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 		if ( out[out_name].PWM != PWM )
 		{
 			out[out_name].PWM = PWM;
-			if (out[out_name].out_state == STATE_OUT_ON) //Если выход вклчюен и не находится в каком-то переходном процессе
+			if (out[out_name].out_state != STATE_OUT_ERROR) //Если выход вклчюен и не находится в каком-то переходном процессе
 			{
 				vHWOutSet( out_name, MAX_PWM );
 			}
@@ -386,8 +386,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
-   if ( out[out_name].POWER_SOFT != power)
-   {
+
 	   out[out_name].POWER_SOFT = power;
 	   sConfigOC.OCMode = TIM_OCMODE_PWM1;
 	   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
@@ -396,11 +395,11 @@ static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 	   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
 	   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
 	   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
-	   if ( out_name < 8 )
+	 /*  if ( out_name < 8 )
 	   {
 		   HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
-	   }
-   }
+	   }*/
+
    return;
 }
 /*
@@ -427,10 +426,10 @@ static void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
 	out[ucChannel].POWER_SOFT = 0;
-	if ( ucChannel < 8 )
+	/*if ( ucChannel < 8 )
 		   {
 			   HAL_GPIO_WritePin(out[ucChannel].GPIOx, out[ucChannel].GPIO_Pin , CS_DISABLE);
-		   }
+		   }*/
 	return;
 }
 /*
@@ -510,14 +509,17 @@ static void vDataConvertToFloat( void)
     	if (out[i].EnableFlag == IS_ENABLE )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
-    	    if ( ( fCurrent > out[ i ].overload_power) && (out[i].PWM != 100) )
+    	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
 			{
+    	      if  (HAL_GPIO_ReadPin(GPIOE, InCH8_9_Pin) == GPIO_PIN_SET)
+    	      {
     	    	 out[i].PWM_err_counter ++;
-    	    	 if  (out[i].PWM_err_counter < 1000 )
-    	    	 {
+    	      }
+    	      if  (out[i].PWM_err_counter < 3 )
+    	      {
     	    		 fCurrent = out[i].current;
-    	    	 }
-		    }
+    	      }
+			}
     	    else
     	    {
     	    	 out[i].PWM_err_counter = 0;
@@ -570,7 +572,7 @@ static void vDataConvertToFloat( void)
  					out[i].current = fCurrent;
  					break;
  				case STATE_OUT_ON:  // Состояние входа - включен
- 					if  ((fCurrent  > out[ i ].power  ) && (out[i].PWM ==100))
+ 					if  (fCurrent  > out[ i ].power  )
  					{
  						vGotoRestartState( i, fCurrent );
  						break;
