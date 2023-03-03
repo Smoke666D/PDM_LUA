@@ -165,6 +165,7 @@ typedef struct __packed
    float overload_power;
    float current;
    ENABLE_t EnableFlag;
+   uint8_t NewState;
    uint8_t error_counter;
    uint8_t PWM;
    uint8_t PWM_err_counter;

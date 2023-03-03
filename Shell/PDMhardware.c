@@ -203,18 +203,20 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 	switch (state)
 	{
 		case 0:
-			out[out_name].out_state = STATE_OUT_OFF;
-			vHWOutOFF(out_name);
+			out[out_name].NewState = 0;
+			//out[out_name].out_state = STATE_OUT_OFF;
+			//vHWOutOFF(out_name);
 			/*if ( out_name > 7 )
 			{
 				HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
 			}*/
 			break;
 		case 1:
-			if (out[out_name].out_state == STATE_OUT_OFF)
-			{
-					out[out_name].out_state = STATE_OUT_ON_PROCESS;
-			}
+			out[out_name].NewState = 1;
+			//if (out[out_name].out_state == STATE_OUT_OFF)
+			//{
+			//		out[out_name].out_state = STATE_OUT_ON_PROCESS;
+			//}
 			break;
 		default:
 			break;
@@ -338,6 +340,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].current 		   = 0.0;
 		out[out_name].PWM_err_counter  = 0;
 		out[out_name].POWER_SOFT = 0;
+		out[out_name].NewState = 0;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
@@ -493,6 +496,7 @@ static void vDataConvertToFloat( void)
 	 out[ ucChannel ].out_state =  (out[ ucChannel ].error_counter == 1) ? STATE_OUT_ERROR : STATE_OUT_RESTART_PROCESS;
 	 out[ ucChannel ].error_flag = ERROR_OVER_LIMIT;
 	 out[ ucChannel ].restart_timer = 0U;
+	 out[ ucChannel ].soft_start_timer = 0;
 	 vHWOutOFF(ucChannel);
 	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_HOVERLOAD_POWER : MAX_LOVERLOAD_POWER ) )
 	 {
@@ -508,6 +512,8 @@ static void vDataConvertToFloat( void)
  	{
     	if (out[i].EnableFlag == IS_ENABLE )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
+
+
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
 			{
@@ -530,11 +536,13 @@ static void vDataConvertToFloat( void)
  					out[i].current 	   		 = 0U;
  					out[i].restart_timer   	 = 0U;
  					out[i].error_flag 		 = ERROR_OFF;
+ 					out[i].soft_start_timer  = 0U;
  					break;
  				case STATE_OUT_ON_PROCESS: //Состояния влючения
 
  					out[i].restart_timer++;
- 					if (out[i].soft_start_timer !=0)
+ 					out[i].soft_start_timer++;
+ 					/*if (out[i].soft_start_timer !=0)
  					{
  						if  ( fCurrent  > out[i].power )
  						{
@@ -556,14 +564,19 @@ static void vDataConvertToFloat( void)
  						 		vHWOutSet( i, ucCurrentPower );
  						 }
  					}
- 					else
+ 					else*/
  					{
+
+ 						 if ( out[i].soft_start_timer < 2 )
+ 						 {
+ 							 break;
+ 						 }
  						 if  ( fCurrent  > out[ i ].overload_power )
  						 {
  						 	vGotoRestartState(i,fCurrent);
  						 	break;
  						 }
- 						 vHWOutSet( i , MAX_POWER );
+ 						// vHWOutSet( i , MAX_POWER );
  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
  							out[ i ].out_state = STATE_OUT_ON;
@@ -597,6 +610,16 @@ static void vDataConvertToFloat( void)
  				default:
  					break;
  			}
+ 			if (( out[i].NewState == 0 ) && (out[i].out_state != STATE_OUT_OFF ) &&  (out[i].out_state != STATE_OUT_ERROR ))
+ 			{
+ 			 	out[i].out_state = STATE_OUT_OFF;
+ 			    vHWOutOFF(i);
+		    }
+ 		    if ( (out[i].NewState == 1 ) &&  (out[i].out_state == STATE_OUT_OFF))
+ 			{
+ 			    out[i].out_state = STATE_OUT_ON_PROCESS;
+ 			    vHWOutSet( i , MAX_POWER );
+ 			}
    		 }
  	}
  }
@@ -624,6 +647,7 @@ static void vDataConvertToFloat( void)
    for(;;)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
+
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
@@ -636,10 +660,10 @@ static void vDataConvertToFloat( void)
 
 
 	   vDataConvertToFloat();
-
+	   vOutControlFSM();
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
-	   vOutControlFSM();
+
 
 
    }
