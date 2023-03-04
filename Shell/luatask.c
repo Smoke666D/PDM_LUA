@@ -365,7 +365,8 @@ int  iOutConfig( lua_State *L )
 		vHWOutOverloadConfig( out_number,
 							  ( float ) lua_tonumber(L, SECOND_ARGUMENT ),
 							  ( uint16_t ) lua_tointeger(L, THIRD_ARGUMENT),
-							  ( float ) lua_tonumber(L, FOURTH_ARGUMENT ) );
+							  ( float ) lua_tonumber(L, FOURTH_ARGUMENT ),
+							  ( uint8_t ) lua_tointeger(L, FIVE_ARGUMENT) );   // режим сброс. Можно ли перезапускать канал выключением
 		vOutHWEnbale(out_number);
 	}
 	return ( NO_RESULT );

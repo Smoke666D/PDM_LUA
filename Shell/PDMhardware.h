@@ -35,7 +35,7 @@
 #define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
 #define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
 #define MAX_OVERLOAD_HPOWER             60.0 // Максиальный пусковой ток мощных каналов
-#define DEFAULT_LPOWER_MAX              10.0 // Ток перегрузки при старте для маломощных каналов
+#define DEFAULT_LPOWER_MAX              15.0 // Ток перегрузки при старте для маломощных каналов
 #define MAX_OVERLOAD_LPOWER             30.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
 #define MAX_PWM					100U
@@ -107,6 +107,13 @@ typedef enum {
 } ADC_DMA_NAME;
 
 
+typedef enum {
+ OFF_STATE = 0,
+ ON_STATE = 1,
+ IDLE_STATE = 2,
+
+} CONTROL_STATE_TYPE;
+
  typedef struct
  {
    __IO uint32_t ISR;   /*!< DMA interrupt status register */
@@ -130,6 +137,11 @@ typedef enum {
   ERROR_OK = 0,
   INVALID_ARG = 1,
 } ERROR_CODE;
+
+typedef enum {
+  OFF_STATE_AFTER_ERROR = 1 ,
+  RESETTEBLE_STATE_AFTER_ERROR = 0,
+} OFF_STATE_TYPE;
 
 //Ошибки состония выхода
 typedef enum {
@@ -159,19 +171,22 @@ typedef struct
 typedef struct __packed
 {
    GPIO_TypeDef* GPIOx;
+   GPIO_TypeDef* OutGPIOx;
    TIM_HandleTypeDef * ptim;
    uint32_t  channel;
    float power;
    float overload_power;
    float current;
    ENABLE_t EnableFlag;
-   uint8_t NewState;
+   uint8_t OffStateFlag;
+   CONTROL_STATE_TYPE NewState;
    uint8_t error_counter;
    uint8_t PWM;
    uint8_t PWM_err_counter;
    uint8_t POWER_SOFT;
    uint8_t soft_start_power;
    uint16_t GPIO_Pin;
+   uint16_t OutGPIO_Pin;
    uint16_t soft_start_timer;
    uint16_t overload_config_timer;
    uint16_t restart_timer;
@@ -229,7 +244,7 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power);
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, uint8_t off_state);
 void vOutHWEnbale(OUT_NAME_TYPE out_name);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);

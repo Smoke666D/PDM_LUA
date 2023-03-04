@@ -61,7 +61,7 @@ static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O
 #endif
 
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin);
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
 static void vHWOutOFF( uint8_t ucChannel );
 static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
 static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
@@ -86,26 +86,26 @@ void vOutInit( void )
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin );
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin );
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin );
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin );
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin );
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin );
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin );
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin	);
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin );
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin );
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin );
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, GPIOD  ,InCH20_1_Pin);
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, GPIOD , InCH20_2_Pin );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin , InCH20_3_GPIO_Port, InCH20_3_Pin);
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin , GPIOB, InCH20_4_Pin);
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin ,GPIOE, InCH20_5_Pin);
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin ,GPIOE, InCH20_6_Pin);
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin , GPIOB, InCH20_7_Pin );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin ,GPIOD ,InCH20_8_Pin );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin,  GPIOE ,InCH8_9_Pin );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin , GPIOE, InCH8_10_Pin);
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin , GPIOB , InCH8_11_Pin);
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin ,GPIOB , InCH8_12_Pin );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin , GPIOC , InCH8_13_Pin  );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin , GPIOC , InCH8_14_Pin);
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin , GPIOB , InCH8_15_Pin );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin ,GPIOB , InCH8_16_Pin);
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin ,  GPIOC , InCH8_17_Pin	);
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin , GPIOC , InCH8_18_Pin);
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin , GPIOB , InCH8_19_Pin);
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin, GPIOD, InCH8_20_Pin );
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
@@ -124,7 +124,7 @@ void vOutHWEnbale(OUT_NAME_TYPE out_name)
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power)
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state)
 {
 	ERROR_CODE res = INVALID_ARG;
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
@@ -138,6 +138,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
 				out[out_name].overload_power = overload_power;
+				out[out_name].OffStateFlag = ( off_state == RESETTEBLE_STATE_AFTER_ERROR) ? 0 : 1;
 				res = ERROR_OK;
 			}
 		out[out_name].EnableFlag	  =IS_ENABLE;
@@ -325,7 +326,7 @@ float fTemperatureGet ( uint8_t chanel )
 /*
  *
  */
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin )
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin )
 {
 	volatile uint8_t j;
 	if ( out_name < OUT_COUNT )
@@ -334,20 +335,22 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].channel 		   = uiChannel;
 		out[out_name].GPIOx 		   = EnablePort;
 		out[out_name].GPIO_Pin		   = EnablePin;
-		out[out_name].error_counter      = 0U;
+		out[out_name].OutGPIOx 		   = OutPort;
+		out[out_name].OutGPIO_Pin	   = OutPin;
+		out[out_name].error_counter    = 0U;
 		out[out_name].soft_start_timer = 0;
 		out[out_name].out_state		   = STATE_OUT_OFF;
 		out[out_name].current 		   = 0.0;
 		out[out_name].PWM_err_counter  = 0;
-		out[out_name].POWER_SOFT = 0;
-		out[out_name].NewState = 0;
+		out[out_name].POWER_SOFT 	   = 0;
+		out[out_name].NewState 	       = 0;
 		if (out_name < OUT_HPOWER_COUNT)
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX);
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
 		}
 		else
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX);
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR);
 		}
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
@@ -429,10 +432,7 @@ static void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
 	out[ucChannel].POWER_SOFT = 0;
-	/*if ( ucChannel < 8 )
-		   {
-			   HAL_GPIO_WritePin(out[ucChannel].GPIOx, out[ucChannel].GPIO_Pin , CS_DISABLE);
-		   }*/
+
 	return;
 }
 /*
@@ -494,6 +494,10 @@ static void vDataConvertToFloat( void)
  static void vGotoRestartState( uint8_t ucChannel, float fCurr )
  {
 	 out[ ucChannel ].out_state =  (out[ ucChannel ].error_counter == 1) ? STATE_OUT_ERROR : STATE_OUT_RESTART_PROCESS;
+	 if  (( out[ ucChannel ].out_state == STATE_OUT_ERROR ) && ( out[ ucChannel ].OffStateFlag == 1))
+	 {
+		 out[ ucChannel ].EnableFlag = DISABLE;
+     }
 	 out[ ucChannel ].error_flag = ERROR_OVER_LIMIT;
 	 out[ ucChannel ].restart_timer = 0U;
 	 out[ ucChannel ].soft_start_timer = 0;
@@ -517,7 +521,7 @@ static void vDataConvertToFloat( void)
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
 			{
-    	      if  (HAL_GPIO_ReadPin(GPIOE, InCH8_9_Pin) == GPIO_PIN_SET)
+    	      if  (HAL_GPIO_ReadPin(out[i].OutGPIOx, out[i].OutGPIO_Pin) == GPIO_PIN_SET)
     	      {
     	    	 out[i].PWM_err_counter ++;
     	      }
@@ -567,7 +571,7 @@ static void vDataConvertToFloat( void)
  					else*/
  					{
 
- 						 if ( out[i].soft_start_timer < 2 )
+ 						 if ( out[i].restart_timer  < 2 )
  						 {
  							 break;
  						 }
@@ -576,7 +580,6 @@ static void vDataConvertToFloat( void)
  						 	vGotoRestartState(i,fCurrent);
  						 	break;
  						 }
- 						// vHWOutSet( i , MAX_POWER );
  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
  							out[ i ].out_state = STATE_OUT_ON;
@@ -610,16 +613,23 @@ static void vDataConvertToFloat( void)
  				default:
  					break;
  			}
- 			if (( out[i].NewState == 0 ) && (out[i].out_state != STATE_OUT_OFF ) &&  (out[i].out_state != STATE_OUT_ERROR ))
+ 			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
+ 			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
+ 			if ( out[i].NewState != IDLE_STATE )
  			{
- 			 	out[i].out_state = STATE_OUT_OFF;
- 			    vHWOutOFF(i);
-		    }
- 		    if ( (out[i].NewState == 1 ) &&  (out[i].out_state == STATE_OUT_OFF))
- 			{
- 			    out[i].out_state = STATE_OUT_ON_PROCESS;
- 			    vHWOutSet( i , MAX_POWER );
+ 				if (( out[i].NewState == OFF_STATE) && (out[i].out_state != STATE_OUT_OFF ) )
+ 				{
+ 				 	out[i].out_state = STATE_OUT_OFF;
+ 				 	vHWOutOFF(i);
+ 				}
+ 				if ( (out[i].NewState == ON_STATE ) &&  (out[i].out_state == STATE_OUT_OFF))
+ 				{
+ 					out[i].out_state = STATE_OUT_ON_PROCESS;
+ 				 	vHWOutSet( i , MAX_POWER );
+ 				}
+ 				out[i].NewState = IDLE_STATE;
  			}
+
    		 }
  	}
  }
@@ -647,25 +657,17 @@ static void vDataConvertToFloat( void)
    for(;;)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
-
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-
 	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
-
 	   ADC_STOP();
-
-
 	   vDataConvertToFloat();
 	   vOutControlFSM();
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
-
-
-
    }
    /* USER CODE END vADCTask */
  }

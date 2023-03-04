@@ -187,7 +187,7 @@ int main(void)
   MX_TIM6_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
-  //MX_MEMS_Init();
+  MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
   vSERIALinit( &huart2 );
