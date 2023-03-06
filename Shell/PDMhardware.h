@@ -224,7 +224,14 @@ typedef struct
 } KAL_DATA;
 
 
-
+typedef enum {
+    CH5_6_9_10    = 0,
+    CH11_12_16    = 1,
+    CH4_15          = 2,
+    CH1_2_8_20      = 3,
+    CH13_14_17_18 = 4,
+    CH7_19          = 5,
+} OUT_CH_GROUPE_TYPE;
 
 typedef enum {
 	OUT_1 = 0,
@@ -262,6 +269,9 @@ typedef enum {
   ANGLE_TYPE_YAW
 } ANGLE_TYPE;
 
+
+void vHWOutOFF( uint8_t ucChannel );
+void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
 void vOutInit( void );
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);

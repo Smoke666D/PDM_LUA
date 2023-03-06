@@ -62,7 +62,7 @@ static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O
 
 static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
-static void vHWOutOFF( uint8_t ucChannel );
+void vHWOutOFF( uint8_t ucChannel );
 static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
 static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
 static void ADC_STOP();
@@ -172,7 +172,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 		if ( out[out_name].PWM != PWM )
 		{
 			out[out_name].PWM = PWM;
-			if (   IS_FLAG_RESET(out_name, FSM_ERROR_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
+			if (   IS_FLAG_RESET(out_name, FSM_ERROR_STATE) &&   IS_FLAG_RESET(out_name, FSM_OFF_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
 			{
 				vHWOutSet( out_name, MAX_PWM );
 			}
@@ -204,19 +204,9 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 	{
 		case 0:
 			SET_FLAG(out_name, CONTROL_OFF_STATE);
-			//out[out_name].out_state = STATE_OUT_OFF;
-			//vHWOutOFF(out_name);
-			/*if ( out_name > 7 )
-			{
-				HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
-			}*/
 			break;
 		case 1:
 			SET_FLAG(out_name, CONTROL_ON_STATE);
-			//if (out[out_name].out_state == STATE_OUT_OFF)
-			//{
-			//		out[out_name].out_state = STATE_OUT_ON_PROCESS;
-			//}
 			break;
 		default:
 			break;
@@ -363,6 +353,43 @@ float fTemperatureGet ( uint8_t chanel )
  *
  */
 
+
+void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
+{
+	if ((Freq > 0) && (Freq < 2000))
+	{
+       switch (groupe)
+       {
+           case CH5_6_9_10:
+               out[ 4 ].ptim->Init.Prescaler =  168000 / Freq;
+               HAL_TIM_Base_Init(out[ 4 ].ptim);
+               break;
+           case CH11_12_16:
+               out[ 10 ].ptim->Init.Prescaler = 84000 / Freq;
+               HAL_TIM_Base_Init(out[ 10 ].ptim);
+               break;
+           case CH4_15:
+               out[ 3 ].ptim->Init.Prescaler = 84000 / Freq;
+               HAL_TIM_Base_Init(out[ 3 ].ptim);
+               break;
+           case CH1_2_8_20:
+               out[ 0 ].ptim->Init.Prescaler = 84000 / Freq;
+               HAL_TIM_Base_Init(out[ 0 ].ptim);
+               break;
+           case CH13_14_17_18:
+               out[ 12 ].ptim->Init.Prescaler = 168000 / Freq;
+               HAL_TIM_Base_Init(out[ 12 ].ptim);
+               break;
+           case CH7_19:
+               out[ 6 ].ptim->Init.Prescaler = 84000 / Freq;
+               HAL_TIM_Base_Init(out[ 6 ].ptim);
+               break;
+           default:
+               break;
+       }
+	}
+   return;
+}
 /*
  *
  */
@@ -442,11 +469,6 @@ static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
 	   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
 	   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
 	   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
-	 /*  if ( out_name < 8 )
-	   {
-		   HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
-	   }*/
-
    return;
 }
 /*
@@ -469,7 +491,7 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t In
 }
 /*
 */
-static void vHWOutOFF( uint8_t ucChannel )
+void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
 	out[ucChannel].POWER_SOFT = 0;
@@ -673,7 +695,7 @@ static void vDataConvertToFloat( void)
  					SET_STATE_FLAG(i, FSM_OFF_STATE );
  				 	vHWOutOFF(i);
  				}
- 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE  ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
+ 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
  				{
  					SET_STATE_FLAG(i, FSM_ON_PROCESS );
  				 	vHWOutSet( i , MAX_POWER );

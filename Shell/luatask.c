@@ -64,6 +64,7 @@ static void vSafeModeOutState()
 	 for (uint8_t i = 0; i<OUT_COUNT; i++ )
 	 {
 		 vOutSetState( i, 0U);
+		 vHWOutOFF( i );
      }
 	 return;
 }
@@ -153,8 +154,21 @@ static int iProcessPID(lua_State *L)
 	}
 	return ( res );
 }
-
-
+/*
+ *
+ */
+static int isetPWMFreq(lua_State *L)
+{
+	if (lua_gettop(L) == TWO_ARGUMENTS)
+	{
+		uint8_t groupe = (uint8_t) lua_tointeger( L, FIRST_ARGUMENT);
+		if  (groupe <= 5)
+		{
+			vPWMFreqSet( groupe , (uint32_t) lua_tointeger( L, SECOND_ARGUMENT));
+		}
+	}
+	return ( NO_RESULT );
+}
 /*
  *  Setting Can parameter API function
  */
@@ -607,6 +621,8 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"resetPID",iResetPID);
 	   	   lua_register(L1,"processPID",iProcessPID);
 	   	   lua_register(L1,"setOutSoftStart",iSoftStart);
+	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
+
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
