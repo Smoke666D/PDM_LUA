@@ -187,30 +187,33 @@ typedef struct __packed
    uint16_t overload_config_timer;
    uint16_t restart_timer;
    uint16_t restart_config_timer;
-   ERROR_FLAGS_TYPE error_flag;
    uint32_t SysReg;
-   PDM_OUT_STATE_t out_state;
    LIN_COOF CSC[KOOF_COUNT -1 ];
 } PDM_OUTPUT_TYPE;
 
 
 
 
-#define ENABLE_FLAG  	  0x000000001
-#define RESETTEBLE_FLAG   0x000000002
-#define CONTROL_ON_STATE  0x000000004
-#define CONTROL_OFF_STATE 0x000000008
-#define FSM_OFF_STATE     0x000000010
-#define FSM_ON_PROCESS    0x000000020
-#define FSM_ON_STATE      0x000000040
-#define FSM_ERROR_STATE   0x000000080
-#define FSM_RESTART_STATE 0x000000100
+#define ENABLE_FLAG  	  0x00000001
+#define RESETTEBLE_FLAG   0x00000002
+#define CONTROL_ON_STATE  0x00000004
+#define CONTROL_OFF_STATE 0x00000008
+#define FSM_OFF_STATE     0x00000010
+#define FSM_ON_PROCESS    0x00000020
+#define FSM_ON_STATE      0x00000040
+#define FSM_ERROR_STATE   0x00000080
+#define FSM_RESTART_STATE 0x00000100
+#define OVERLOAD_ERROR    0x00000200
+#define OPEN_LOAD_ERROR   0x00000400
 #define CONTROL_FLAGS ( CONTROL_OFF_STATE | CONTROL_ON_STATE )
 
-#define FSM_MASK ( FSM_OFF_STATE |  FSM_ON_PROCES |  FSM_ON_STATE | FSM_ERROR_STATE | FSM_RESTART_STATE)
+#define FSM_MASK  		  0x000001F0
+#define ERROR_MASK		  0x00000600
 
 #define  RESET_FLAG(i, flag) (out[i].SysReg &= ~flag )
 #define  SET_FLAG(i, flag) (out[i].SysReg |= flag )
+#define  SET_STATE_FLAG(i, flag) (out[i].SysReg = (out[i].SysReg & ~FSM_MASK) | flag )
+#define  SET_ERROR_FLAG(i, flag) (out[i].SysReg = (out[i].SysReg & ~ERROR_MASK) | flag )
 #define  IS_FLAG_SET(i, flag)  ( ( (out[i].SysReg & flag ) == flag ) )
 #define  IS_FLAG_RESET(i, flag) ( ( (out[i].SysReg & flag ) != flag ) )
 

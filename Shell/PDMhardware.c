@@ -172,7 +172,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 		if ( out[out_name].PWM != PWM )
 		{
 			out[out_name].PWM = PWM;
-			if (out[out_name].out_state != STATE_OUT_ERROR) //Если выход вклчюен и не находится в каком-то переходном процессе
+			if (   IS_FLAG_RESET(out_name, FSM_ERROR_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
 			{
 				vHWOutSet( out_name, MAX_PWM );
 			}
@@ -228,7 +228,33 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
  */
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  )
 {
-	return ( (eChNum < OUT_COUNT) ? out[eChNum ].out_state : 0U );
+	PDM_OUT_STATE_t state = STATE_OUT_OFF;
+
+	if (eChNum < OUT_COUNT)
+	{
+
+		switch ( out[eChNum].SysReg & FSM_MASK )
+		{
+			case  FSM_OFF_STATE:
+				state =  STATE_OUT_OFF;
+				break;
+			case FSM_ON_PROCESS:
+				state = STATE_OUT_ON_PROCESS;
+				break;
+			case FSM_ON_STATE:
+				state =   STATE_OUT_ON;
+				break;
+			case FSM_ERROR_STATE:
+				state =   STATE_OUT_ERROR;
+				break;
+			case FSM_RESTART_STATE:
+				state = STATE_OUT_RESTART_PROCESS;
+				break;
+			default:
+				break;
+		}
+	}
+	return (state);
 }
 /*
  *
@@ -247,27 +273,25 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 	uint32_t channel_state 	= 0;
 	for (uint8_t i = 0; i < OUT_COUNT ;i++)
 	{
-		switch (out[i].error_flag)
+		switch (out[i].SysReg & ERROR_MASK)
 		{
-			case ERROR_CIRCUT_BREAK:
+			case OPEN_LOAD_ERROR:
 				channel_state = 0x02;
 				break;
-			case ERROR_OVERLOAD:
-			case  ERROR_OVER_LIMIT:
+			case  OVERLOAD_ERROR :
 				channel_state = 0x03;
 				break;
 			default:
-				switch( out[i].out_state)
+				if ( IS_FLAG_SET(i, ( FSM_ON_PROCESS  |  FSM_ON_STATE ) ) )
 				{
-					case STATE_OUT_ON_PROCESS:
-					case STATE_OUT_ON:
 						channel_state = 1;
-						break;
-					default:
-						channel_state = 0;
-						break;
 				}
-		}
+				else
+				{
+						channel_state = 0;
+				}
+				break;
+		  }
 		if (i<10)
 		{
 			status1 |= channel_state<<(2*i);
@@ -276,6 +300,7 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 		{
 			status2 |= channel_state<<(2*(i-10));
 		}
+
 	}
 	*Dout1_10Status = status1;
 	*Dout11_20Status = status2;
@@ -287,7 +312,23 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
  */
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
 {
-	return ( (eChNum < OUT_COUNT) ? out[eChNum ].error_flag : 0U );
+	ERROR_FLAGS_TYPE error = ERROR_OFF;
+
+   if (	eChNum < OUT_COUNT )
+   {
+	   switch (out[eChNum].SysReg & ERROR_MASK)
+	   {
+	   	   	   case OPEN_LOAD_ERROR:
+	   	   		   error = ERROR_CIRCUT_BREAK;
+	   	   		   break;
+	   	   	   case OVERLOAD_ERROR:
+	   	   		   error = ERROR_OVERLOAD;
+	   	   		   break;
+	   	   		default:
+				   break;
+	   }
+   }
+	return (  error );
 }
 /*
  *
@@ -338,11 +379,11 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].OutGPIO_Pin	   = OutPin;
 		out[out_name].error_counter    = 0U;
 		out[out_name].soft_start_timer = 0;
-		out[out_name].out_state		   = STATE_OUT_OFF;
 		out[out_name].current 		   = 0.0;
 		out[out_name].PWM_err_counter  = 0;
 		out[out_name].POWER_SOFT 	   = 0;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
+		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
@@ -354,8 +395,8 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
 		RESET_FLAG(out_name,ENABLE_FLAG);
+		RESET_FLAG(out_name, ERROR_MASK);
 
-		out[out_name].error_flag = ERROR_OFF;
 		for (j=0; j< KOOF_COUNT - 1 ; j++)
 		{
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
@@ -493,12 +534,19 @@ static void vDataConvertToFloat( void)
  */
  static void vGotoRestartState( uint8_t ucChannel, float fCurr )
  {
-	 out[ ucChannel ].out_state =  (out[ ucChannel ].error_counter == 1) ? STATE_OUT_ERROR : STATE_OUT_RESTART_PROCESS;
-	 if  (( out[ ucChannel ].out_state == STATE_OUT_ERROR ) &&  IS_FLAG_RESET( ucChannel, RESETTEBLE_FLAG ) )
+	 if (out[ ucChannel ].error_counter == 1)
+	 {
+		 SET_STATE_FLAG( ucChannel, FSM_ERROR_STATE );
+	 }
+	 else
+	 {
+		 SET_STATE_FLAG( ucChannel, FSM_RESTART_STATE);
+	 }
+	 if  ( IS_FLAG_SET(ucChannel, FSM_ERROR_STATE ) &&  IS_FLAG_RESET( ucChannel, RESETTEBLE_FLAG ) )
 	 {
 		 RESET_FLAG(ucChannel,ENABLE_FLAG);
      }
-	 out[ ucChannel ].error_flag = ERROR_OVER_LIMIT;
+	 SET_ERROR_FLAG( ucChannel, OVERLOAD_ERROR);
 	 out[ ucChannel ].restart_timer = 0U;
 	 out[ ucChannel ].soft_start_timer = 0;
 	 vHWOutOFF(ucChannel);
@@ -534,15 +582,15 @@ static void vDataConvertToFloat( void)
     	    {
     	    	 out[i].PWM_err_counter = 0;
     	    }
- 			switch (out[i].out_state)
+ 			switch (out[i].SysReg & FSM_MASK )
  			{
- 				case STATE_OUT_OFF: //Состония входа - выключен
+ 				case FSM_OFF_STATE : //Состония входа - выключен
  					out[i].current 	   		 = 0U;
  					out[i].restart_timer   	 = 0U;
- 					out[i].error_flag 		 = ERROR_OFF;
+ 					RESET_FLAG(i,ERROR_MASK);
  					out[i].soft_start_timer  = 0U;
  					break;
- 				case STATE_OUT_ON_PROCESS: //Состояния влючения
+ 				case FSM_ON_PROCESS: //Состояния влючения
 
  					out[i].restart_timer++;
  					out[i].soft_start_timer++;
@@ -582,53 +630,55 @@ static void vDataConvertToFloat( void)
  						 }
  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
- 							out[ i ].out_state = STATE_OUT_ON;
+ 							SET_STATE_FLAG(i, FSM_ON_STATE );
  						 }
  					}
  					out[i].current = fCurrent;
  					break;
- 				case STATE_OUT_ON:  // Состояние входа - включен
+ 				case FSM_ON_STATE:  // Состояние входа - включен
  					if  (fCurrent  > out[ i ].power  )
  					{
  						vGotoRestartState( i, fCurrent );
  						break;
  					}
- 					out[i].error_flag = (fCurrent  < CIRCUT_BREAK_CURRENT ? ERROR_CIRCUT_BREAK: ERROR_OFF );
+ 					RESET_FLAG(i,ERROR_MASK);
+ 					if (fCurrent  < CIRCUT_BREAK_CURRENT)
+ 					{
+ 						SET_ERROR_FLAG(i,OPEN_LOAD_ERROR);
+ 					}
  					out[i].current = fCurrent;
  					break;
- 				case STATE_OUT_RESTART_PROCESS:
+ 				case FSM_RESTART_STATE:
  					out[ i ].restart_timer++;
  					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
  					{
- 						out[ i ].out_state = STATE_OUT_ON_PROCESS;
+ 						SET_STATE_FLAG(i, FSM_ON_PROCESS );
  						out[ i ].restart_timer =0;
- 						out[ i ].error_flag  = ERROR_OFF;
+ 						RESET_FLAG(i,ERROR_MASK);
  						if ( out[i].error_counter !=0 )
  						{
  							out[i].error_counter--;
  						}
  					}
  					break;
- 				case STATE_OUT_ERROR:
+ 				case FSM_ERROR_STATE:
  				default:
  					break;
  			}
  			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
  			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
 
- 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && (out[i].out_state != STATE_OUT_OFF ) )
+ 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE) )
  				{
- 				 	out[i].out_state = STATE_OUT_OFF;
+ 					SET_STATE_FLAG(i, FSM_OFF_STATE );
  				 	vHWOutOFF(i);
  				}
- 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  (out[i].out_state == STATE_OUT_OFF))
+ 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE  ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
  				{
- 					out[i].out_state = STATE_OUT_ON_PROCESS;
+ 					SET_STATE_FLAG(i, FSM_ON_PROCESS );
  				 	vHWOutSet( i , MAX_POWER );
  				}
  				RESET_FLAG(i,CONTROL_FLAGS );
-
-
    		 }
  	}
  }
