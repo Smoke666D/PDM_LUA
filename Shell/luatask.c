@@ -618,9 +618,9 @@ void vLuaTask(void *argument)
 	   	   }
 	   	   break;
 	   	 case LUA_RUN:
-	   	   if (eMainLoopIsEnable == IS_DISABLE)
-	   	     lua_getglobal(L1, "init");
-	   	   else
+	   	  // if (eMainLoopIsEnable == IS_DISABLE)
+	   	   //  lua_getglobal(L1, "init");
+	   	   //else
 	   	     lua_getglobal(L1, "main");
 	   	   ulWorkCicleIn10us  = ulRestartTimer();
 	   	   lua_pushinteger(L1, ulWorkCicleIn10us );
