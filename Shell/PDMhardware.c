@@ -203,7 +203,7 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 	switch (state)
 	{
 		case 0:
-			out[out_name].NewState = 0;
+			SET_FLAG(out_name, CONTROL_OFF_STATE);
 			//out[out_name].out_state = STATE_OUT_OFF;
 			//vHWOutOFF(out_name);
 			/*if ( out_name > 7 )
@@ -212,7 +212,7 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 			}*/
 			break;
 		case 1:
-			out[out_name].NewState = 1;
+			SET_FLAG(out_name, CONTROL_ON_STATE);
 			//if (out[out_name].out_state == STATE_OUT_OFF)
 			//{
 			//		out[out_name].out_state = STATE_OUT_ON_PROCESS;
@@ -342,7 +342,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].current 		   = 0.0;
 		out[out_name].PWM_err_counter  = 0;
 		out[out_name].POWER_SOFT 	   = 0;
-		out[out_name].NewState 	       = 0;
+		RESET_FLAG(out_name,CONTROL_FLAGS );
 		if (out_name < OUT_HPOWER_COUNT)
 		{
 			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
@@ -615,20 +615,19 @@ static void vDataConvertToFloat( void)
  			}
  			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
  			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
- 			if ( out[i].NewState != IDLE_STATE )
- 			{
- 				if (( out[i].NewState == OFF_STATE) && (out[i].out_state != STATE_OUT_OFF ) )
+
+ 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && (out[i].out_state != STATE_OUT_OFF ) )
  				{
  				 	out[i].out_state = STATE_OUT_OFF;
  				 	vHWOutOFF(i);
  				}
- 				if ( (out[i].NewState == ON_STATE ) &&  (out[i].out_state == STATE_OUT_OFF))
+ 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  (out[i].out_state == STATE_OUT_OFF))
  				{
  					out[i].out_state = STATE_OUT_ON_PROCESS;
  				 	vHWOutSet( i , MAX_POWER );
  				}
- 				out[i].NewState = IDLE_STATE;
- 			}
+ 				RESET_FLAG(i,CONTROL_FLAGS );
+
 
    		 }
  	}

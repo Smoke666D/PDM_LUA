@@ -176,9 +176,6 @@ typedef struct __packed
    float power;
    float overload_power;
    float current;
-
-//   uint8_t OffStateFlag;
-   CONTROL_STATE_TYPE NewState;
    uint8_t error_counter;
    uint8_t PWM;
    uint8_t PWM_err_counter;
@@ -198,8 +195,19 @@ typedef struct __packed
 
 
 
-#define ENABLE_FLAG  	0x000000001
-#define RESETTEBLE_FLAG  0x000000002
+
+#define ENABLE_FLAG  	  0x000000001
+#define RESETTEBLE_FLAG   0x000000002
+#define CONTROL_ON_STATE  0x000000004
+#define CONTROL_OFF_STATE 0x000000008
+#define FSM_OFF_STATE     0x000000010
+#define FSM_ON_PROCESS    0x000000020
+#define FSM_ON_STATE      0x000000040
+#define FSM_ERROR_STATE   0x000000080
+#define FSM_RESTART_STATE 0x000000100
+#define CONTROL_FLAGS ( CONTROL_OFF_STATE | CONTROL_ON_STATE )
+
+#define FSM_MASK ( FSM_OFF_STATE |  FSM_ON_PROCES |  FSM_ON_STATE | FSM_ERROR_STATE | FSM_RESTART_STATE)
 
 #define  RESET_FLAG(i, flag) (out[i].SysReg &= ~flag )
 #define  SET_FLAG(i, flag) (out[i].SysReg |= flag )
