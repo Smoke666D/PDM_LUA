@@ -180,6 +180,7 @@ typedef struct __packed
    uint8_t PWM;
    uint8_t PWM_err_counter;
    uint8_t POWER_SOFT;
+   uint16_t PWM_Freg;
    uint8_t soft_start_power;
    uint16_t GPIO_Pin;
    uint16_t OutGPIO_Pin;

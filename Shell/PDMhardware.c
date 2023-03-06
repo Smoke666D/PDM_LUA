@@ -363,26 +363,45 @@ void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
            case CH5_6_9_10:
                out[ 4 ].ptim->Init.Prescaler =  168000 / Freq;
                HAL_TIM_Base_Init(out[ 4 ].ptim);
+               out[ 4 ].PWM_Freg =Freq;
+               out[ 5 ].PWM_Freg =Freq;
+               out[ 8 ].PWM_Freg =Freq;
+               out[ 9 ].PWM_Freg =Freq;
                break;
            case CH11_12_16:
                out[ 10 ].ptim->Init.Prescaler = 84000 / Freq;
                HAL_TIM_Base_Init(out[ 10 ].ptim);
+               out[ 10 ].PWM_Freg =Freq;
+               out[ 11 ].PWM_Freg =Freq;
+               out[ 15 ].PWM_Freg =Freq;
                break;
            case CH4_15:
                out[ 3 ].ptim->Init.Prescaler = 84000 / Freq;
                HAL_TIM_Base_Init(out[ 3 ].ptim);
+               out[ 3 ].PWM_Freg =Freq;
+               out[ 14 ].PWM_Freg =Freq;
                break;
            case CH1_2_8_20:
                out[ 0 ].ptim->Init.Prescaler = 84000 / Freq;
                HAL_TIM_Base_Init(out[ 0 ].ptim);
+               out[ 0 ].PWM_Freg =Freq;
+               out[ 1 ].PWM_Freg =Freq;
+               out[ 7 ].PWM_Freg =Freq;
+               out[ 19 ].PWM_Freg =Freq;
                break;
            case CH13_14_17_18:
                out[ 12 ].ptim->Init.Prescaler = 168000 / Freq;
                HAL_TIM_Base_Init(out[ 12 ].ptim);
+               out[ 12 ].PWM_Freg =Freq;
+               out[ 13 ].PWM_Freg =Freq;
+               out[ 16 ].PWM_Freg =Freq;
+               out[ 17 ].PWM_Freg =Freq;
                break;
            case CH7_19:
                out[ 6 ].ptim->Init.Prescaler = 84000 / Freq;
                HAL_TIM_Base_Init(out[ 6 ].ptim);
+               out[ 6 ].PWM_Freg =Freq;
+               out[ 18 ].PWM_Freg =Freq;
                break;
            default:
                break;
@@ -595,7 +614,7 @@ static void vDataConvertToFloat( void)
     	      {
     	    	 out[i].PWM_err_counter ++;
     	      }
-    	      if  (out[i].PWM_err_counter < 3 )
+    	      if  (out[i].PWM_err_counter < (uint16_t)(out[i].PWM_Freg / 30) )
     	      {
     	    		 fCurrent = out[i].current;
     	      }
