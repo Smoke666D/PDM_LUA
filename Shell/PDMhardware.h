@@ -67,7 +67,6 @@
 
 
 
-
 #ifdef REV_2
 	#define RR  300.0
 #else
@@ -139,8 +138,8 @@ typedef enum {
 } ERROR_CODE;
 
 typedef enum {
-  OFF_STATE_AFTER_ERROR = 1 ,
-  RESETTEBLE_STATE_AFTER_ERROR = 0,
+  OFF_STATE_AFTER_ERROR = 0 ,
+  RESETTEBLE_STATE_AFTER_ERROR = 1,
 } OFF_STATE_TYPE;
 
 //Ошибки состония выхода
@@ -177,8 +176,8 @@ typedef struct __packed
    float power;
    float overload_power;
    float current;
-   ENABLE_t EnableFlag;
-   uint8_t OffStateFlag;
+
+//   uint8_t OffStateFlag;
    CONTROL_STATE_TYPE NewState;
    uint8_t error_counter;
    uint8_t PWM;
@@ -192,15 +191,29 @@ typedef struct __packed
    uint16_t restart_timer;
    uint16_t restart_config_timer;
    ERROR_FLAGS_TYPE error_flag;
+   uint32_t SysReg;
    PDM_OUT_STATE_t out_state;
    LIN_COOF CSC[KOOF_COUNT -1 ];
 } PDM_OUTPUT_TYPE;
+
+
+
+#define ENABLE_FLAG  	0x000000001
+#define RESETTEBLE_FLAG  0x000000002
+
+#define  RESET_FLAG(i, flag) (out[i].SysReg &= ~flag )
+#define  SET_FLAG(i, flag) (out[i].SysReg |= flag )
+#define  IS_FLAG_SET(i, flag)  ( ( (out[i].SysReg & flag ) == flag ) )
+#define  IS_FLAG_RESET(i, flag) ( ( (out[i].SysReg & flag ) != flag ) )
 
 typedef struct
 {
 	uint16_t KOOF;
 	float Data;
 } KAL_DATA;
+
+
+
 
 typedef enum {
 	OUT_1 = 0,
@@ -245,7 +258,6 @@ void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, uint8_t off_state);
-void vOutHWEnbale(OUT_NAME_TYPE out_name);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );

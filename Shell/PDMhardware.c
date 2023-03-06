@@ -112,15 +112,7 @@ void vOutInit( void )
 /*
  *
  */
-void vOutHWEnbale(OUT_NAME_TYPE out_name)
-{
-	if (out_name < OUT_COUNT)
-	{
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
-		out[out_name].EnableFlag	  =IS_ENABLE;
-	}
-	return;
-}
+
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
@@ -129,7 +121,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	ERROR_CODE res = INVALID_ARG;
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
 	{
-		out[out_name].EnableFlag	  =IS_DISABLE;
+		RESET_FLAG(out_name,ENABLE_FLAG);
 	//	if ( (overload_timer <= MAX_OVERLOAD_TIMER) && (
 	//				((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
 	//				((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ) )
@@ -138,10 +130,17 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
 				out[out_name].overload_power = overload_power;
-				out[out_name].OffStateFlag = ( off_state == RESETTEBLE_STATE_AFTER_ERROR) ? 0 : 1;
+				if  ( off_state == RESETTEBLE_STATE_AFTER_ERROR)
+				{
+					SET_FLAG(out_name,RESETTEBLE_FLAG);
+				}
+				else
+				{
+					RESET_FLAG(out_name,RESETTEBLE_FLAG);
+				}
 				res = ERROR_OK;
 			}
-		out[out_name].EnableFlag	  =IS_ENABLE;
+			SET_FLAG(out_name,ENABLE_FLAG);
 	}
 	return ( res );
 }
@@ -153,12 +152,12 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	ERROR_CODE res = INVALID_ARG;
 	if ( out_name < OUT_COUNT )      //Проверяем корекность номера канала
 	{
-		out[out_name].EnableFlag	  =IS_DISABLE;
+		RESET_FLAG(out_name,ENABLE_FLAG);;
 		out[out_name].error_counter = restart_count;
 		out[out_name].restart_timer = 0U;
 		out[out_name].restart_config_timer = timer;
 		res = ERROR_OK;
-		out[out_name].EnableFlag	  =IS_ENABLE;
+		SET_FLAG(out_name,ENABLE_FLAG);
 	}
 	return ( res );
 }
@@ -354,7 +353,8 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		}
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
-		out[out_name].EnableFlag = IS_DISABLE;
+		RESET_FLAG(out_name,ENABLE_FLAG);
+
 		out[out_name].error_flag = ERROR_OFF;
 		for (j=0; j< KOOF_COUNT - 1 ; j++)
 		{
@@ -381,7 +381,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
 		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
 		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
 	}
 	return;
 }
@@ -494,9 +494,9 @@ static void vDataConvertToFloat( void)
  static void vGotoRestartState( uint8_t ucChannel, float fCurr )
  {
 	 out[ ucChannel ].out_state =  (out[ ucChannel ].error_counter == 1) ? STATE_OUT_ERROR : STATE_OUT_RESTART_PROCESS;
-	 if  (( out[ ucChannel ].out_state == STATE_OUT_ERROR ) && ( out[ ucChannel ].OffStateFlag == 1))
+	 if  (( out[ ucChannel ].out_state == STATE_OUT_ERROR ) &&  IS_FLAG_RESET( ucChannel, RESETTEBLE_FLAG ) )
 	 {
-		 out[ ucChannel ].EnableFlag = DISABLE;
+		 RESET_FLAG(ucChannel,ENABLE_FLAG);
      }
 	 out[ ucChannel ].error_flag = ERROR_OVER_LIMIT;
 	 out[ ucChannel ].restart_timer = 0U;
@@ -514,7 +514,7 @@ static void vDataConvertToFloat( void)
  {
     for (uint8_t i = 0U; i < OUT_COUNT; i++ )
  	{
-    	if (out[i].EnableFlag == IS_ENABLE )		/*Если канал не выключен или не в режиме конфигурации*/
+    	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
 
 

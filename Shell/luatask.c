@@ -359,15 +359,15 @@ int iCanSendRequest( lua_State *L )
  */
 int  iOutConfig( lua_State *L )
 {
-	if ( lua_gettop(L) >= FOUR_ARGUMENTS)  //Проверяем, что при вызове нам передали нужное число аргументов
+	if ( lua_gettop(L) >= SECOND_ARGUMENT)  //Проверяем, что при вызове нам передали нужное число аргументов
 	{
 		uint8_t out_number 		= ( uint8_t ) lua_tointeger( L, FIRST_ARGUMENT ) - 1U ; //Первым аргументом дожен передоваться номер канала
-		vHWOutOverloadConfig( out_number,
-							  ( float ) lua_tonumber(L, SECOND_ARGUMENT ),
-							  ( uint16_t ) lua_tointeger(L, THIRD_ARGUMENT),
-							  ( float ) lua_tonumber(L, FOURTH_ARGUMENT ),
-							  ( uint8_t ) lua_tointeger(L, FIVE_ARGUMENT) );   // режим сброс. Можно ли перезапускать канал выключением
-		vOutHWEnbale(out_number);
+		float nominal_power     = ( float ) lua_tonumber(L, SECOND_ARGUMENT );										   // Номинальая мощность
+		uint8_t reset_satate    = (lua_gettop(L) >= THIRD_ARGUMENT) ? ( uint8_t ) lua_tointeger(L, THIRD_ARGUMENT) : 1; // режим сброс. Можно ли перезапускать канал выключением
+		uint16_t overload_time  = (lua_gettop(L) >= FOURTH_ARGUMENT) ? ( uint16_t ) lua_tointeger(L, FOURTH_ARGUMENT) : 0;
+		float overlad_power     = (lua_gettop(L) >= FIVE_ARGUMENT) ? ( float ) lua_tonumber(L, FIVE_ARGUMENT ) : nominal_power; //Пусковой ток
+		vHWOutOverloadConfig( out_number, nominal_power, overload_time  , overlad_power, reset_satate  );
+
 	}
 	return ( NO_RESULT );
 }
@@ -618,10 +618,7 @@ void vLuaTask(void *argument)
 	   	   }
 	   	   break;
 	   	 case LUA_RUN:
-	   	  // if (eMainLoopIsEnable == IS_DISABLE)
-	   	   //  lua_getglobal(L1, "init");
-	   	   //else
-	   	     lua_getglobal(L1, "main");
+	   	   lua_getglobal(L1, "main");
 	   	   ulWorkCicleIn10us  = ulRestartTimer();
 	   	   lua_pushinteger(L1, ulWorkCicleIn10us );
 	   	   vGetDoutStatus(&OutStatus1 , &OutStatus2 );
