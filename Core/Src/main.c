@@ -66,6 +66,8 @@ CRC_HandleTypeDef hcrc;
 
 I2C_HandleTypeDef hi2c2;
 
+IWDG_HandleTypeDef hiwdg;
+
 RTC_HandleTypeDef hrtc;
 
 TIM_HandleTypeDef htim1;
@@ -127,6 +129,7 @@ static void MX_TIM13_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_IWDG_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -187,6 +190,7 @@ int main(void)
   MX_TIM6_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
+  MX_IWDG_Init();
   MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
@@ -747,6 +751,34 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_IWDG_Init(void)
+{
+
+  /* USER CODE BEGIN IWDG_Init 0 */
+
+  /* USER CODE END IWDG_Init 0 */
+
+  /* USER CODE BEGIN IWDG_Init 1 */
+
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
+
+  /* USER CODE END IWDG_Init 2 */
 
 }
 
@@ -1712,6 +1744,7 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
     osDelay(1);
+    HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END 5 */
 }
