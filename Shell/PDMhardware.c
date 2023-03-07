@@ -760,6 +760,7 @@ static void vDataConvertToFloat( void)
 	   vOutControlFSM();
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
+
    }
    /* USER CODE END vADCTask */
  }

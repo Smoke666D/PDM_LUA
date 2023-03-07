@@ -391,6 +391,7 @@ void vUSBtask ( void *argument )
   {
     if ( ulTaskNotifyTake( pdTRUE, portMAX_DELAY ) > 0U )
     {
+     // WDT_Reset();
       vUSBparseReport( &report );
       switch( report.cmd )
       {

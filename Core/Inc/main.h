@@ -216,7 +216,7 @@ void Error_Handler(void);
 #define Din2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
-
+void WDT_Reset();
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

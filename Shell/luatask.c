@@ -591,6 +591,7 @@ void vLuaTask(void *argument)
      while(1)
 	 {
 	   vTaskDelay( 1 );
+
 	   switch (state)
 	   {
        case LUA_INIT:
