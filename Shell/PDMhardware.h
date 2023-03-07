@@ -10,7 +10,7 @@
 
 #include "main.h"
 #include "luatask.h"
-
+#include "platform_init.h"
 
 #define REV_2 				1
 
@@ -18,7 +18,12 @@
 #define CS_DISABLE	   		GPIO_PIN_RESET
 
 
+#ifdef PDM
 #define AIN_COUNT			3U		//Количесвто аналоговых входов
+#endif
+#ifdef PCM
+#define AIN_COUNT			12U		//Количесвто аналоговых входов
+#endif
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости

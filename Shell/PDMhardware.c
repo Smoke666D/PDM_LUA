@@ -82,8 +82,10 @@ static uint32_t ulRestartTimer()
 void vOutInit( void )
 {
 	//Инициализация портов упраления ключами
+
+#ifdef PDM
 	HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
+		                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
 	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, Cs_Dis20_1_GPIO_Port,Cs_Dis20_1_Pin,OUT1_PORT ,OUT1_PIN );
@@ -106,6 +108,29 @@ void vOutInit( void )
 	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin , OUT18_PORT ,OUT18_PIN );
 	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin , OUT19_PORT ,OUT19_PIN );
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,OUT20_PORT ,OUT20_PIN  );
+#endif
+#ifdef PCM
+	vHWOutInit(OUT_1, &htim8, TIM_CHANNEL_4, CS1_PORT ,CS1_PIN, OUT1_PORT ,OUT1_PIN );
+	vHWOutInit(OUT_2, &htim8, TIM_CHANNEL_3, CS1_PORT,CS1_PIN, OUT2_PORT ,OUT2_PIN  );
+	vHWOutInit(OUT_3, &htim8, TIM_CHANNEL_2, CS1_PORT,CS1_PIN, OUT3_PORT ,OUT3_PIN );
+	vHWOutInit(OUT_4, &htim8, TIM_CHANNEL_1, CS1_PORT,CS1_PIN, OUT4_PORT ,OUT4_PIN );
+	vHWOutInit(OUT_5, &htim2, TIM_CHANNEL_1, CS2_PORT,CS2_PIN,OUT5_PORT ,OUT5_PIN );
+	vHWOutInit(OUT_6, &htim2, TIM_CHANNEL_2, CS2_PORT,CS2_PIN,OUT6_PORT ,OUT6_PIN );
+	vHWOutInit(OUT_7, &htim3, TIM_CHANNEL_1, CS2_PORT,CS2_PIN, OUT7_PORT ,OUT7_PIN );
+	vHWOutInit(OUT_8, &htim3, TIM_CHANNEL_2, CS2_PORT,CS2_PIN ,OUT8_PORT ,OUT8_PIN  );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  CS3_PORT,CS3_PIN,  OUT9_PORT ,OUT9_PIN  );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, CS3_PORT,CS3_PIN , OUT10_PORT ,OUT10_PIN );
+	vHWOutInit(OUT_11, &htim1, TIM_CHANNEL_3, CS3_PORT,CS3_PIN , OUT11_PORT ,OUT11_PIN );
+	vHWOutInit(OUT_12, &htim1, TIM_CHANNEL_4, CS3_PORT,CS3_PIN ,OUT12_PORT ,OUT12_PIN  );
+	vHWOutInit(OUT_13, &htim2, TIM_CHANNEL_3, CS4_PORT,CS4_PIN , OUT13_PORT ,OUT13_PIN  );
+	vHWOutInit(OUT_14, &htim2, TIM_CHANNEL_4, CS4_PORT,CS4_PIN , OUT14_PORT ,OUT14_PIN );
+	vHWOutInit(OUT_15, &htim12, TIM_CHANNEL_1, CS4_PORT,CS4_PIN , OUT15_PORT ,OUT15_PIN  );
+	vHWOutInit(OUT_16, &htim12, TIM_CHANNEL_2, CS4_PORT,CS4_PIN ,OUT16_PORT ,OUT16_PIN );
+	vHWOutInit(OUT_17, &htim4, TIM_CHANNEL_1, CS5_PORT,CS5_PIN , OUT17_PORT ,OUT17_PIN 	);
+	vHWOutInit(OUT_18,  &htim4, TIM_CHANNEL_1, CS5_PORT,CS5_PIN , OUT18_PORT ,OUT18_PIN );
+	vHWOutInit(OUT_19, &htim4, TIM_CHANNEL_3,CS5_PORT,CS5_PIN, OUT19_PORT ,OUT19_PIN );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_4, CS5_PORT,CS5_PIN,OUT20_PORT ,OUT20_PIN  );
+#endif
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
@@ -542,7 +567,8 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 
 static void vDataConvertToFloat( void)
 {
-	uint8_t i;
+
+#ifdef PDM
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
@@ -557,6 +583,23 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+#endif
+#ifdef PCM
+	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
+		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 6U, 6U , ADC1_CHANNELS);
+		 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
+		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
+		 // Полчени из буфера ADC 1 данныех каналов каналов AIN
+		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
+		 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
+		 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
+		 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
+		 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
+		 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
+		 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
+		 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
+		 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+#endif
 	return;
 }
 /*

@@ -8,8 +8,8 @@
 #ifndef PLATFORM_INIT_H_
 #define PLATFORM_INIT_H_
 
-#define PDM
-//#define PCM
+//#define PDM
+#define PCM
 
 #ifdef PDM
 #define OUT1_PIN  InCH20_1_Pin
@@ -52,8 +52,59 @@
 #define OUT19_PORT InCH8_19_GPIO_Port
 #define OUT20_PIN  InCH8_20_Pin
 #define OUT20_PORT InCH8_20_GPIO_Port
+#endif
 
-
+#ifdef PCM
+#define OUT1_PIN  DR1_Pin
+#define OUT1_PORT DR1_GPIO_Port
+#define OUT2_PIN  DR2_Pin
+#define OUT2_PORT DR2_GPIO_Port
+#define OUT3_PIN  DR3_Pin
+#define OUT3_PORT DR3_GPIO_Port
+#define OUT4_PIN  DR4_Pin
+#define OUT4_PORT DR4_GPIO_Port
+#define OUT5_PIN  DR5_Pin
+#define OUT5_PORT DR5_GPIO_Port
+#define OUT6_PIN  DR6_Pin
+#define OUT6_PORT DR6_GPIO_Port
+#define OUT7_PIN  DR7_Pin
+#define OUT7_PORT DR7_GPIO_Port
+#define OUT8_PIN  DR8_Pin
+#define OUT8_PORT DR8_GPIO_Port
+#define OUT9_PIN  DR9_Pin
+#define OUT9_PORT DR9_GPIO_Port
+#define OUT10_PIN  DR10_Pin
+#define OUT10_PORT DR10_GPIO_Port
+#define OUT11_PIN  DR11_Pin
+#define OUT11_PORT DR11_GPIO_Port
+#define OUT12_PIN  DR12_Pin
+#define OUT12_PORT DR12_GPIO_Port
+#define OUT13_PIN  DR13_Pin
+#define OUT13_PORT DR13_GPIO_Port
+#define OUT14_PIN  DR14_Pin
+#define OUT14_PORT DR14_GPIO_Port
+#define OUT15_PIN  DR15_Pin
+#define OUT15_PORT DR15_GPIO_Port
+#define OUT16_PIN  DR16_Pin
+#define OUT16_PORT DR16_GPIO_Port
+#define OUT17_PIN  DR17_Pin
+#define OUT17_PORT DR17_GPIO_Port
+#define OUT18_PIN  DR18_Pin
+#define OUT18_PORT DR18_GPIO_Port
+#define OUT19_PIN  DR19_Pin
+#define OUT19_PORT DR19_GPIO_Port
+#define OUT20_PIN  DR20_Pin
+#define OUT20_PORT DR20_GPIO_Port
+#define CS1_PORT   CS_DIS1_GPIO_Port
+#define CS1_PIN    CS_DIS1_Pin
+#define CS2_PORT   CS_DIS2_GPIO_Port
+#define CS2_PIN    CS_DIS2_Pin
+#define CS3_PORT   CS_DIS3_GPIO_Port
+#define CS3_PIN    CS_DIS3_Pin
+#define CS4_PORT   CS_DIS4_GPIO_Port
+#define CS4_PIN    CS_DIS4_Pin
+#define CS5_PORT   CS_DIS5_GPIO_Port
+#define CS5_PIN    CS_DIS5_Pin
 #endif
 
 
@@ -202,6 +253,137 @@
 #define Din1_GPIO_Port GPIOE
 #define Din2_Pin GPIO_PIN_1
 #define Din2_GPIO_Port GPIOE
+#endif
+
+#ifdef PCMF
+#define Din12_Pin GPIO_PIN_2
+#define Din12_GPIO_Port GPIOE
+#define Din13_Pin GPIO_PIN_3
+#define Din13_GPIO_Port GPIOE
+#define Din14_Pin GPIO_PIN_4
+#define Din14_GPIO_Port GPIOE
+#define Din15_Pin GPIO_PIN_5
+#define Din15_GPIO_Port GPIOE
+#define Din16_Pin GPIO_PIN_6
+#define Din16_GPIO_Port GPIOE
+#define CS1_Pin GPIO_PIN_6
+#define CS1_GPIO_Port GPIOF
+#define CS2_Pin GPIO_PIN_7
+#define CS2_GPIO_Port GPIOF
+#define CS3_Pin GPIO_PIN_8
+#define CS3_GPIO_Port GPIOF
+#define CS4_Pin GPIO_PIN_9
+#define CS4_GPIO_Port GPIOF
+#define AIN2_Pin GPIO_PIN_1
+#define AIN2_GPIO_Port GPIOC
+#define AIN1_Pin GPIO_PIN_2
+#define AIN1_GPIO_Port GPIOC
+#define AIN3_Pin GPIO_PIN_0
+#define AIN3_GPIO_Port GPIOA
+#define AIN2A1_Pin GPIO_PIN_1
+#define AIN2A1_GPIO_Port GPIOA
+#define AIN1A2_Pin GPIO_PIN_2
+#define AIN1A2_GPIO_Port GPIOA
+#define AIN12_Pin GPIO_PIN_3
+#define AIN12_GPIO_Port GPIOA
+#define AIN13_Pin GPIO_PIN_4
+#define AIN13_GPIO_Port GPIOA
+#define AIN11_Pin GPIO_PIN_5
+#define AIN11_GPIO_Port GPIOA
+#define AIN10_Pin GPIO_PIN_6
+#define AIN10_GPIO_Port GPIOA
+#define AIN9_Pin GPIO_PIN_7
+#define AIN9_GPIO_Port GPIOA
+#define AIN8_Pin GPIO_PIN_0
+#define AIN8_GPIO_Port GPIOB
+#define AIN7_Pin GPIO_PIN_1
+#define AIN7_GPIO_Port GPIOB
+#define Din17_Pin GPIO_PIN_11
+#define Din17_GPIO_Port GPIOF
+#define Din18_Pin GPIO_PIN_12
+#define Din18_GPIO_Port GPIOF
+#define Din19_Pin GPIO_PIN_13
+#define Din19_GPIO_Port GPIOF
+#define Din20_Pin GPIO_PIN_14
+#define Din20_GPIO_Port GPIOF
+#define CS_DIS3_Pin GPIO_PIN_1
+#define CS_DIS3_GPIO_Port GPIOG
+#define InCH8_9_Pin GPIO_PIN_9
+#define InCH8_9_GPIO_Port GPIOE
+#define DR10_Pin GPIO_PIN_11
+#define DR10_GPIO_Port GPIOE
+#define DR11_Pin GPIO_PIN_13
+#define DR11_GPIO_Port GPIOE
+#define DR12_Pin GPIO_PIN_14
+#define DR12_GPIO_Port GPIOE
+#define CS_DIS4_Pin GPIO_PIN_15
+#define CS_DIS4_GPIO_Port GPIOE
+#define DR13_Pin GPIO_PIN_10
+#define DR13_GPIO_Port GPIOB
+#define DR14_Pin GPIO_PIN_11
+#define DR14_GPIO_Port GPIOB
+#define DR15_Pin GPIO_PIN_14
+#define DR15_GPIO_Port GPIOB
+#define DR16_Pin GPIO_PIN_15
+#define DR16_GPIO_Port GPIOB
+#define CS_DIS5_Pin GPIO_PIN_10
+#define CS_DIS5_GPIO_Port GPIOD
+#define DR17_Pin GPIO_PIN_12
+#define DR17_GPIO_Port GPIOD
+#define DR18_Pin GPIO_PIN_13
+#define DR18_GPIO_Port GPIOD
+#define DR19_Pin GPIO_PIN_14
+#define DR19_GPIO_Port GPIOD
+#define DR20_Pin GPIO_PIN_15
+#define DR20_GPIO_Port GPIOD
+#define CS_DIS1_Pin GPIO_PIN_4
+#define CS_DIS1_GPIO_Port GPIOG
+#define USB_PULLUP_Pin GPIO_PIN_6
+#define USB_PULLUP_GPIO_Port GPIOG
+#define USB_VBAT_DET_Pin GPIO_PIN_7
+#define USB_VBAT_DET_GPIO_Port GPIOG
+#define DR4_Pin GPIO_PIN_6
+#define DR4_GPIO_Port GPIOC
+#define DR3_Pin GPIO_PIN_7
+#define DR3_GPIO_Port GPIOC
+#define DR2_Pin GPIO_PIN_8
+#define DR2_GPIO_Port GPIOC
+#define DR1_Pin GPIO_PIN_9
+#define DR1_GPIO_Port GPIOC
+#define DR5_Pin GPIO_PIN_15
+#define DR5_GPIO_Port GPIOA
+#define Din1_Pin GPIO_PIN_7
+#define Din1_GPIO_Port GPIOD
+#define Din2_Pin GPIO_PIN_9
+#define Din2_GPIO_Port GPIOG
+#define Din3_Pin GPIO_PIN_10
+#define Din3_GPIO_Port GPIOG
+#define Din4_Pin GPIO_PIN_11
+#define Din4_GPIO_Port GPIOG
+#define Din5_Pin GPIO_PIN_12
+#define Din5_GPIO_Port GPIOG
+#define Din6_Pin GPIO_PIN_13
+#define Din6_GPIO_Port GPIOG
+#define Din7_Pin GPIO_PIN_14
+#define Din7_GPIO_Port GPIOG
+#define Din8_Pin GPIO_PIN_15
+#define Din8_GPIO_Port GPIOG
+#define DR6_Pin GPIO_PIN_3
+#define DR6_GPIO_Port GPIOB
+#define DR7_Pin GPIO_PIN_4
+#define DR7_GPIO_Port GPIOB
+#define DR8_Pin GPIO_PIN_5
+#define DR8_GPIO_Port GPIOB
+#define CS_DIS2_Pin GPIO_PIN_7
+#define CS_DIS2_GPIO_Port GPIOB
+#define SPEED_IN_Pin GPIO_PIN_8
+#define SPEED_IN_GPIO_Port GPIOB
+#define Din9_Pin GPIO_PIN_9
+#define Din9_GPIO_Port GPIOB
+#define Din10_Pin GPIO_PIN_0
+#define Din10_GPIO_Port GPIOE
+#define Din11_Pin GPIO_PIN_1
+#define Din11_GPIO_Port GPIOE
 #endif
 
 #endif /* PLATFORM_INIT_H_ */

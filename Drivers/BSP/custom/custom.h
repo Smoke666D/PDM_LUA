@@ -198,9 +198,7 @@ int32_t  BSP_COM_Init(COM_TypeDef COM);
 int32_t  BSP_COM_DeInit(COM_TypeDef COM);
 #endif
 
-#if (USE_COM_LOG > 0)
-int32_t  BSP_COM_SelectLogPort(COM_TypeDef COM);
-#endif
+
 
 #if (USE_HAL_UART_REGISTER_CALLBACKS == 1U)
 int32_t BSP_COM_RegisterDefaultMspCallbacks(COM_TypeDef COM);
