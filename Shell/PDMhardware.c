@@ -3,7 +3,7 @@
 #include "cmsis_os.h"
 #include "event_groups.h"
 #include "system.h"
-
+#include "platform_init.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -86,26 +86,26 @@ void vOutInit( void )
 	                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
-	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, GPIOG,Cs_Dis20_1_Pin, GPIOD  ,InCH20_1_Pin);
-	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, GPIOD , InCH20_2_Pin );
-	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin , InCH20_3_GPIO_Port, InCH20_3_Pin);
-	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin , GPIOB, InCH20_4_Pin);
-	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin ,GPIOE, InCH20_5_Pin);
-	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin ,GPIOE, InCH20_6_Pin);
-	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin , GPIOB, InCH20_7_Pin );
-	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin ,GPIOD ,InCH20_8_Pin );
-	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin,  GPIOE ,InCH8_9_Pin );
-	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin , GPIOE, InCH8_10_Pin);
-	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin , GPIOB , InCH8_11_Pin);
-	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin ,GPIOB , InCH8_12_Pin );
-	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin , GPIOC , InCH8_13_Pin  );
-	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin , GPIOC , InCH8_14_Pin);
-	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin , GPIOB , InCH8_15_Pin );
-	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin ,GPIOB , InCH8_16_Pin);
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin ,  GPIOC , InCH8_17_Pin	);
-	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin , GPIOC , InCH8_18_Pin);
-	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin , GPIOB , InCH8_19_Pin);
-	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin, GPIOD, InCH8_20_Pin );
+	vHWOutInit(OUT_1, &htim4, TIM_CHANNEL_3, Cs_Dis20_1_GPIO_Port,Cs_Dis20_1_Pin,OUT1_PORT ,OUT1_PIN );
+	vHWOutInit(OUT_2, &htim4, TIM_CHANNEL_4, GPIOG,Cs_Dis20_2_Pin, OUT2_PORT ,OUT2_PIN  );
+	vHWOutInit(OUT_3, &htim2, TIM_CHANNEL_1, GPIOG,Cs_Dis20_3_Pin, OUT3_PORT ,OUT3_PIN );
+	vHWOutInit(OUT_4, &htim3, TIM_CHANNEL_2, GPIOG,Cs_Dis20_4_Pin, OUT4_PORT ,OUT4_PIN );
+	vHWOutInit(OUT_5, &htim1, TIM_CHANNEL_3, GPIOG, Cs_Dis20_5_Pin,OUT5_PORT ,OUT5_PIN );
+	vHWOutInit(OUT_6, &htim1, TIM_CHANNEL_4, GPIOE, Cs_Dis20_6_Pin,OUT6_PORT ,OUT6_PIN );
+	vHWOutInit(OUT_7, &htim12, TIM_CHANNEL_1, GPIOD,Cs_Dis20_7_Pin, OUT7_PORT ,OUT7_PIN );
+	vHWOutInit(OUT_8, &htim4, TIM_CHANNEL_2, GPIOD,Cs_Dis20_8_Pin ,OUT8_PORT ,OUT8_PIN  );
+	vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  GPIOE, Cs_Dis8_9_10_Pin,  OUT9_PORT ,OUT9_PIN  );
+	vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, GPIOE, Cs_Dis8_9_10_Pin , OUT10_PORT ,OUT10_PIN );
+	vHWOutInit(OUT_11, &htim2, TIM_CHANNEL_4, GPIOD, Cs_Dis8_11_12_Pin , OUT11_PORT ,OUT11_PIN );
+	vHWOutInit(OUT_12, &htim2, TIM_CHANNEL_3, GPIOD, Cs_Dis8_11_12_Pin ,OUT12_PORT ,OUT12_PIN  );
+	vHWOutInit(OUT_13, &htim8, TIM_CHANNEL_1,GPIOG,Cs_Dis8_13_14_Pin , OUT13_PORT ,OUT13_PIN  );
+	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin , OUT14_PORT ,OUT14_PIN );
+	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin , OUT15_PORT ,OUT15_PIN  );
+	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin ,OUT16_PORT ,OUT16_PIN );
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin , OUT17_PORT ,OUT17_PIN 	);
+	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin , OUT18_PORT ,OUT18_PIN );
+	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin , OUT19_PORT ,OUT19_PIN );
+	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,OUT20_PORT ,OUT20_PIN  );
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }

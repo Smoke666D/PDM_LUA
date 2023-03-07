@@ -22,17 +22,29 @@ static RPMConfig_t eRPM[2] 						__SECTION(RAM_SECTION_CCMRAM);
 
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
-const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,GPIOE},
-											    {Din2_Pin,GPIOE},
-											    {Din3_Pin,GPIOE},
-											    {Din4_Pin,GPIOE},
-											    {Din5_Pin,GPIOE},
-											    {Din6_Pin,GPIOE},
-											    {Din7_Pin,GPIOE},
-											    {Din8_Pin,GPIOB},
-											    {Din9_Pin,GPIOB},
-											    {Din10_Pin,GPIOF},
-											    {Din11_Pin,GPIOF}};
+const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,Din1_GPIO_Port},
+											    {Din2_Pin,Din2_GPIO_Port},
+											    {Din3_Pin,Din3_GPIO_Port},
+											    {Din4_Pin,Din4_GPIO_Port},
+											    {Din5_Pin,Din5_GPIO_Port},
+											    {Din6_Pin,Din6_GPIO_Port},
+											    {Din7_Pin,Din7_GPIO_Port},
+											    {Din8_Pin,Din8_GPIO_Port},
+											    {Din9_Pin,Din9_GPIO_Port},
+											    {Din10_Pin,Din10_GPIO_Port},
+											    {Din11_Pin,Din11_GPIO_Port}
+#ifdef PCM
+											    ,{Din12_Pin,Din12_GPIO_Port},
+											    {Din13_Pin,Din13_GPIO_Port},
+											    {Din14_Pin,Din14_GPIO_Port},
+											    {Din15_Pin,Din15_GPIO_Port},
+											    {Din16_Pin,Din16_GPIO_Port},
+											    {Din17_Pin,Din17_GPIO_Port},
+											    {Din18_Pin,Din18_GPIO_Port},
+											    {Din19_Pin,Din19_GPIO_Port},
+											    {Din20_Pin,Din20_GPIO_Port}
+#endif
+};
 /*
  *
  */
@@ -160,12 +172,10 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
 			if (ucCh == INPUT_9)
 			{
 				__HAL_RCC_TIM10_CLK_ENABLE();
-				 //__HAL_RCC_GPIOB_CLK_ENABLE();
 			}
 			else
 			{
 				__HAL_RCC_TIM9_CLK_ENABLE();
-				//__HAL_RCC_GPIOE_CLK_ENABLE();
 			}
 			HAL_NVIC_SetPriority((ucCh == INPUT_9) ? TIM1_UP_TIM10_IRQn : TIM1_BRK_TIM9_IRQn , 5, 0);
 			HAL_NVIC_EnableIRQ( (ucCh == INPUT_9) ? TIM1_UP_TIM10_IRQn : TIM1_BRK_TIM9_IRQn);
@@ -204,6 +214,17 @@ void vDinInit( void )
 	eDinConfig( INPUT_9, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_10, DIN_CONFIG_POSITIVE ,DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_11, DIN_CONFIG_POSITIVE ,DEF_H_FRONT, DEF_L_FRONT );
+#ifdef PCM
+	eDinConfig( INPUT_12, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_13, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_14, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_15, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_16, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_17, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_18, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_19, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
+	eDinConfig( INPUT_20, DIN_CONFIG_POSITIVE ,DEF_H_FRONT, DEF_L_FRONT );
+#endif
 	return;
 }
 /*

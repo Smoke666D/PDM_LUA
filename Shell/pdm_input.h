@@ -18,8 +18,16 @@
 #include "task.h"
 #include "semphr.h"
 #include "stm32f4xx_hal.h"
+#include "platform_init.h"
 
-#define DIN_CHANNEL 11U
+//Количество дискретных входов, максимально 32 шт. из-за разрядности регистра для передачи данных
+#ifdef PDM
+	#define DIN_CHANNEL 11U
+#endif
+#ifdef PCM
+	#define DIN_CHANNEL 20U
+#endif
+
 #define DIN_VALID   3U
 #define MAX_VAL 65000U
 #define DEF_H_FRONT 10U
@@ -48,7 +56,16 @@ typedef enum {
 		INPUT_8 = 7U,
 		INPUT_9 = 8U,
 		INPUT_10 = 9U,
-		INPUT_11 = 10U
+		INPUT_11 = 10U,
+		INPUT_12 = 11U,
+		INPUT_13 = 12U,
+		INPUT_14 = 13U,
+		INPUT_15 = 14U,
+		INPUT_16 = 15U,
+		INPUT_17 = 16U,
+		INPUT_18 = 17U,
+		INPUT_19 = 18U,
+		INPUT_20 = 19U
 } PDM_INPUT_NAME;
 
 typedef enum  {
