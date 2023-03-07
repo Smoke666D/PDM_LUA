@@ -578,6 +578,7 @@ static void vDataConvertToFloat( void)
 	 if (out[ ucChannel ].error_counter == 1)
 	 {
 		 SET_STATE_FLAG( ucChannel, FSM_ERROR_STATE );
+		 RESET_FLAG(ucChannel,CONTROL_FLAGS );
 	 }
 	 else
 	 {
@@ -595,6 +596,7 @@ static void vDataConvertToFloat( void)
 	 {
 		 out[ucChannel].current = fCurr;
 	 }
+
  }
  /*
   *
@@ -709,7 +711,7 @@ static void vDataConvertToFloat( void)
  			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
  			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
 
- 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE) )
+ 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
  				{
  					SET_STATE_FLAG(i, FSM_OFF_STATE );
  				 	vHWOutOFF(i);
