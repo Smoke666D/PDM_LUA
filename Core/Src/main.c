@@ -30,12 +30,9 @@
 
 #include "usbhid.h"
 #include "pdm_input.h"
-#include "system.h"
-#include "serial.h"
+#include "system.h""
 #include "common.h"
-#if defined( UNIT_TEST )
-  #include "tests.h"
-#endif
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -194,7 +191,7 @@ int main(void)
   MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
-  vSERIALinit( &huart2 );
+
   vUSBinit( &usbDet, &usbPullup );
   vDinInit( );
   vCANinit( );
@@ -1732,12 +1729,6 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
-
-  char welcomeString[] = "Power Distribution Module by SIDER Ltd. 2022";
-  vSYSserialString( welcomeString );
-  #if defined ( UNIT_TEST )
-    //vTESTinit();
-  #endif
 
 
   /* Infinite loop */
