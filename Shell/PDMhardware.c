@@ -560,10 +560,22 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 	 }
 	return ( fRes );
 }
+
+#ifdef PCM
+
+
+uint8_t DOUTGROUP = 0;
+uint8_t ucGetDOUTGroup()
+{
+	return DOUTGROUP;
+
+}
+
+#endif
+
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
  */
-
 
 static void vDataConvertToFloat( void)
 {
@@ -586,19 +598,17 @@ static void vDataConvertToFloat( void)
 #endif
 #ifdef PCM
 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
-		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 6U, 6U , ADC1_CHANNELS);
+		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 7U, 7U , ADC1_CHANNELS);
 		 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
-		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
+		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 7U, 14U, 1U , ADC1_CHANNELS);
 		 // Полчени из буфера ADC 1 данныех каналов каналов AIN
-		 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
 		 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
-		 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
+		 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 0U, 6U , ADC2_CHANNELS);
 		 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
-		 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
 		 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
-		 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
+		 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, ucGetDOUTGroup()*4 , 4U , ADC3_CHANNELS);
 		 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
-		 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+
 #endif
 	return;
 }
@@ -782,6 +792,10 @@ static void vDataConvertToFloat( void)
  {
    /* USER CODE BEGIN vADCTask */
 
+#ifdef PCM
+
+	 DOUTGROUP  = 0;
+#endif
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
    pxPDMstatusEvent = osLUAetPDMstatusHandle();
    TickType_t xLastWakeTime;
