@@ -30,6 +30,7 @@ extern "C" {
 #include "bsp_ip_conf.h"
 #include "fw_version.h"
 #include "motion_di_manager.h"
+#include "system.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -53,8 +54,8 @@ MDI_cal_type_t GyrCalMode = MDI_CAL_NONE;
 /* Extern variables ----------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static MOTION_SENSOR_Axes_t AccValue;
-static MOTION_SENSOR_Axes_t GyrValue;
+static MOTION_SENSOR_Axes_t AccValue __SECTION(RAM_SECTION_CCMRAM);
+static MOTION_SENSOR_Axes_t GyrValue __SECTION(RAM_SECTION_CCMRAM);
 static int64_t Timestamp = 0;
 
 /* Private function prototypes -----------------------------------------------*/
