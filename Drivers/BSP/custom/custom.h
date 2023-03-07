@@ -131,41 +131,14 @@ typedef enum
   COMn
 }COM_TypeDef;
 
-typedef enum
-{
- COM_WORDLENGTH_8B     =   UART_WORDLENGTH_8B,
- COM_WORDLENGTH_9B     =   UART_WORDLENGTH_9B,
-}COM_WordLengthTypeDef;
 
-typedef enum
-{
- COM_STOPBITS_1     =   UART_STOPBITS_1,
- COM_STOPBITS_2     =   UART_STOPBITS_2,
-}COM_StopBitsTypeDef;
 
-typedef enum
-{
- COM_PARITY_NONE     =  UART_PARITY_NONE,
- COM_PARITY_EVEN     =  UART_PARITY_EVEN,
- COM_PARITY_ODD      =  UART_PARITY_ODD,
-}COM_ParityTypeDef;
 
-typedef enum
-{
- COM_HWCONTROL_NONE    =  UART_HWCONTROL_NONE,
- COM_HWCONTROL_RTS     =  UART_HWCONTROL_RTS,
- COM_HWCONTROL_CTS     =  UART_HWCONTROL_CTS,
- COM_HWCONTROL_RTS_CTS =  UART_HWCONTROL_RTS_CTS,
-}COM_HwFlowCtlTypeDef;
 
-typedef struct
-{
-  uint32_t             BaudRate;
-  COM_WordLengthTypeDef  WordLength;
-  COM_StopBitsTypeDef  StopBits;
-  COM_ParityTypeDef    Parity;
-  COM_HwFlowCtlTypeDef HwFlowCtl;
-}COM_InitTypeDef;
+
+
+
+
 #endif
 
 #define MX_UART_InitTypeDef          COM_InitTypeDef
@@ -188,7 +161,6 @@ typedef struct
 #define COM1_UART                        USART1
 
 #define COM_POLL_TIMEOUT                 1000
-extern UART_HandleTypeDef hcom_uart[COMn];
 #define  huart1 hcom_uart[COM1]
 
 /**
