@@ -49,14 +49,23 @@
 #define DEFAULT_RESET_COUNTER	1U
 #define MAX_RESET_TIMER         32767U
 
+
 #define ADC1_READY         0x01
 #define ADC2_READY         0x02
 #define ADC3_READY         0x04
 #define OUT_BUSY		   0x08
 #define ADC_DATA_READY     0x10
+#ifdef PDM
 #define ADC1_CHANNELS      9U
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
+#endif
+#ifdef PCM
+#define ADC1_CHANNELS      8U
+#define ADC2_CHANNELS      6U
+#define ADC3_CHANNELS      4U
+#endif
+
 #define ADC_FRAME_SIZE     3U
 #define R1  10000.0
 #define R2  3000.0

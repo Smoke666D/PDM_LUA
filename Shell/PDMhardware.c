@@ -364,7 +364,7 @@ float fAinGetState ( AIN_NAME_TYPE channel )
  */
 float fBatteryGet ( void )
 {
-	 return (float)muRawVData[3] * AINCOOF1 + INDIOD;
+	 return (float)muRawVData[13] * AINCOOF1 + INDIOD;
 }
 /*
  *
@@ -372,7 +372,7 @@ float fBatteryGet ( void )
 
 float fTemperatureGet ( uint8_t chanel )
 {
-	return ((float)muRawVData[4] * K - 0.76) /0.0025 + 25;
+	return ((float)muRawVData[14] * K - 0.76) /0.0025 + 25;
 }
 /*
  *
@@ -563,11 +563,68 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 
 #ifdef PCM
 
+typedef enum
+{
+	CS_1 =0,
+	CS_2 =1,
+	CS_3 =2,
+	CS_4 =3,
+	CS_5 =4
+} CS_type;
 
-uint8_t DOUTGROUP = 0;
+CS_type DOUTGROUP = CS_1;
+
+
+void vGrpopFSM()
+{
+	switch (DOUTGROUP)
+	{
+			case CS_1:
+				HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_ENABLE);
+				HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
+				DOUTGROUP = CS_2;
+				break;
+			case CS_2:
+				HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_ENABLE);
+				HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
+				DOUTGROUP = CS_3;
+				break;
+			case CS_3:
+				HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_ENABLE);
+				HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
+				DOUTGROUP = CS_4;
+				break;
+			case CS_4:
+				HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_ENABLE);
+				HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
+				DOUTGROUP = CS_5;
+				break;
+			case CS_5:
+				HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
+				HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_ENABLE);
+				DOUTGROUP = CS_1;
+				break;
+	}
+    return;
+}
 uint8_t ucGetDOUTGroup()
 {
-	return DOUTGROUP;
+	return ((uint8_t)DOUTGROUP);
 
 }
 
@@ -813,6 +870,9 @@ static void vDataConvertToFloat( void)
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
 	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
 	   ADC_STOP();
+#ifdef PCM
+	   vGrpopFSM();
+#endif
 	   vDataConvertToFloat();
 	   vOutControlFSM();
 	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
