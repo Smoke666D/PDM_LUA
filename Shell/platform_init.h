@@ -19,6 +19,7 @@
 	#define ADC2_CHANNELS      7U
 	#define ADC3_CHANNELS      9U
     #define AIN_COUNT          3U        //Количесвто аналоговых входов
+    #define AIN_NUMBER		   AIN_COUNT
 #endif
 #ifdef PCM
     #define TEMP_INDEX		   13U
@@ -71,8 +72,6 @@
 #define OUT19_PORT InCH8_19_GPIO_Port
 #define OUT20_PIN  InCH8_20_Pin
 #define OUT20_PORT InCH8_20_GPIO_Port
-
-
 #endif
 
 

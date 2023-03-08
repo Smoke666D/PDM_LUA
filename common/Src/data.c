@@ -47,7 +47,7 @@ void vDATAupdate ( void )
   telemetry.battery = fBatteryGet();
   for ( uint8_t i=0U; i<AIN_COUNT; i++ )
   {
-    telemetry.voltage[i] = fAinGetState( ( AIN_NAME_TYPE )i );
+    telemetry.voltage[i] = fAinGetState( ( AIN_NAME_t )i );
   }
   for ( uint8_t i=0U; i<DIN_CHANNEL; i++ )
   {

@@ -14,8 +14,8 @@
 
 
 #define MAX_CAL_POINT  20
-#define MAX_TOTAL_CAL_POINT  ( AIN_COUNT * MAX_CAL_POINT  ) //Суммароне количество калибровочных точек
-#define MAX_COOF_COUNT       ( AIN_COUNT * ( MAX_CAL_POINT -1 ) )
+#define MAX_TOTAL_CAL_POINT  ( AIN_NUMBER * MAX_CAL_POINT  ) //Суммароне количество калибровочных точек
+#define MAX_COOF_COUNT       ( AIN_NUMBER * ( MAX_CAL_POINT -1 ) )
 typedef enum {
   AIN1 = 0,
   AIN2 = 1,
@@ -35,6 +35,7 @@ typedef enum {
   AIN16 = 15,
   AIN17 = 16,
 } AIN_NAME_t;
+
 
 /*Коофиценты для кривых */
 typedef struct

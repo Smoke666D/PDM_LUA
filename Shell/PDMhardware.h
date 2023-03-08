@@ -128,12 +128,7 @@ typedef enum {
 
 } CONTROL_STATE_TYPE;
 
- typedef struct
- {
-   __IO uint32_t ISR;   /*!< DMA interrupt status register */
-   __IO uint32_t Reserved0;
-   __IO uint32_t IFCR;  /*!< DMA interrupt flag clear register */
- } DMA_Base_Registers;
+
 
 typedef enum {
   STATE_OUT_OFF,
@@ -261,12 +256,7 @@ typedef enum {
 	OUT_20 = 19,
 } OUT_NAME_TYPE;
 
-typedef enum {
-	AIN_1 = 0,
-	AIN_2 = 1,
-	AIN_3 = 2,
-	AIN_4 = 3,
-} AIN_NAME_TYPE;
+
 
 typedef enum {
   ANGLE_TYPE_ROLL,
@@ -275,24 +265,22 @@ typedef enum {
 } ANGLE_TYPE;
 
 
-void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
-void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
 void vOutInit( void );
-void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
-void vADC_Ready(uint8_t adc_number);
-void vADCTask(void * argument);
-ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, uint8_t off_state);
+ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
-float fOutGetCurrent(OUT_NAME_TYPE out_name);
+void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
 float fOutGetCurrent(OUT_NAME_TYPE eChNum);
-float fAinGetState ( AIN_NAME_TYPE channel );
+ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
+void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
+ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
+void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
+void vADC_Ready(uint8_t adc_number);
+void vADCTask(void * argument);
+void vHWOutOFF( uint8_t ucChannel );
+float fAinGetState ( AIN_NAME_t channel );
 float fBatteryGet ( void );
 float fTemperatureGet ( uint8_t chanel );
-ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
-ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
-float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
-void DMA_IRQHandler(DMA_HandleTypeDef *hdma);
 #endif /* PDMHARDWARE_H_ */

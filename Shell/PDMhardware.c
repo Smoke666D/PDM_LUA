@@ -5,6 +5,7 @@
 #include "system.h"
 #include "platform_init.h"
 #include "pdm_math.h"
+#include "adc_dma.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -27,7 +28,7 @@ static volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] 
 static volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
 static PDM_OUTPUT_TYPE out[OUT_COUNT]  				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawVData[AIN_COUNT + 2]   		__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
@@ -56,19 +57,18 @@ static const KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20}
 										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										};
-/**************************************** PRIVER FUNCTION***********************************************/
+/**************************************** PRIVAT FUNCTION***********************************************/
 #ifdef PCM
 static uint8_t ucGetDOUTGroup();
 static void vGrpopFSM();
 #endif
 static void vHWOutSet( OUT_NAME_TYPE out_name);
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
-static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
-static void ADC_STOP();
-static  HAL_StatusTypeDef DMA_Abort(DMA_HandleTypeDef *hdma);
-static void ADC_DMAError(DMA_HandleTypeDef *hdma);
-static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma);
-#define HAL_TIMEOUT_DMA_ABORT    5U
+static void vGotoRestartState( uint8_t ucChannel, float fCurr );
+static void vHWOutSet( OUT_NAME_TYPE out_name );
+static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize);
+static float fGetDataFromRaw( float fraw, PDM_OUTPUT_TYPE xOut);
+static void vDataConvertToFloat( void);
 #ifdef PCM
 /
 static uint8_t ucGetDOUTGroup()
@@ -127,299 +127,296 @@ static void vGrpopFSM()
 /*
  *
 */
-/*
- *
- */
- static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
- {
-   CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
-   if(HAL_IS_BIT_SET(hadc->Instance->CR2, ADC_CR2_ADON))
-   {
-     ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR, HAL_ADC_STATE_REG_BUSY);
-     __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
-     __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
-     hadc->Instance->CR2 |= ADC_CR2_DMA;
-
-     DMA_Base_Registers *regs = (DMA_Base_Registers *)hadc->DMA_Handle->StreamBaseAddress;
-
-
-      if(HAL_DMA_STATE_READY == hadc->DMA_Handle->State)
-      {
-        	hadc->DMA_Handle->State = HAL_DMA_STATE_BUSY;
-        	hadc->DMA_Handle->ErrorCode = HAL_DMA_ERROR_NONE;
-            /* Clear DBM bit */
-        	hadc->DMA_Handle->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
-        	hadc->DMA_Handle->Instance->NDTR = Length;
-        	hadc->DMA_Handle->Instance->PAR = &hadc->Instance->DR;
-        	hadc->DMA_Handle->Instance->M0AR = pData;
-        	regs->IFCR = 0x3FU << hadc->DMA_Handle->StreamIndex;
-        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
-        	__HAL_DMA_ENABLE(hadc->DMA_Handle);
-        }
-     hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
-   }
-   else
-   {
-     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
-     SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
-   }
- }
- static void ADC_STOP()
- {
-	 __HAL_ADC_DISABLE(&hadc1);
-	 __HAL_ADC_DISABLE(&hadc2);
-	 __HAL_ADC_DISABLE(&hadc3);
-	 hadc1.Instance->CR2 &= ~ADC_CR2_DMA;
-	 hadc2.Instance->CR2 &= ~ADC_CR2_DMA;
-	 hadc3.Instance->CR2 &= ~ADC_CR2_DMA;
-	 if (hadc1.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-	 {
-	     if (DMA_Abort(hadc1.DMA_Handle) != HAL_OK)
-	     {
-	          SET_BIT(hadc1.State, HAL_ADC_STATE_ERROR_DMA);
-	     }
-	 }
-	 if (hadc2.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-     {
-		 if (DMA_Abort(hadc2.DMA_Handle) != HAL_OK)
-		 {
-		     SET_BIT(hadc2.State, HAL_ADC_STATE_ERROR_DMA);
-		 }
-	 }
-	 if (hadc3.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-	  {
-		 if (DMA_Abort(hadc3.DMA_Handle) != HAL_OK)
-		 {
-		     SET_BIT(hadc3.State, HAL_ADC_STATE_ERROR_DMA);
-		 }
-	  }
-	  __HAL_ADC_DISABLE_IT(&hadc1, ADC_IT_OVR);
-	  __HAL_ADC_DISABLE_IT(&hadc2, ADC_IT_OVR);
-	  __HAL_ADC_DISABLE_IT(&hadc3, ADC_IT_OVR);
-	  ADC_STATE_CLR_SET(hadc1.State,
-	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	                        HAL_ADC_STATE_READY);
-	  ADC_STATE_CLR_SET(hadc2.State,
-	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	      	                        HAL_ADC_STATE_READY);
-	 ADC_STATE_CLR_SET(hadc3.State,
-	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	      	                        HAL_ADC_STATE_READY);
-	 return;
- }
- /*
-   *
-   */
-
- static  HAL_StatusTypeDef DMA_Abort(DMA_HandleTypeDef *hdma)
-  {
-    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;/* calculate DMA base and stream number */
-    uint32_t tickstart = HAL_GetTick();
-    if(hdma->State != HAL_DMA_STATE_BUSY)
-    {
-      hdma->ErrorCode = HAL_DMA_ERROR_NO_XFER;
-      return HAL_ERROR;
-    }
-    else
-    {
-      /* Disable all the transfer interrupts */
-      hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
-      hdma->Instance->FCR &= ~(DMA_IT_FE);
-      __HAL_DMA_DISABLE(hdma);/* Disable the stream */
-      while((hdma->Instance->CR & DMA_SxCR_EN) != RESET)/* Check if the DMA Stream is effectively disabled */
-      {
-
-        if((HAL_GetTick() - tickstart ) > HAL_TIMEOUT_DMA_ABORT)/* Check for the Timeout */
-        {
-          hdma->ErrorCode = HAL_DMA_ERROR_TIMEOUT; /* Update error code */
-          hdma->State = HAL_DMA_STATE_TIMEOUT;/* Change the DMA state */
-          return HAL_TIMEOUT;
-        }
-      }
-      regs->IFCR = 0x3FU << hdma->StreamIndex; /* Clear all interrupt flags at correct offset within the register */
-      hdma->State = HAL_DMA_STATE_READY; /* Change the DMA state*/
-    }
-    return HAL_OK;
-  }
- /*
-  *
-  */
-  static void ADC_DMAError(DMA_HandleTypeDef *hdma)
-  {
-    ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-    hadc->State= HAL_ADC_STATE_ERROR_DMA;
-    hadc->ErrorCode |= HAL_ADC_ERROR_DMA;
-  }
-
-  static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma)
-  {
-    /* Retrieve ADC handle corresponding to current DMA handle */
-    ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-    /* Update state machine on conversion status if not in error state */
-    if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA))
-    {
-      SET_BIT(hadc->State, HAL_ADC_STATE_REG_EOC);/* Update ADC state machine */
-      /* Determine whether any further conversion upcoming on group regular   */
-      /* by external trigger, continuous mode or scan sequence on going.      */
-      /* Note: On STM32F4, there is no independent flag of end of sequence.   */
-      /*       The test of scan sequence on going is done either with scan    */
-      /*       sequence disabled or with end of conversion flag set to        */
-      /*       of end of sequence.                                            */
-      if(ADC_IS_SOFTWARE_START_REGULAR(hadc)                   &&
-         (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
-          HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)  )   )
-      {
-        /* Disable ADC end of single conversion interrupt on group regular */
-        /* Note: Overrun interrupt was enabled with EOC interrupt in          */
-        /* HAL_ADC_Start_IT(), but is not disabled here because can be used   */
-        /* by overrun IRQ process below.                                      */
-        __HAL_ADC_DISABLE_IT(hadc, ADC_IT_EOC);
-        CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);/* Set ADC state */
-        if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_INJ_BUSY))
-        {
-          SET_BIT(hadc->State, HAL_ADC_STATE_READY);
-        }
-      }
-    }
-    else /* DMA and-or internal error occurred */
-    {
-      if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
-      {
-      	HAL_ADC_ErrorCallback(hadc);/* Call HAL ADC Error Callback function */
-      }
-  	else
-  	{
-  		ADC_DMAError(hdma);/* Call DMA error callback */
-      }
-    }
-  }
-/*
- *
- */
- void DMA_IRQHandler(DMA_HandleTypeDef *hdma)
- {
-    uint32_t tmpisr;
-    __IO uint32_t count = 0U;
-    uint32_t timeout = SystemCoreClock / 9600U;
-
-    /* calculate DMA base and stream number */
-    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-
-    tmpisr = regs->ISR;
-
-    /* Transfer Error Interrupt management ***************************************/
-    if ((tmpisr & (DMA_FLAG_TEIF0_4 << hdma->StreamIndex)) != RESET)
-    {
-      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET)
-      {
-        /* Disable the transfer error interrupt */
-        hdma->Instance->CR  &= ~(DMA_IT_TE);
-
-        /* Clear the transfer error flag */
-        regs->IFCR = DMA_FLAG_TEIF0_4 << hdma->StreamIndex;
-
-        /* Update error code */
-        hdma->ErrorCode |= HAL_DMA_ERROR_TE;
-      }
-    }
-    /* FIFO Error Interrupt management ******************************************/
-    if ((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
-    {
-      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_FE) != RESET)
-      {
-        regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex; /* Clear the FIFO error flag */
-        hdma->ErrorCode |= HAL_DMA_ERROR_FE; /* Update error code */
-      }
-    }
-    /* Direct Mode Error Interrupt management ***********************************/
-    if ((tmpisr & (DMA_FLAG_DMEIF0_4 << hdma->StreamIndex)) != RESET)
-    {
-      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_DME) != RESET)
-      {
-        /* Clear the direct mode error flag */
-        regs->IFCR = DMA_FLAG_DMEIF0_4 << hdma->StreamIndex;
-
-        /* Update error code */
-        hdma->ErrorCode |= HAL_DMA_ERROR_DME;
-      }
-    }
-
-    /* Transfer Complete Interrupt management ***********************************/
-    if ((tmpisr & (DMA_FLAG_TCIF0_4 << hdma->StreamIndex)) != RESET)
-    {
-      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TC) != RESET)
-      {
-        /* Clear the transfer complete flag */
-        regs->IFCR = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
-
-        if(HAL_DMA_STATE_ABORT == hdma->State)
-        {
-          /* Disable all the transfer interrupts */
-          hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
-          hdma->Instance->FCR &= ~(DMA_IT_FE);
-
-          /* Clear all interrupt flags at correct offset within the register */
-          regs->IFCR = 0x3FU << hdma->StreamIndex;
-          /* Change the DMA state */
-          hdma->State = HAL_DMA_STATE_READY;
-          return;
-        }
-
-        if(((hdma->Instance->CR) & (uint32_t)(DMA_SxCR_DBM)) != RESET)
-        {
-     	   ADC_DMAConvCplt(hdma);
-
-        }
-        /* Disable the transfer complete interrupt if the DMA mode is not CIRCULAR */
-        else
-        {
-          if((hdma->Instance->CR & DMA_SxCR_CIRC) == RESET)
-          {
-            hdma->Instance->CR  &= ~(DMA_IT_TC);/* Disable the transfer complete interrupt */
-            hdma->State = HAL_DMA_STATE_READY;/* Change the DMA state */
-          }
-          ADC_DMAConvCplt(hdma);
-        }
-      }
-    }
-
-    /* manage error case */
-    if(hdma->ErrorCode != HAL_DMA_ERROR_NONE)
-    {
-      if((hdma->ErrorCode & HAL_DMA_ERROR_TE) != RESET)
-      {
-        hdma->State = HAL_DMA_STATE_ABORT;
-        __HAL_DMA_DISABLE(hdma); /* Disable the stream */
-
-        do
-        {
-          if (++count > timeout)
-          {
-            break;
-          }
-        }
-        while((hdma->Instance->CR & DMA_SxCR_EN) != RESET);
-        hdma->State = HAL_DMA_STATE_READY;/* Change the DMA state */
-      }
-      ADC_DMAConvCplt(hdma);
-    }
- }
-
-static uint32_t ulRestartTimer()
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin )
 {
-	uint32_t data = htim6.Instance->CNT;
-	htim6.Instance->CNT = 0U;
-	return ( data );
+	volatile uint8_t j;
+	if ( out_name < OUT_COUNT )
+	{
+		out[out_name].ptim 			   = ptim;
+		out[out_name].channel 		   = uiChannel;
+		out[out_name].GPIOx 		   = EnablePort;
+		out[out_name].GPIO_Pin		   = EnablePin;
+		out[out_name].OutGPIOx 		   = OutPort;
+		out[out_name].OutGPIO_Pin	   = OutPin;
+		out[out_name].error_counter    = 0U;
+		out[out_name].soft_start_timer = 0;
+		out[out_name].current 		   = 0.0;
+		out[out_name].PWM_err_counter  = 0;
+		RESET_FLAG(out_name,CONTROL_FLAGS );
+		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
+		if (out_name < OUT_HPOWER_COUNT)
+		{
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
+		}
+		else
+		{
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR);
+		}
+		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
+		vOutSetPWM(out_name, DEFAULT_PWM);
+		RESET_FLAG(out_name,ENABLE_FLAG);
+		RESET_FLAG(out_name, ERROR_MASK);
+
+		for (j=0; j< KOOF_COUNT - 1 ; j++)
+		{
+			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
+			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
+			{
+				vABLineKoofFinde(&out[out_name].CSC[j].k, &out[out_name].CSC[j].b,
+								CurSensData[out_name][j].Data, CurSensData[out_name][j+1].Data,
+								CurSensData[out_name][j].KOOF, CurSensData[out_name][j+1].KOOF);
+				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
+			}
+		}
+		TIM_OC_InitTypeDef sConfigOC = {0U};
+		sConfigOC.OCMode = TIM_OCMODE_PWM1;
+		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM );
+		sConfigOC.OCPolarity 	= TIM_OCPOLARITY_HIGH;
+		sConfigOC.OCNPolarity 	= TIM_OCNPOLARITY_HIGH;
+		sConfigOC.OCFastMode 	= TIM_OCFAST_DISABLE;
+		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
+		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
+		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+	}
+	return;
 }
 /*
  *
  */
+ static void vGotoRestartState( uint8_t ucChannel, float fCurr )
+ {
+	 if (out[ ucChannel ].error_counter == 1)
+	 {
+		 SET_STATE_FLAG( ucChannel, FSM_ERROR_STATE );
+		 RESET_FLAG(ucChannel,CONTROL_FLAGS );
+	 }
+	 else
+	 {
+		 SET_STATE_FLAG( ucChannel, FSM_RESTART_STATE);
+	 }
+	 if  ( IS_FLAG_SET(ucChannel, FSM_ERROR_STATE ) &&  IS_FLAG_RESET( ucChannel, RESETTEBLE_FLAG ) )
+	 {
+		 RESET_FLAG(ucChannel,ENABLE_FLAG);
+     }
+	 SET_ERROR_FLAG( ucChannel, OVERLOAD_ERROR);
+	 out[ ucChannel ].restart_timer = 0U;
+	 out[ ucChannel ].soft_start_timer = 0;
+	 vHWOutOFF(ucChannel);
+	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_HOVERLOAD_POWER : MAX_LOVERLOAD_POWER ) )
+	 {
+		 out[ucChannel].current = fCurr;
+	 }
+ }
+ /*
+  *
+  */
+ static void vHWOutSet( OUT_NAME_TYPE out_name )
+ {
+    TIM_OC_InitTypeDef sConfigOC = {0};
 
-/*
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;
+    sConfigOC.Pulse = (uint32_t )( (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+    HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
+    HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
+    HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+    return;
+ }
+ /*
+  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
+  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
+  */
+ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize)
+ {
+ 	uint32_t temp;
+ 	for (uint8_t i=0; i<Size; i++ )
+ 	{
+ 		temp = 0;
+ 		for (uint8_t j=0;j < ADC_FRAME_SIZE; j++ )
+ 		{
+ 		  temp += InData[ InIndex + i + j * BufferSize ];
+ 		}
+ 		OutData[ OutIndex + i ] = temp / ADC_FRAME_SIZE;
+ 	}
+ 	return;
+ }
+ /*
+  *
+  */
+ static float fGetDataFromRaw( float fraw, PDM_OUTPUT_TYPE xOut)
+ {
+ 	float fRes;
+ 	for (uint8_t r = 0; r < ( KOOF_COUNT -1 ); r++)
+     {
+ 		if (( fraw < xOut.CSC[r].data ) || (r == (KOOF_COUNT -2)) )
+ 		{
+ 			fRes =  fraw * xOut.CSC[r].k;
+ 			fRes += xOut.CSC[r].b ;
+ 			fRes *= fraw/RR;
+ 			break;
+ 		}
+ 	 }
+ 	return ( fRes );
+ }
+ /*
+  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
+  */
+ static void vDataConvertToFloat( void)
+ {
+ #ifdef PDM
+ 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
+ 	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
+ 	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
+ 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
+ 	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
+ 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
+ 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
+ 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+ #endif
+ #ifdef PCM
+      // Полчени из буфера ADC 1 данныех каналов АЦП  7-13
+          vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 7U, 7U , ADC1_CHANNELS);
+          // Полчени из буфера ADC 1 данныех термодатчика
+          vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
+          // Полчени из буфера ADC 2 данныех каналов АЦП 1-6
+          vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 0U, 6U , ADC2_CHANNELS);
+          // Полчени из буфера ADC 3 данныех каналов каналов тока
+          vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, ucGetDOUTGroup()*4 , 4U , ADC3_CHANNELS);
+ #endif
+     return;
+ }
+ /*
  *
  */
+  static void vOutControlFSM(void)
+  {
+     for (uint8_t i = 0U; i < OUT_COUNT; i++ )
+  	{
+     	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
+     	{
+     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
+ 			{
+     	      if  (HAL_GPIO_ReadPin(out[i].OutGPIOx, out[i].OutGPIO_Pin) == GPIO_PIN_SET)
+     	      {
+     	    	 out[i].PWM_err_counter ++;
+     	      }
+     	      if  (out[i].PWM_err_counter < (uint16_t)(out[i].PWM_Freg / 30) )
+     	      {
+     	    		 fCurrent = out[i].current;
+     	      }
+ 			}
+     	    else
+     	    {
+     	    	 out[i].PWM_err_counter = 0;
+     	    }
+  			switch (out[i].SysReg & FSM_MASK )
+  			{
+  				case FSM_OFF_STATE : //Состония входа - выключен
+  					out[i].current 	   		 = 0U;
+  					out[i].restart_timer   	 = 0U;
+  					RESET_FLAG(i,ERROR_MASK);
+  					out[i].soft_start_timer  = 0U;
+  					break;
+  				case FSM_ON_PROCESS: //Состояния влючения
+  					out[i].restart_timer++;
+  					out[i].soft_start_timer++;
+  					/*if (out[i].soft_start_timer !=0)
+  					{
+  						if  ( fCurrent  > out[i].power )
+  						{
+  							vGotoRestartState(i,fCurrent);
+  							break;
+  						}
+  						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
+  						{
+  						 		vHWOutSet(i,MAX_POWER);
+  						 		out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+  						}
+  						else
+  						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
+  						 		uint8_t ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
+  						 		if (ucCurrentPower  > MAX_POWER)
+  						 		{
+  						 			ucCurrentPower = MAX_POWER;
+  						 		}
+  						 		vHWOutSet( i, ucCurrentPower );
+  						 }
+  					}
+  					else*/
+  					{
 
+  						 if ( out[i].restart_timer  < 2 )
+  						 {
+  							 break;
+  						 }
+  						 if  ( fCurrent  > out[ i ].overload_power )
+  						 {
+  						 	vGotoRestartState(i,fCurrent);
+  						 	break;
+  						 }
+  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
+  						 {
+  							SET_STATE_FLAG(i, FSM_ON_STATE );
+  						 }
+  					}
+  					out[i].current = fCurrent;
+  					break;
+  				case FSM_ON_STATE:  // Состояние входа - включен
+  					if  (fCurrent  > out[ i ].power  )
+  					{
+  						vGotoRestartState( i, fCurrent );
+  						break;
+  					}
+  					RESET_FLAG(i,ERROR_MASK);
+  					if (fCurrent  < CIRCUT_BREAK_CURRENT)
+  					{
+  						SET_ERROR_FLAG(i,OPEN_LOAD_ERROR);
+  					}
+  					out[i].current = fCurrent;
+  					break;
+  				case FSM_RESTART_STATE:
+  					out[ i ].restart_timer++;
+  					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
+  					{
+  						SET_STATE_FLAG(i, FSM_ON_PROCESS );
+  						out[ i ].restart_timer =0;
+  						RESET_FLAG(i,ERROR_MASK);
+  						if ( out[i].error_counter !=0 )
+  						{
+  							out[i].error_counter--;
+  						}
+  					}
+  					break;
+  				case FSM_ERROR_STATE:
+  				default:
+  					break;
+  			}
+  			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
+  			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
 
+  				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
+  				{
+  					SET_STATE_FLAG(i, FSM_OFF_STATE );
+  				 	vHWOutOFF(i);
+  				}
+  				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
+  				{
+  					SET_STATE_FLAG(i, FSM_ON_PROCESS );
+  				 	vHWOutSet( i );
+  				}
+  				RESET_FLAG(i,CONTROL_FLAGS );
+    		 }
+  	}
+  }
 /*************************************** PUBLIC FUNCTION************************************************/
 
 void vOutInit( void )
@@ -476,14 +473,7 @@ void vOutInit( void )
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
 }
-/*
- *
- */
-void vHWOutOFF( uint8_t ucChannel )
-{
-	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
-	return;
-}
+
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
@@ -685,239 +675,10 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
    }
 	return (  error );
 }
-/*
- *
- */
-float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
-{
-	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
-}
-/*
- * Напряжение на аналогвом входе
- */
-float fAinGetState ( AIN_NAME_TYPE channel )
-{
- return  ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
-}
-/*
- *
- */
-float fBatteryGet ( void )
-{
-	 return (float)muRawVData[BAT_INDEX] * AINCOOF1 + INDIOD;
-}
-/*
- *
- */
-
-float fTemperatureGet ( uint8_t chanel )
-{
-	return ((float)muRawVData[TEMP_INDEX ] * K - 0.76) /0.0025 + 25;
-}
-/*
- *
- */
-void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
-{
-	if ((Freq > 0) && (Freq < 2000))
-	{
-       switch (groupe)
-       {
-           case CH5_6_9_10:
-               out[ 4 ].ptim->Init.Prescaler =  168000 / Freq;
-               HAL_TIM_Base_Init(out[ 4 ].ptim);
-               out[ 4 ].PWM_Freg =Freq;
-               out[ 5 ].PWM_Freg =Freq;
-               out[ 8 ].PWM_Freg =Freq;
-               out[ 9 ].PWM_Freg =Freq;
-               break;
-           case CH11_12_16:
-               out[ 10 ].ptim->Init.Prescaler = 84000 / Freq;
-               HAL_TIM_Base_Init(out[ 10 ].ptim);
-               out[ 10 ].PWM_Freg =Freq;
-               out[ 11 ].PWM_Freg =Freq;
-               out[ 15 ].PWM_Freg =Freq;
-               break;
-           case CH4_15:
-               out[ 3 ].ptim->Init.Prescaler = 84000 / Freq;
-               HAL_TIM_Base_Init(out[ 3 ].ptim);
-               out[ 3 ].PWM_Freg =Freq;
-               out[ 14 ].PWM_Freg =Freq;
-               break;
-           case CH1_2_8_20:
-               out[ 0 ].ptim->Init.Prescaler = 84000 / Freq;
-               HAL_TIM_Base_Init(out[ 0 ].ptim);
-               out[ 0 ].PWM_Freg =Freq;
-               out[ 1 ].PWM_Freg =Freq;
-               out[ 7 ].PWM_Freg =Freq;
-               out[ 19 ].PWM_Freg =Freq;
-               break;
-           case CH13_14_17_18:
-               out[ 12 ].ptim->Init.Prescaler = 168000 / Freq;
-               HAL_TIM_Base_Init(out[ 12 ].ptim);
-               out[ 12 ].PWM_Freg =Freq;
-               out[ 13 ].PWM_Freg =Freq;
-               out[ 16 ].PWM_Freg =Freq;
-               out[ 17 ].PWM_Freg =Freq;
-               break;
-           case CH7_19:
-               out[ 6 ].ptim->Init.Prescaler = 84000 / Freq;
-               HAL_TIM_Base_Init(out[ 6 ].ptim);
-               out[ 6 ].PWM_Freg =Freq;
-               out[ 18 ].PWM_Freg =Freq;
-               break;
-           default:
-               break;
-       }
-	}
-   return;
-}
-/*
- *
- */
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin )
-{
-	volatile uint8_t j;
-	if ( out_name < OUT_COUNT )
-	{
-		out[out_name].ptim 			   = ptim;
-		out[out_name].channel 		   = uiChannel;
-		out[out_name].GPIOx 		   = EnablePort;
-		out[out_name].GPIO_Pin		   = EnablePin;
-		out[out_name].OutGPIOx 		   = OutPort;
-		out[out_name].OutGPIO_Pin	   = OutPin;
-		out[out_name].error_counter    = 0U;
-		out[out_name].soft_start_timer = 0;
-		out[out_name].current 		   = 0.0;
-		out[out_name].PWM_err_counter  = 0;
-		RESET_FLAG(out_name,CONTROL_FLAGS );
-		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
-		if (out_name < OUT_HPOWER_COUNT)
-		{
-			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
-		}
-		else
-		{
-			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR);
-		}
-		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
-		vOutSetPWM(out_name, DEFAULT_PWM);
-		RESET_FLAG(out_name,ENABLE_FLAG);
-		RESET_FLAG(out_name, ERROR_MASK);
-
-		for (j=0; j< KOOF_COUNT - 1 ; j++)
-		{
-			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
-			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
-			{
-				vABLineKoofFinde(&out[out_name].CSC[j].k, &out[out_name].CSC[j].b,
-								CurSensData[out_name][j].Data, CurSensData[out_name][j+1].Data,
-								CurSensData[out_name][j].KOOF, CurSensData[out_name][j+1].KOOF);
-				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-			}
-		}
-		TIM_OC_InitTypeDef sConfigOC = {0U};
-		sConfigOC.OCMode = TIM_OCMODE_PWM1;
-		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM );
-		sConfigOC.OCPolarity 	= TIM_OCPOLARITY_HIGH;
-		sConfigOC.OCNPolarity 	= TIM_OCNPOLARITY_HIGH;
-		sConfigOC.OCFastMode 	= TIM_OCFAST_DISABLE;
-		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
-		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
-		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
-	}
-	return;
-}
-
-/*
- *
- */
-static void vHWOutSet( OUT_NAME_TYPE out_name )
-{
-   TIM_OC_InitTypeDef sConfigOC = {0};
-
-   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   sConfigOC.Pulse = (uint32_t )( (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
-   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
-   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
-   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
-   return;
-}
-/*
- * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
- * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
- */
-static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize)
-{
-	uint32_t temp;
-	for (uint8_t i=0; i<Size; i++ )
-	{
-		temp = 0;
-		for (uint8_t j=0;j < ADC_FRAME_SIZE; j++ )
-		{
-		  temp += InData[ InIndex + i + j * BufferSize ];
-		}
-		OutData[ OutIndex + i ] = temp / ADC_FRAME_SIZE;
-	}
-	return;
-}
-
-/*
- *
- */
-static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
-{
-	float fRes;
-	for (uint8_t r = 0; r < ( KOOF_COUNT -1 ); r++)
-    {
-		if (( fraw < xOut.CSC[r].data ) || (r == (KOOF_COUNT -2)) )
-		{
-			fRes =  fraw * xOut.CSC[r].k;
-			fRes += xOut.CSC[r].b ;
-			fRes *= fraw/RR;
-			break;
-		}
-	 }
-	return ( fRes );
-}
-/*
- *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
- */
-static void vDataConvertToFloat( void)
-{
-#ifdef PDM
-	 // Полчени из буфера ADC 1 данныех каналов каналов тока 7-8
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 6U, 2U , ADC1_CHANNELS);
-	 // Полчени из буфера ADC 1 данныех каналов каналов тока 19-20
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawCurData, 2U, 18U, 2U , ADC1_CHANNELS);
-	 // Полчени из буфера ADC 1 данныех каналов каналов AIN
-	 vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 4U, 0U, 5U , ADC1_CHANNELS);
-	 // Полчени из буфера ADC 2 данныех каналов каналов тока 4-6
-	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 3U, 3U , ADC2_CHANNELS);
-	 // Полчени из буфера ADC 2 данныех каналов каналов тока 9-12
-	 vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 8U, 4U , ADC2_CHANNELS);
-	 // Полчени из буфера ADC 3 данныех каналов каналов тока 1-3
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
-	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
-	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
-#endif
-#ifdef PCM
-     // Полчени из буфера ADC 1 данныех каналов АЦП  7-13
-         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 7U, 7U , ADC1_CHANNELS);
-         // Полчени из буфера ADC 1 данныех термодатчика
-         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
-         // Полчени из буфера ADC 2 данныех каналов АЦП 1-6
-         vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 0U, 6U , ADC2_CHANNELS);
-         // Полчени из буфера ADC 3 данныех каналов каналов тока
-         vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, ucGetDOUTGroup()*4 , 4U , ADC3_CHANNELS);
-#endif
 
 
-         return;
-}
+
+
 /*
  *
  */
@@ -928,168 +689,6 @@ static void vDataConvertToFloat( void)
    xEventGroupSetBitsFromISR( pADCEvent, adc_number, &xHigherPriorityTaskWoken );
    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
    return;
- }
-/*
- *
- */
- static void vGotoRestartState( uint8_t ucChannel, float fCurr )
- {
-	 if (out[ ucChannel ].error_counter == 1)
-	 {
-		 SET_STATE_FLAG( ucChannel, FSM_ERROR_STATE );
-		 RESET_FLAG(ucChannel,CONTROL_FLAGS );
-	 }
-	 else
-	 {
-		 SET_STATE_FLAG( ucChannel, FSM_RESTART_STATE);
-	 }
-	 if  ( IS_FLAG_SET(ucChannel, FSM_ERROR_STATE ) &&  IS_FLAG_RESET( ucChannel, RESETTEBLE_FLAG ) )
-	 {
-		 RESET_FLAG(ucChannel,ENABLE_FLAG);
-     }
-	 SET_ERROR_FLAG( ucChannel, OVERLOAD_ERROR);
-	 out[ ucChannel ].restart_timer = 0U;
-	 out[ ucChannel ].soft_start_timer = 0;
-	 vHWOutOFF(ucChannel);
-	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_HOVERLOAD_POWER : MAX_LOVERLOAD_POWER ) )
-	 {
-		 out[ucChannel].current = fCurr;
-	 }
-
- }
- /*
-  *
-  */
- static void vOutControlFSM(void)
- {
-    for (uint8_t i = 0U; i < OUT_COUNT; i++ )
- 	{
-    	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
-    	{
-
-
-    	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
-    	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
-			{
-    	      if  (HAL_GPIO_ReadPin(out[i].OutGPIOx, out[i].OutGPIO_Pin) == GPIO_PIN_SET)
-    	      {
-    	    	 out[i].PWM_err_counter ++;
-    	      }
-    	      if  (out[i].PWM_err_counter < (uint16_t)(out[i].PWM_Freg / 30) )
-    	      {
-    	    		 fCurrent = out[i].current;
-    	      }
-			}
-    	    else
-    	    {
-    	    	 out[i].PWM_err_counter = 0;
-    	    }
- 			switch (out[i].SysReg & FSM_MASK )
- 			{
- 				case FSM_OFF_STATE : //Состония входа - выключен
- 					out[i].current 	   		 = 0U;
- 					out[i].restart_timer   	 = 0U;
- 					RESET_FLAG(i,ERROR_MASK);
- 					out[i].soft_start_timer  = 0U;
- 					break;
- 				case FSM_ON_PROCESS: //Состояния влючения
-
- 					out[i].restart_timer++;
- 					out[i].soft_start_timer++;
- 					/*if (out[i].soft_start_timer !=0)
- 					{
- 						if  ( fCurrent  > out[i].power )
- 						{
- 							vGotoRestartState(i,fCurrent);
- 							break;
- 						}
- 						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
- 						{
- 						 		vHWOutSet(i,MAX_POWER);
- 						 		out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
- 						}
- 						else
- 						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
- 						 		uint8_t ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
- 						 		if (ucCurrentPower  > MAX_POWER)
- 						 		{
- 						 			ucCurrentPower = MAX_POWER;
- 						 		}
- 						 		vHWOutSet( i, ucCurrentPower );
- 						 }
- 					}
- 					else*/
- 					{
-
- 						 if ( out[i].restart_timer  < 2 )
- 						 {
- 							 break;
- 						 }
- 						 if  ( fCurrent  > out[ i ].overload_power )
- 						 {
- 						 	vGotoRestartState(i,fCurrent);
- 						 	break;
- 						 }
- 						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
- 						 {
- 							SET_STATE_FLAG(i, FSM_ON_STATE );
- 						 }
- 					}
- 					out[i].current = fCurrent;
- 					break;
- 				case FSM_ON_STATE:  // Состояние входа - включен
- 					if  (fCurrent  > out[ i ].power  )
- 					{
- 						vGotoRestartState( i, fCurrent );
- 						break;
- 					}
- 					RESET_FLAG(i,ERROR_MASK);
- 					if (fCurrent  < CIRCUT_BREAK_CURRENT)
- 					{
- 						SET_ERROR_FLAG(i,OPEN_LOAD_ERROR);
- 					}
- 					out[i].current = fCurrent;
- 					break;
- 				case FSM_RESTART_STATE:
- 					out[ i ].restart_timer++;
- 					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
- 					{
- 						SET_STATE_FLAG(i, FSM_ON_PROCESS );
- 						out[ i ].restart_timer =0;
- 						RESET_FLAG(i,ERROR_MASK);
- 						if ( out[i].error_counter !=0 )
- 						{
- 							out[i].error_counter--;
- 						}
- 					}
- 					break;
- 				case FSM_ERROR_STATE:
- 				default:
- 					break;
- 			}
- 			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
- 			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
-
- 				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
- 				{
- 					SET_STATE_FLAG(i, FSM_OFF_STATE );
- 				 	vHWOutOFF(i);
- 				}
- 				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
- 				{
- 					SET_STATE_FLAG(i, FSM_ON_PROCESS );
- 				 	vHWOutSet( i );
- 				}
- 				RESET_FLAG(i,CONTROL_FLAGS );
-   		 }
- 	}
- }
-
- static void vADCEnable(ADC_HandleTypeDef* hadc1,ADC_HandleTypeDef* hadc2,ADC_HandleTypeDef* hadc3)
- {
-	     __HAL_ADC_ENABLE(hadc1);
-	     __HAL_ADC_ENABLE(hadc2);
-	     __HAL_ADC_ENABLE(hadc3);
  }
  /*
   *
@@ -1106,13 +705,11 @@ static void vDataConvertToFloat( void)
    TickType_t xLastWakeTime;
    const TickType_t xPeriod = pdMS_TO_TICKS( 1 );
    xLastWakeTime = xTaskGetTickCount();
-
    HAL_TIM_Base_Start(&htim6);
    for(;;)
    {
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-	   ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
@@ -1123,12 +720,111 @@ static void vDataConvertToFloat( void)
 #endif
 	   vDataConvertToFloat();
 	   vOutControlFSM();
-	   vADCEnable(&hadc1,&hadc2,&hadc3); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
+	   vADCEnable(); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
 
    }
    /* USER CODE END vADCTask */
  }
-
-
-
+ /*
+  *
+  */
+ void vHWOutOFF( uint8_t ucChannel )
+ {
+ 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+ 	return;
+ }
+ /********************************API FUNCTION**************************************************************************************/
+ /*
+  *
+  */
+ void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
+ {
+ 	if ((Freq > 0) && (Freq < 2000))
+ 	{
+        switch (groupe)
+        {
+            case CH5_6_9_10:
+                out[ OUT_5 ].ptim->Init.Prescaler =  168000 / Freq;
+                HAL_TIM_Base_Init(out[ 4 ].ptim);
+                out[ OUT_5 ].PWM_Freg =Freq;
+                out[ OUT_6 ].PWM_Freg =Freq;
+                out[ OUT_7 ].PWM_Freg =Freq;
+                out[ OUT_8 ].PWM_Freg =Freq;
+                break;
+            case CH11_12_16:
+                out[ OUT_11 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ 10 ].ptim);
+                out[ OUT_11 ].PWM_Freg =Freq;
+                out[ OUT_12 ].PWM_Freg =Freq;
+                out[ OUT_16 ].PWM_Freg =Freq;
+                break;
+            case CH4_15:
+                out[ OUT_4 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ 3 ].ptim);
+                out[ OUT_4 ].PWM_Freg =Freq;
+                out[ OUT_15 ].PWM_Freg =Freq;
+                break;
+            case CH1_2_8_20:
+                out[ 0 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ 0 ].ptim);
+                out[ 0 ].PWM_Freg =Freq;
+                out[ 1 ].PWM_Freg =Freq;
+                out[ 7 ].PWM_Freg =Freq;
+                out[ 19 ].PWM_Freg =Freq;
+                break;
+            case CH13_14_17_18:
+                out[ 12 ].ptim->Init.Prescaler = 168000 / Freq;
+                HAL_TIM_Base_Init(out[ 12 ].ptim);
+                out[ 12 ].PWM_Freg =Freq;
+                out[ 13 ].PWM_Freg =Freq;
+                out[ 16 ].PWM_Freg =Freq;
+                out[ 17 ].PWM_Freg =Freq;
+                break;
+            case CH7_19:
+                out[ 6 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ 6 ].ptim);
+                out[ 6 ].PWM_Freg =Freq;
+                out[ 18 ].PWM_Freg =Freq;
+                break;
+            default:
+                break;
+        }
+ 	}
+    return;
+ }
+ /*
+  *
+  */
+ float fTemperatureGet ( uint8_t chanel )
+ {
+ 	return ((float)muRawVData[TEMP_INDEX ] * K - 0.76) /0.0025 + 25;
+ }
+ /*
+  *
+  */
+ float fBatteryGet ( void )
+ {
+ 	 return (float)muRawVData[BAT_INDEX] * AINCOOF1 + INDIOD;
+ }
+ /*
+  *
+  */
+ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
+ {
+ 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
+ }
+ /*
+  * Напряжение на аналогвом входе
+  */
+ float fAinGetState ( AIN_NAME_t channel )
+ {
+  return  ( (channel < AIN_NUMBER) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
+ }
+ /*
+  *
+  */
+ float fAinGetCalState ( AIN_NAME_t channel )
+ {
+   return fGetAinCalData( channel , fAinGetCalState ( channel ));
+ }

@@ -8,14 +8,14 @@
 #include "pdm_adc.h"
 
 
-static AIN_DATA_t xAinData[AIN_COUNT] 						 __SECTION(RAM_SECTION_CCMRAM);
+static AIN_DATA_t xAinData[AIN_NUMBER] 						 __SECTION(RAM_SECTION_CCMRAM);
 static LIN_COOF   xKoofData[ MAX_COOF_COUNT]   __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t usCurMaxIndex								 __SECTION(RAM_SECTION_CCMRAM);
 
 
 void vAINInit()
 {
-	for (uint8_t i = 0; i < AIN_COUNT; i++)
+	for (uint8_t i = 0; i < AIN_NUMBER; i++)
 	{
 		xAinData[i].coof_count = 0U;
 		xAinData[i].index = 0U;
@@ -45,7 +45,7 @@ static float fConvertCalData( AIN_NAME_t name, float in_data )
 float fGetAinCalData( AIN_NAME_t name, float raw_data)
 {
 	 float out_data = 0U;
-	  if ( name <  AIN_COUNT )
+	  if ( name < AIN_NUMBER )
 	 {
 		  if ( xAinData[ name ].coof_count == 0 )
 		   {
