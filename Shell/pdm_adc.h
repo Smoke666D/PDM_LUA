@@ -76,5 +76,6 @@ CAL_ERROR_CODE  eSetAinCalPoint(AIN_NAME_t name, POINT_t * cal_point, uint16_t P
 CAL_ERROR_CODE  eSetAinCal(AIN_NAME_t name, POINT_t * cal_point, uint8_t cal_point_count);
 void vABLineKoofFinde(float * k, float * b,  float x1, float x2, float y1, float y2);
 float fGetAinCalData( AIN_NAME_t name, float raw_data);
+void vAINInit();
 
 #endif /* PDM_ADC_H_ */

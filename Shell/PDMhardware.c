@@ -18,27 +18,24 @@ extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim12;
 extern TIM_HandleTypeDef htim6;
 
-volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U };   //ADC1 input data buffer
-volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
-volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
-
 
 #define TEMP_DATA    5
 
-
-PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
+/***************************** PRIVET VARIABLE******************************************************************/
+static volatile int16_t            ADC1_IN_Buffer[ADC_FRAME_SIZE*ADC1_CHANNELS] = { 0U };   //ADC1 input data buffer
+static volatile int16_t            ADC2_IN_Buffer[ADC_FRAME_SIZE*ADC2_CHANNELS] = { 0U };   //ADC2 input data buffer
+static volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U };   //ADC3 input data buffer
+static PDM_OUTPUT_TYPE out[OUT_COUNT]  				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_COUNT + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
-
-
-#ifdef REV_2
-
-
-
-static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+#ifdef PCM
+static CS_type DOUTGROUP = CS_1;
+#endif
+/***************************** PRIVET CONST******************************************************************/
+static const KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
@@ -59,19 +56,27 @@ static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O
 										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										};
-#endif
-
+/**************************************** PRIVER FUNCTION***********************************************/
 #ifdef PCM
-
-
-CS_type DOUTGROUP = CS_1;
-uint8_t ucGetDOUTGroup()
+static uint8_t ucGetDOUTGroup();
+static void vGrpopFSM();
+#endif
+static void vHWOutSet( OUT_NAME_TYPE out_name);
+static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
+static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
+static void ADC_STOP();
+static  HAL_StatusTypeDef DMA_Abort(DMA_HandleTypeDef *hdma);
+static void ADC_DMAError(DMA_HandleTypeDef *hdma);
+static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma);
+#define HAL_TIMEOUT_DMA_ABORT    5U
+#ifdef PCM
+/
+static uint8_t ucGetDOUTGroup()
 {
     return ((uint8_t)DOUTGROUP);
-
 }
 
-void vGrpopFSM()
+static void vGrpopFSM()
 {
     switch (DOUTGROUP)
     {
@@ -119,17 +124,286 @@ void vGrpopFSM()
     return;
 }
 #endif
+/*
+ *
+*/
+/*
+ *
+ */
+ static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
+ {
+   CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
+   if(HAL_IS_BIT_SET(hadc->Instance->CR2, ADC_CR2_ADON))
+   {
+     ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR, HAL_ADC_STATE_REG_BUSY);
+     __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
+     __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
+     hadc->Instance->CR2 |= ADC_CR2_DMA;
+
+     DMA_Base_Registers *regs = (DMA_Base_Registers *)hadc->DMA_Handle->StreamBaseAddress;
 
 
-static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power);
-static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
-void vHWOutOFF( uint8_t ucChannel );
-static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
-static void ADC_Stop_DMA(ADC_HandleTypeDef* hadc);
-static void ADC_STOP();
-void vOutEnable(OUT_NAME_TYPE out_name);
+      if(HAL_DMA_STATE_READY == hadc->DMA_Handle->State)
+      {
+        	hadc->DMA_Handle->State = HAL_DMA_STATE_BUSY;
+        	hadc->DMA_Handle->ErrorCode = HAL_DMA_ERROR_NONE;
+            /* Clear DBM bit */
+        	hadc->DMA_Handle->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
+        	hadc->DMA_Handle->Instance->NDTR = Length;
+        	hadc->DMA_Handle->Instance->PAR = &hadc->Instance->DR;
+        	hadc->DMA_Handle->Instance->M0AR = pData;
+        	regs->IFCR = 0x3FU << hadc->DMA_Handle->StreamIndex;
+        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
+        	__HAL_DMA_ENABLE(hadc->DMA_Handle);
+        }
+     hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
+   }
+   else
+   {
+     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
+     SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
+   }
+ }
+ static void ADC_STOP()
+ {
+	 __HAL_ADC_DISABLE(&hadc1);
+	 __HAL_ADC_DISABLE(&hadc2);
+	 __HAL_ADC_DISABLE(&hadc3);
+	 hadc1.Instance->CR2 &= ~ADC_CR2_DMA;
+	 hadc2.Instance->CR2 &= ~ADC_CR2_DMA;
+	 hadc3.Instance->CR2 &= ~ADC_CR2_DMA;
+	 if (hadc1.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+	 {
+	     if (DMA_Abort(hadc1.DMA_Handle) != HAL_OK)
+	     {
+	          SET_BIT(hadc1.State, HAL_ADC_STATE_ERROR_DMA);
+	     }
+	 }
+	 if (hadc2.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+     {
+		 if (DMA_Abort(hadc2.DMA_Handle) != HAL_OK)
+		 {
+		     SET_BIT(hadc2.State, HAL_ADC_STATE_ERROR_DMA);
+		 }
+	 }
+	 if (hadc3.DMA_Handle->State == HAL_DMA_STATE_BUSY)
+	  {
+		 if (DMA_Abort(hadc3.DMA_Handle) != HAL_OK)
+		 {
+		     SET_BIT(hadc3.State, HAL_ADC_STATE_ERROR_DMA);
+		 }
+	  }
+	  __HAL_ADC_DISABLE_IT(&hadc1, ADC_IT_OVR);
+	  __HAL_ADC_DISABLE_IT(&hadc2, ADC_IT_OVR);
+	  __HAL_ADC_DISABLE_IT(&hadc3, ADC_IT_OVR);
+	  ADC_STATE_CLR_SET(hadc1.State,
+	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	                        HAL_ADC_STATE_READY);
+	  ADC_STATE_CLR_SET(hadc2.State,
+	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	      	                        HAL_ADC_STATE_READY);
+	 ADC_STATE_CLR_SET(hadc3.State,
+	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+	      	                        HAL_ADC_STATE_READY);
+	 return;
+ }
+ /*
+   *
+   */
 
+ static  HAL_StatusTypeDef DMA_Abort(DMA_HandleTypeDef *hdma)
+  {
+    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;/* calculate DMA base and stream number */
+    uint32_t tickstart = HAL_GetTick();
+    if(hdma->State != HAL_DMA_STATE_BUSY)
+    {
+      hdma->ErrorCode = HAL_DMA_ERROR_NO_XFER;
+      return HAL_ERROR;
+    }
+    else
+    {
+      /* Disable all the transfer interrupts */
+      hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
+      hdma->Instance->FCR &= ~(DMA_IT_FE);
+      __HAL_DMA_DISABLE(hdma);/* Disable the stream */
+      while((hdma->Instance->CR & DMA_SxCR_EN) != RESET)/* Check if the DMA Stream is effectively disabled */
+      {
 
+        if((HAL_GetTick() - tickstart ) > HAL_TIMEOUT_DMA_ABORT)/* Check for the Timeout */
+        {
+          hdma->ErrorCode = HAL_DMA_ERROR_TIMEOUT; /* Update error code */
+          hdma->State = HAL_DMA_STATE_TIMEOUT;/* Change the DMA state */
+          return HAL_TIMEOUT;
+        }
+      }
+      regs->IFCR = 0x3FU << hdma->StreamIndex; /* Clear all interrupt flags at correct offset within the register */
+      hdma->State = HAL_DMA_STATE_READY; /* Change the DMA state*/
+    }
+    return HAL_OK;
+  }
+ /*
+  *
+  */
+  static void ADC_DMAError(DMA_HandleTypeDef *hdma)
+  {
+    ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+    hadc->State= HAL_ADC_STATE_ERROR_DMA;
+    hadc->ErrorCode |= HAL_ADC_ERROR_DMA;
+  }
+
+  static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma)
+  {
+    /* Retrieve ADC handle corresponding to current DMA handle */
+    ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+    /* Update state machine on conversion status if not in error state */
+    if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA))
+    {
+      SET_BIT(hadc->State, HAL_ADC_STATE_REG_EOC);/* Update ADC state machine */
+      /* Determine whether any further conversion upcoming on group regular   */
+      /* by external trigger, continuous mode or scan sequence on going.      */
+      /* Note: On STM32F4, there is no independent flag of end of sequence.   */
+      /*       The test of scan sequence on going is done either with scan    */
+      /*       sequence disabled or with end of conversion flag set to        */
+      /*       of end of sequence.                                            */
+      if(ADC_IS_SOFTWARE_START_REGULAR(hadc)                   &&
+         (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
+          HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)  )   )
+      {
+        /* Disable ADC end of single conversion interrupt on group regular */
+        /* Note: Overrun interrupt was enabled with EOC interrupt in          */
+        /* HAL_ADC_Start_IT(), but is not disabled here because can be used   */
+        /* by overrun IRQ process below.                                      */
+        __HAL_ADC_DISABLE_IT(hadc, ADC_IT_EOC);
+        CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);/* Set ADC state */
+        if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_INJ_BUSY))
+        {
+          SET_BIT(hadc->State, HAL_ADC_STATE_READY);
+        }
+      }
+    }
+    else /* DMA and-or internal error occurred */
+    {
+      if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
+      {
+      	HAL_ADC_ErrorCallback(hadc);/* Call HAL ADC Error Callback function */
+      }
+  	else
+  	{
+  		ADC_DMAError(hdma);/* Call DMA error callback */
+      }
+    }
+  }
+/*
+ *
+ */
+ void DMA_IRQHandler(DMA_HandleTypeDef *hdma)
+ {
+    uint32_t tmpisr;
+    __IO uint32_t count = 0U;
+    uint32_t timeout = SystemCoreClock / 9600U;
+
+    /* calculate DMA base and stream number */
+    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
+
+    tmpisr = regs->ISR;
+
+    /* Transfer Error Interrupt management ***************************************/
+    if ((tmpisr & (DMA_FLAG_TEIF0_4 << hdma->StreamIndex)) != RESET)
+    {
+      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET)
+      {
+        /* Disable the transfer error interrupt */
+        hdma->Instance->CR  &= ~(DMA_IT_TE);
+
+        /* Clear the transfer error flag */
+        regs->IFCR = DMA_FLAG_TEIF0_4 << hdma->StreamIndex;
+
+        /* Update error code */
+        hdma->ErrorCode |= HAL_DMA_ERROR_TE;
+      }
+    }
+    /* FIFO Error Interrupt management ******************************************/
+    if ((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
+    {
+      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_FE) != RESET)
+      {
+        regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex; /* Clear the FIFO error flag */
+        hdma->ErrorCode |= HAL_DMA_ERROR_FE; /* Update error code */
+      }
+    }
+    /* Direct Mode Error Interrupt management ***********************************/
+    if ((tmpisr & (DMA_FLAG_DMEIF0_4 << hdma->StreamIndex)) != RESET)
+    {
+      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_DME) != RESET)
+      {
+        /* Clear the direct mode error flag */
+        regs->IFCR = DMA_FLAG_DMEIF0_4 << hdma->StreamIndex;
+
+        /* Update error code */
+        hdma->ErrorCode |= HAL_DMA_ERROR_DME;
+      }
+    }
+
+    /* Transfer Complete Interrupt management ***********************************/
+    if ((tmpisr & (DMA_FLAG_TCIF0_4 << hdma->StreamIndex)) != RESET)
+    {
+      if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TC) != RESET)
+      {
+        /* Clear the transfer complete flag */
+        regs->IFCR = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
+
+        if(HAL_DMA_STATE_ABORT == hdma->State)
+        {
+          /* Disable all the transfer interrupts */
+          hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
+          hdma->Instance->FCR &= ~(DMA_IT_FE);
+
+          /* Clear all interrupt flags at correct offset within the register */
+          regs->IFCR = 0x3FU << hdma->StreamIndex;
+          /* Change the DMA state */
+          hdma->State = HAL_DMA_STATE_READY;
+          return;
+        }
+
+        if(((hdma->Instance->CR) & (uint32_t)(DMA_SxCR_DBM)) != RESET)
+        {
+     	   ADC_DMAConvCplt(hdma);
+
+        }
+        /* Disable the transfer complete interrupt if the DMA mode is not CIRCULAR */
+        else
+        {
+          if((hdma->Instance->CR & DMA_SxCR_CIRC) == RESET)
+          {
+            hdma->Instance->CR  &= ~(DMA_IT_TC);/* Disable the transfer complete interrupt */
+            hdma->State = HAL_DMA_STATE_READY;/* Change the DMA state */
+          }
+          ADC_DMAConvCplt(hdma);
+        }
+      }
+    }
+
+    /* manage error case */
+    if(hdma->ErrorCode != HAL_DMA_ERROR_NONE)
+    {
+      if((hdma->ErrorCode & HAL_DMA_ERROR_TE) != RESET)
+      {
+        hdma->State = HAL_DMA_STATE_ABORT;
+        __HAL_DMA_DISABLE(hdma); /* Disable the stream */
+
+        do
+        {
+          if (++count > timeout)
+          {
+            break;
+          }
+        }
+        while((hdma->Instance->CR & DMA_SxCR_EN) != RESET);
+        hdma->State = HAL_DMA_STATE_READY;/* Change the DMA state */
+      }
+      ADC_DMAConvCplt(hdma);
+    }
+ }
 
 static uint32_t ulRestartTimer()
 {
@@ -140,6 +414,14 @@ static uint32_t ulRestartTimer()
 /*
  *
  */
+
+/*
+ *
+ */
+
+
+/*************************************** PUBLIC FUNCTION************************************************/
+
 void vOutInit( void )
 {
 	//Инициализация портов упраления ключами
@@ -197,7 +479,11 @@ void vOutInit( void )
 /*
  *
  */
-
+void vHWOutOFF( uint8_t ucChannel )
+{
+	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+	return;
+}
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
@@ -259,7 +545,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 			out[out_name].PWM = PWM;
 			if (   IS_FLAG_RESET(out_name, FSM_ERROR_STATE) &&   IS_FLAG_RESET(out_name, FSM_OFF_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
 			{
-				vHWOutSet( out_name, MAX_PWM );
+				vHWOutSet( out_name );
 			}
 		}
 		res = ERROR_OK;
@@ -285,16 +571,13 @@ ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t powe
  */
 void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 {
-	switch (state)
+	if  ( state  == 0 )
 	{
-		case 0:
-			SET_FLAG(out_name, CONTROL_OFF_STATE);
-			break;
-		case 1:
-			SET_FLAG(out_name, CONTROL_ON_STATE);
-			break;
-		default:
-			break;
+		SET_FLAG(out_name, CONTROL_OFF_STATE);
+	}
+	else
+	{
+		SET_FLAG(out_name, CONTROL_ON_STATE);
 	}
 	return;
 }
@@ -304,10 +587,8 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state)
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  )
 {
 	PDM_OUT_STATE_t state = STATE_OUT_OFF;
-
 	if (eChNum < OUT_COUNT)
 	{
-
 		switch ( out[eChNum].SysReg & FSM_MASK )
 		{
 			case  FSM_OFF_STATE:
@@ -375,7 +656,6 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 		{
 			status2 |= channel_state<<(2*(i-10));
 		}
-
 	}
 	*Dout1_10Status = status1;
 	*Dout11_20Status = status2;
@@ -437,8 +717,6 @@ float fTemperatureGet ( uint8_t chanel )
 /*
  *
  */
-
-
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
 {
 	if ((Freq > 0) && (Freq < 2000))
@@ -512,7 +790,6 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].soft_start_timer = 0;
 		out[out_name].current 		   = 0.0;
 		out[out_name].PWM_err_counter  = 0;
-		out[out_name].POWER_SOFT 	   = 0;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
@@ -533,7 +810,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
 			{
-				vABLineKoofFinde(& out[out_name].CSC[j].k, &out[out_name].CSC[j].b,
+				vABLineKoofFinde(&out[out_name].CSC[j].k, &out[out_name].CSC[j].b,
 								CurSensData[out_name][j].Data, CurSensData[out_name][j+1].Data,
 								CurSensData[out_name][j].KOOF, CurSensData[out_name][j+1].KOOF);
 				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
@@ -556,18 +833,17 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 /*
  *
  */
-static void vHWOutSet( OUT_NAME_TYPE out_name, uint8_t power)
+static void vHWOutSet( OUT_NAME_TYPE out_name )
 {
    TIM_OC_InitTypeDef sConfigOC = {0};
 
-	   out[out_name].POWER_SOFT = power;
-	   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	   sConfigOC.Pulse = (uint32_t )( (float)power/ MAX_POWER * (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
-	   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
-	   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
-	   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+   sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   sConfigOC.Pulse = (uint32_t )( (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
+   HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
+   HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
    return;
 }
 /*
@@ -588,15 +864,7 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t In
 	}
 	return;
 }
-/*
-*/
-void vHWOutOFF( uint8_t ucChannel )
-{
-	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
-	out[ucChannel].POWER_SOFT = 0;
 
-	return;
-}
 /*
  *
  */
@@ -810,7 +1078,7 @@ static void vDataConvertToFloat( void)
  				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
  				{
  					SET_STATE_FLAG(i, FSM_ON_PROCESS );
- 				 	vHWOutSet( i , MAX_POWER );
+ 				 	vHWOutSet( i );
  				}
  				RESET_FLAG(i,CONTROL_FLAGS );
    		 }
@@ -863,326 +1131,4 @@ static void vDataConvertToFloat( void)
  }
 
 
-/*
- *
- */
- static void ADC_DMAError(DMA_HandleTypeDef *hdma)
- {
-   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-   hadc->State= HAL_ADC_STATE_ERROR_DMA;
-   hadc->ErrorCode |= HAL_ADC_ERROR_DMA;
- }
 
- static void ADC_DMAConvCplt(DMA_HandleTypeDef *hdma)
- {
-   /* Retrieve ADC handle corresponding to current DMA handle */
-   ADC_HandleTypeDef* hadc = ( ADC_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-
-   /* Update state machine on conversion status if not in error state */
-   if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA))
-   {
-     /* Update ADC state machine */
-     SET_BIT(hadc->State, HAL_ADC_STATE_REG_EOC);
-
-     /* Determine whether any further conversion upcoming on group regular   */
-     /* by external trigger, continuous mode or scan sequence on going.      */
-     /* Note: On STM32F4, there is no independent flag of end of sequence.   */
-     /*       The test of scan sequence on going is done either with scan    */
-     /*       sequence disabled or with end of conversion flag set to        */
-     /*       of end of sequence.                                            */
-     if(ADC_IS_SOFTWARE_START_REGULAR(hadc)                   &&
-        (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
-         HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)  )   )
-     {
-       /* Disable ADC end of single conversion interrupt on group regular */
-       /* Note: Overrun interrupt was enabled with EOC interrupt in          */
-       /* HAL_ADC_Start_IT(), but is not disabled here because can be used   */
-       /* by overrun IRQ process below.                                      */
-       __HAL_ADC_DISABLE_IT(hadc, ADC_IT_EOC);
-
-       /* Set ADC state */
-       CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);
-
-       if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_INJ_BUSY))
-       {
-         SET_BIT(hadc->State, HAL_ADC_STATE_READY);
-       }
-     }
-   }
-   else /* DMA and-or internal error occurred */
-   {
-     if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
-     {
-       /* Call HAL ADC Error Callback function */
-     	HAL_ADC_ErrorCallback(hadc);
-     }
- 	else
- 	{
-       /* Call DMA error callback */
- 		ADC_DMAError(hdma);
-     }
-   }
- }
-
-
-#define HAL_TIMEOUT_DMA_ABORT    5U
- /* Private types -------------------------------------------------------------*/
-
- /*
-  *
-  */
- HAL_StatusTypeDef DMA_Abort(DMA_HandleTypeDef *hdma)
- {
-   /* calculate DMA base and stream number */
-   DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-
-   uint32_t tickstart = HAL_GetTick();
-
-   if(hdma->State != HAL_DMA_STATE_BUSY)
-   {
-     hdma->ErrorCode = HAL_DMA_ERROR_NO_XFER;
-     return HAL_ERROR;
-   }
-   else
-   {
-     /* Disable all the transfer interrupts */
-     hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
-     hdma->Instance->FCR &= ~(DMA_IT_FE);
-
-
-     /* Disable the stream */
-     __HAL_DMA_DISABLE(hdma);
-
-     /* Check if the DMA Stream is effectively disabled */
-     while((hdma->Instance->CR & DMA_SxCR_EN) != RESET)
-     {
-       /* Check for the Timeout */
-       if((HAL_GetTick() - tickstart ) > HAL_TIMEOUT_DMA_ABORT)
-       {
-         /* Update error code */
-         hdma->ErrorCode = HAL_DMA_ERROR_TIMEOUT;
-
-         /* Change the DMA state */
-         hdma->State = HAL_DMA_STATE_TIMEOUT;
-
-         return HAL_TIMEOUT;
-       }
-     }
-
-     /* Clear all interrupt flags at correct offset within the register */
-     regs->IFCR = 0x3FU << hdma->StreamIndex;
-
-     /* Change the DMA state*/
-     hdma->State = HAL_DMA_STATE_READY;
-
-   }
-   return HAL_OK;
- }
-
-
- static void ADC_STOP()
- {
-	   __HAL_ADC_DISABLE(&hadc1);
-	   __HAL_ADC_DISABLE(&hadc2);
-	   __HAL_ADC_DISABLE(&hadc3);
-	   hadc1.Instance->CR2 &= ~ADC_CR2_DMA;
-	   hadc2.Instance->CR2 &= ~ADC_CR2_DMA;
-	   hadc3.Instance->CR2 &= ~ADC_CR2_DMA;
-	   if (hadc1.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-	   {
-	        if (DMA_Abort(hadc1.DMA_Handle) != HAL_OK)
-	        {
-	          SET_BIT(hadc1.State, HAL_ADC_STATE_ERROR_DMA);
-	        }
-	   }
-	   if (hadc2.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-		   {
-		        if (DMA_Abort(hadc2.DMA_Handle) != HAL_OK)
-		        {
-		          SET_BIT(hadc2.State, HAL_ADC_STATE_ERROR_DMA);
-		        }
-		   }
-	   if (hadc3.DMA_Handle->State == HAL_DMA_STATE_BUSY)
-		   {
-		        if (DMA_Abort(hadc3.DMA_Handle) != HAL_OK)
-		        {
-		          SET_BIT(hadc3.State, HAL_ADC_STATE_ERROR_DMA);
-		        }
-		   }
-	   __HAL_ADC_DISABLE_IT(&hadc1, ADC_IT_OVR);
-	   __HAL_ADC_DISABLE_IT(&hadc2, ADC_IT_OVR);
-	   __HAL_ADC_DISABLE_IT(&hadc3, ADC_IT_OVR);
-	      ADC_STATE_CLR_SET(hadc1.State,
-	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	                        HAL_ADC_STATE_READY);
-	      ADC_STATE_CLR_SET(hadc2.State,
-	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	      	                        HAL_ADC_STATE_READY);
-	      ADC_STATE_CLR_SET(hadc3.State,
-	      	                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-	      	                        HAL_ADC_STATE_READY);
-
- }
-
-
-/*
- *
- */
- static void ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
- {
-
-   CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
-   if(HAL_IS_BIT_SET(hadc->Instance->CR2, ADC_CR2_ADON))
-   {
-     ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR, HAL_ADC_STATE_REG_BUSY);
-     __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
-     __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
-     hadc->Instance->CR2 |= ADC_CR2_DMA;
-
-     DMA_Base_Registers *regs = (DMA_Base_Registers *)hadc->DMA_Handle->StreamBaseAddress;
-
-
-      if(HAL_DMA_STATE_READY == hadc->DMA_Handle->State)
-      {
-        	hadc->DMA_Handle->State = HAL_DMA_STATE_BUSY;
-        	hadc->DMA_Handle->ErrorCode = HAL_DMA_ERROR_NONE;
-            /* Clear DBM bit */
-        	hadc->DMA_Handle->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
-        	hadc->DMA_Handle->Instance->NDTR = Length;
-        	hadc->DMA_Handle->Instance->PAR = &hadc->Instance->DR;
-        	hadc->DMA_Handle->Instance->M0AR = pData;
-        	regs->IFCR = 0x3FU << hadc->DMA_Handle->StreamIndex;
-        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
-        	__HAL_DMA_ENABLE(hadc->DMA_Handle);
-        }
-     hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
-   }
-   else
-   {
-     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
-     SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
-   }
-
- }
-
-
- void DMA_IRQHandler(DMA_HandleTypeDef *hdma)
- {
-   uint32_t tmpisr;
-   __IO uint32_t count = 0U;
-   uint32_t timeout = SystemCoreClock / 9600U;
-
-   /* calculate DMA base and stream number */
-   DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-
-   tmpisr = regs->ISR;
-
-   /* Transfer Error Interrupt management ***************************************/
-   if ((tmpisr & (DMA_FLAG_TEIF0_4 << hdma->StreamIndex)) != RESET)
-   {
-     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET)
-     {
-       /* Disable the transfer error interrupt */
-       hdma->Instance->CR  &= ~(DMA_IT_TE);
-
-       /* Clear the transfer error flag */
-       regs->IFCR = DMA_FLAG_TEIF0_4 << hdma->StreamIndex;
-
-       /* Update error code */
-       hdma->ErrorCode |= HAL_DMA_ERROR_TE;
-     }
-   }
-   /* FIFO Error Interrupt management ******************************************/
-   if ((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
-   {
-     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_FE) != RESET)
-     {
-       /* Clear the FIFO error flag */
-       regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex;
-
-       /* Update error code */
-       hdma->ErrorCode |= HAL_DMA_ERROR_FE;
-     }
-   }
-   /* Direct Mode Error Interrupt management ***********************************/
-   if ((tmpisr & (DMA_FLAG_DMEIF0_4 << hdma->StreamIndex)) != RESET)
-   {
-     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_DME) != RESET)
-     {
-       /* Clear the direct mode error flag */
-       regs->IFCR = DMA_FLAG_DMEIF0_4 << hdma->StreamIndex;
-
-       /* Update error code */
-       hdma->ErrorCode |= HAL_DMA_ERROR_DME;
-     }
-   }
-
-   /* Transfer Complete Interrupt management ***********************************/
-   if ((tmpisr & (DMA_FLAG_TCIF0_4 << hdma->StreamIndex)) != RESET)
-   {
-     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TC) != RESET)
-     {
-       /* Clear the transfer complete flag */
-       regs->IFCR = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
-
-       if(HAL_DMA_STATE_ABORT == hdma->State)
-       {
-         /* Disable all the transfer interrupts */
-         hdma->Instance->CR  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
-         hdma->Instance->FCR &= ~(DMA_IT_FE);
-
-         /* Clear all interrupt flags at correct offset within the register */
-         regs->IFCR = 0x3FU << hdma->StreamIndex;
-         /* Change the DMA state */
-         hdma->State = HAL_DMA_STATE_READY;
-         return;
-       }
-
-       if(((hdma->Instance->CR) & (uint32_t)(DMA_SxCR_DBM)) != RESET)
-       {
-    	   ADC_DMAConvCplt(hdma);
-
-       }
-       /* Disable the transfer complete interrupt if the DMA mode is not CIRCULAR */
-       else
-       {
-         if((hdma->Instance->CR & DMA_SxCR_CIRC) == RESET)
-         {
-           /* Disable the transfer complete interrupt */
-           hdma->Instance->CR  &= ~(DMA_IT_TC);
-
-           /* Change the DMA state */
-           hdma->State = HAL_DMA_STATE_READY;
-         }
-         ADC_DMAConvCplt(hdma);
-
-       }
-     }
-   }
-
-   /* manage error case */
-   if(hdma->ErrorCode != HAL_DMA_ERROR_NONE)
-   {
-     if((hdma->ErrorCode & HAL_DMA_ERROR_TE) != RESET)
-     {
-       hdma->State = HAL_DMA_STATE_ABORT;
-
-       /* Disable the stream */
-       __HAL_DMA_DISABLE(hdma);
-
-       do
-       {
-         if (++count > timeout)
-         {
-           break;
-         }
-       }
-       while((hdma->Instance->CR & DMA_SxCR_EN) != RESET);
-
-       /* Change the DMA state */
-       hdma->State = HAL_DMA_STATE_READY;
-
-     }
-     ADC_DMAConvCplt(hdma);
-   }
- }

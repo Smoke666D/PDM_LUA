@@ -188,7 +188,6 @@ typedef struct __packed
    uint8_t error_counter;
    uint8_t PWM;
    uint8_t PWM_err_counter;
-   uint8_t POWER_SOFT;
    uint16_t PWM_Freg;
    uint8_t soft_start_power;
    uint16_t GPIO_Pin;
@@ -276,7 +275,6 @@ typedef enum {
 } ANGLE_TYPE;
 
 
-void vHWOutOFF( uint8_t ucChannel );
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
 void vOutInit( void );

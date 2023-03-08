@@ -35,7 +35,6 @@ static uint32_t dinTaskBuffer[DIN_TASK_STACK_SIZE]                      __sectio
 static uint32_t adcTaskBuffer[ADC_TASK_STACK_SIZE]              		__section( TASK_RAM_SECTION ) = { 0U };
 
 
-
 static StaticTask_t luaTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t canRXTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
 static StaticTask_t canTXTaskControlBlock           __section( TASK_RAM_SECTION ) = { 0U };
@@ -53,79 +52,21 @@ static osThreadId_t adcTaskHandle         	    __section( TASK_RAM_SECTION ) = N
 static osThreadId_t memsTaskHandle         	    __section( TASK_RAM_SECTION ) = NULL;
 
 
-
-
 static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
 static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]    __section( TASK_RAM_SECTION ) = { 0U };
 static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 		__section( TASK_RAM_SECTION ) = { 0U };
-static uint8_t can2TXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]   __section( TASK_RAM_SECTION ) = { 0U };
-static uint8_t can2RXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 	__section( TASK_RAM_SECTION ) = { 0U };
+//static uint8_t can2TXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]   __section( TASK_RAM_SECTION ) = { 0U };
+//static uint8_t can2RXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 	__section( TASK_RAM_SECTION ) = { 0U };
 
 
 static StaticQueue_t xcanRXqueue __section( TASK_RAM_SECTION ) = { 0U };
 static StaticQueue_t xcanTXqueue __section( TASK_RAM_SECTION ) = { 0U };
-static StaticQueue_t xcan2RXqueue __section( TASK_RAM_SECTION ) = { 0U };
-static StaticQueue_t xcan2TXqueue __section( TASK_RAM_SECTION ) = { 0U };
+//static StaticQueue_t xcan2RXqueue __section( TASK_RAM_SECTION ) = { 0U };
+//static StaticQueue_t xcan2TXqueue __section( TASK_RAM_SECTION ) = { 0U };
 /*-------------------------------- Functions ---------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*----------------------- PRIVATE --------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-static void vSYSprintLoadBar ( uint8_t procents )
-{
-  uint8_t i       = 0U;
-  uint8_t wm      = ( uint8_t )( procents / SYS_BAR_LENGTH );
-  char    buf[4U] = { " " };
-  if ( procents > 100U )
-  {
-    wm = 100U / SYS_BAR_LENGTH;
-  }
-  for ( i=0U; i<wm; i++ )
-  {
-    vSYSserial( "█", 1U );
-  }
-  for ( i=wm; i<SYS_BAR_LENGTH; i++ )
-  {
-    vSYSserial( "▒", 1U );
-  }
-  ( void )sprintf( buf, " %d", procents );
-  vSYSserial( buf, strlen( buf ) );
-  vSYSserial( "% ", 2U );
-  return;
-}
-/*----------------------------------------------------------------------------*/
-static void vSYSprintUsedData ( uint16_t usage, uint16_t total )
-{
-  char buf[10U] = { " " };
-  ( void )sprintf( buf, " %u", usage );
-  vSYSserial( buf, strlen( buf ) );
-  vSYSserial( "/", 1U );
-  ( void )sprintf( buf, " %u", total );
-  vSYSserial( " bytes\r\n", 8U );
-  return;
-}
-/*----------------------------------------------------------------------------*/
-static void vSYSprintHeapData ( void )
-{
-  uint16_t usage = xPortGetMinimumEverFreeHeapSize();
-  uint8_t  used  = ( uint8_t )( usage * 100U / configTOTAL_HEAP_SIZE );
-  vSYSserial( "Heap             : ", 19U );
-  vSYSprintLoadBar( used );
-  vSYSprintUsedData( usage, ( uint16_t )( configTOTAL_HEAP_SIZE ) );
-  return;
-}
-/*----------------------------------------------------------------------------*/
-static void vSYSprintTaskData ( TASK_ANALIZE task )
-{
-  uint16_t usage = ( uint16_t )( task.size - uxTaskGetStackHighWaterMark( task.thread ) * 4U );
-  uint8_t  used  = ( uint8_t )( task.size / usage );
-  char*    name  = pcTaskGetName( task.thread );
-  vSYSserial( name, strlen( name ) );
-  vSYSserial( " : ", 3U );
-  vSYSprintLoadBar( used );
-  vSYSprintUsedData( usage, ( uint16_t )( task.size ) );
-  return;
-}
 /*----------------------------------------------------------------------------*/
 static void vSYSaddTask ( osThreadId_t thread, uint32_t size )
 {
@@ -185,18 +126,7 @@ void vSYSeventInit ( void )
 *(osLUAetPDMstatusHandle () ) = xEventGroupCreateStatic(&xPDMstatusEventGroup );
 }
 /*----------------------------------------------------------------------------*/
-void vSYSprintData ( void )
-{
-  vSYSserial( "------------------ freeRTOS ------------------\n", 47U );
-  vSYSprintHeapData();
-  for ( uint8_t i=0U; i<taskNumber; i++ )
-  {
-    vSYSprintTaskData( tasks[i] );
-    vSYSserial( "\n", 1U );
-  }
-  vSYSserial( "----------------------------------------------\n", 47U );
-  return;
-}
+
 /*----------------------------------------------------------------------------*/
 void vSYSgetHeapData ( SYSTEM_DATA* data )
 {

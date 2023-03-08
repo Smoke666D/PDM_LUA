@@ -247,7 +247,6 @@ void vCANinit()
 void vCanTXTask(void *argument)
 {
 	CAN_TX_FRAME_TYPE TXPacket;
-	uint8_t res = 0;
 	while(1)
 	{
 		xQueuePeek( pCanTXHandle, &TXPacket, portMAX_DELAY);
@@ -257,11 +256,11 @@ void vCanTXTask(void *argument)
 			uPDMCanSend(&TXPacket);
 		}
 	}
+	return;
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
-	uint32_t error =hcan->ErrorCode;
 	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR0)
 	{
 		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX0);
