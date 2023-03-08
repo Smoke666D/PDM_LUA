@@ -10,7 +10,7 @@
 
 #include "main.h"
 #include "luatask.h"
-
+#include "pdm_adc.h"
 
 #define REV_2 				1
 
@@ -18,7 +18,7 @@
 #define CS_DISABLE	   		GPIO_PIN_RESET
 
 
-#define AIN_COUNT			3U		//Количесвто аналоговых входов
+
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
@@ -159,13 +159,7 @@ typedef enum {
 	OUT_RESTART,
 } OUT_STATE;
 
-//Коофиценты для расчета функции зависимости тока на выходе ISENSE ключей
-typedef struct
-{
-	float data;
-	float k;
-	float b;
-}   LIN_COOF;
+
 
 typedef struct __packed
 {
@@ -218,11 +212,7 @@ typedef struct __packed
 #define  IS_FLAG_SET(i, flag)  ( ( (out[i].SysReg & flag ) == flag ) )
 #define  IS_FLAG_RESET(i, flag) ( ( (out[i].SysReg & flag ) != flag ) )
 
-typedef struct
-{
-	uint16_t KOOF;
-	float Data;
-} KAL_DATA;
+
 
 
 typedef enum {

@@ -4,6 +4,7 @@
 #include "event_groups.h"
 #include "system.h"
 #include "platform_init.h"
+#include "pdm_math.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -448,15 +449,10 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
 			{
-				float temp;
-				float temp1;
-				float temp2;
+				vABLineKoofFinde(& out[out_name].CSC[j].k, &out[out_name].CSC[j].b,
+								CurSensData[out_name][j].Data, CurSensData[out_name][j+1].Data,
+								CurSensData[out_name][j].KOOF, CurSensData[out_name][j+1].KOOF);
 				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-				out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-				temp =  CurSensData[out_name][j].Data   * CurSensData[out_name][j+1].KOOF;
-				temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
-				temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
-				out[out_name].CSC[j].b = (temp1 - temp)/temp2;
 			}
 		}
 		TIM_OC_InitTypeDef sConfigOC = {0U};

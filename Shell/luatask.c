@@ -19,6 +19,7 @@
 #include "datastorage.h"
 #include "pdm_math.h"
 #include "mems.h"
+#include "pdm_adc.h"
 
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -110,8 +111,35 @@ void vLUArestartPDM()
  *
  */
 
+/*
+ *
+ */
+static int isetAINCal (lua_State *L)
+{
+	uint16_t argument = lua_gettop(L);
+    int res = 0;
+    POINT_t points[2];
+	uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT);
+	if ( ( argument >= FIVE_ARGUMENT ) && ( (argument -1)%2 == 0 ))
+	{
+		if ( eAinCalDataConfig(ucNumber, (argument -1)/2 )== CAL_SUCCESS )
+		{
+			for (uint16_t i = 0; i < (argument - 1); i = i + 2)
+			{
+				points[0].X =  lua_tonumber( L, i + 1);
+				points[0].Y =  lua_tonumber( L, i + 2);
+				points[1].X =  lua_tonumber( L, i + 3);
+				points[1].Y =  lua_tonumber( L, i + 4);
+				eSetAinCalPoint(ucNumber,&points[0], i/2 );
+			}
+			res = 1;
+		}
+	}
+	lua_pushboolean( L, res );
+	return (ONE_RESULT);
 
 
+}
 
 static int iSetPID(lua_State *L)
 {
@@ -596,6 +624,7 @@ void vLuaTask(void *argument)
 	   {
        case LUA_INIT:
     	   vOutInit();
+    	   vAINInit();
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();
@@ -623,7 +652,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"processPID",iProcessPID);
 	   	   lua_register(L1,"setOutSoftStart",iSoftStart);
 	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
-
+	   	   lua_register(L1,"setAINCalTable",isetAINCal);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
@@ -652,7 +681,6 @@ void vLuaTask(void *argument)
            lua_pushnumber( L1, fAinGetState(1));
            lua_pushnumber( L1, fAinGetState(2));
            lua_pushnumber( L1, fBatteryGet() );
-
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_ROLL) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_PITCH) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_YAW) );
