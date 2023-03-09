@@ -188,7 +188,7 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
 				xDinConfig[ucCh].eInputType = DIN_CONFIG_POSITIVE;
 			}
 			GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+			GPIO_InitStruct.Pull = GPIO_PULLUP;
 			HAL_GPIO_Init(xDinPortConfig[ucCh].GPIOx,&GPIO_InitStruct);
 			xDinConfig[ucCh].ulHighCounter = ulHFront;
 			xDinConfig[ucCh].ulLowCounter = ulLFront;
@@ -279,7 +279,7 @@ uint8_t ucDinGet( PDM_INPUT_NAME eChNum )
 uint32_t uiGetDinMask()
 {
 	uint32_t uiMask = 0;
-	for (uint8_t i =0; i< DIN_CHANNEL;i++)
+	for (int8_t i = (DIN_CHANNEL -1);  i > -1 ; i--)
 	{
 		uiMask <<=1;
 		uiMask |= ( xDinConfig[ i ].ucValue & 0x01 );
