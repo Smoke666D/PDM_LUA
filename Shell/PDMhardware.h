@@ -113,12 +113,7 @@ typedef enum {
 
 } CONTROL_STATE_TYPE;
 
- typedef struct
- {
-   __IO uint32_t ISR;   /*!< DMA interrupt status register */
-   __IO uint32_t Reserved0;
-   __IO uint32_t IFCR;  /*!< DMA interrupt flag clear register */
- } DMA_Base_Registers;
+
 
 typedef enum {
   STATE_OUT_OFF,
@@ -291,5 +286,5 @@ ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t powe
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
-void DMA_IRQHandler(DMA_HandleTypeDef *hdma);
+
 #endif /* PDMHARDWARE_H_ */
