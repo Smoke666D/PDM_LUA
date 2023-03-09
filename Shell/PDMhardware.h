@@ -195,7 +195,7 @@ typedef struct __packed
    LIN_COOF CSC[KOOF_COUNT -1 ];
 } PDM_OUTPUT_TYPE;
 
-
+#define PWM_100    100U
 
 
 #define ENABLE_FLAG  	  0x00000001

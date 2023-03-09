@@ -69,6 +69,7 @@ static void vHWOutSet( OUT_NAME_TYPE out_name );
 static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize);
 static float fGetDataFromRaw( float fraw, PDM_OUTPUT_TYPE xOut);
 static void vDataConvertToFloat( void);
+static void SetPWMConifg(OUT_NAME_TYPE out_name );
 #ifdef PCM
 /
 static uint8_t ucGetDOUTGroup()
@@ -181,6 +182,21 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 	}
 	return;
 }
+
+/*
+ *
+ */
+static void SetPWMConifg(OUT_NAME_TYPE out_name )
+{
+	TIM_OC_InitTypeDef sConfigOC = {0};
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = (uint32_t )( (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
+	HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
+	return;
+}
 /*
  *
  */
@@ -213,14 +229,6 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
   */
  static void vHWOutSet( OUT_NAME_TYPE out_name )
  {
-    TIM_OC_InitTypeDef sConfigOC = {0};
-
-    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = (uint32_t )( (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
-    HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
     HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
     return;
  }
@@ -303,7 +311,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
      	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
      	{
      	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
-     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
+     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != PWM_100 ) )
  			{
      	      if  (HAL_GPIO_ReadPin(out[i].OutGPIOx, out[i].OutGPIO_Pin) == GPIO_PIN_SET)
      	      {
@@ -328,8 +336,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
   					break;
   				case FSM_ON_PROCESS: //Состояния влючения
   					out[i].restart_timer++;
-  					out[i].soft_start_timer++;
-  					/*if (out[i].soft_start_timer !=0)
+  					if (out[i].soft_start_timer !=0)
   					{
   						if  ( fCurrent  > out[i].power )
   						{
@@ -338,20 +345,23 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
   						}
   						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
   						{
-  						 		vHWOutSet(i,MAX_POWER);
-  						 		out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+  							SetPWMConifg( i );
+  							vHWOutSet(i);
+  						    SET_STATE_FLAG(i, FSM_ON_STATE ); //переходим в стосония влючено и запускаем выход на 100% мощности
   						}
   						else
-  						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
+  						{   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
   						 		uint8_t ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
-  						 		if (ucCurrentPower  > MAX_POWER)
-  						 		{
-  						 			ucCurrentPower = MAX_POWER;
-  						 		}
-  						 		vHWOutSet( i, ucCurrentPower );
-  						 }
+  						 	if (ucCurrentPower  > MAX_POWER)
+  						 	{
+  						 		ucCurrentPower = MAX_POWER;
+  						 	}
+  						 	out[i].PWM = ucCurrentPower;
+  						 	SetPWMConifg( i );
+  						 	vHWOutSet( i );
+  						}
   					}
-  					else*/
+  					else
   					{
 
   						 if ( out[i].restart_timer  < 2 )
@@ -400,22 +410,28 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
   				default:
   					break;
   			}
-  			// Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
-  			// чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
-
-  				if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
-  				{
-  					SET_STATE_FLAG(i, FSM_OFF_STATE );
-  				 	vHWOutOFF(i);
-  				}
-  				if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
-  				{
-  					SET_STATE_FLAG(i, FSM_ON_PROCESS );
-  				 	vHWOutSet( i );
-  				}
-  				RESET_FLAG(i,CONTROL_FLAGS );
-    		 }
+       }
   	}
+     // Проверям управляющие сигналы. Если они изменилсь, то выключем или включаем каналы. Это нужно сделать именно тот,
+     // чтобы на следующем циклые конечного автомата были актуальные данные о состонии каналов
+     for (uint8_t i = 0U; i < OUT_COUNT; i++ )
+     {
+    	 if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
+    	 {
+    		 if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
+    		 {
+    		   		SET_STATE_FLAG(i, FSM_OFF_STATE );
+    		   		vHWOutOFF(i);
+    		  }
+    		 if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )
+    		  {
+    			 	 SET_STATE_FLAG(i, FSM_ON_PROCESS );
+    		   		 vHWOutSet( i );
+    		 }
+    		 RESET_FLAG(i,CONTROL_FLAGS );
+    	 }
+     }
+
   }
 /*************************************** PUBLIC FUNCTION************************************************/
 
@@ -533,7 +549,8 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 		if ( out[out_name].PWM != PWM )
 		{
 			out[out_name].PWM = PWM;
-			if (   IS_FLAG_RESET(out_name, FSM_ERROR_STATE) &&   IS_FLAG_RESET(out_name, FSM_OFF_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
+			SetPWMConifg(out_name );
+			if (   IS_FLAG_RESET( out_name, FSM_ERROR_STATE) &&   IS_FLAG_RESET(out_name, FSM_OFF_STATE) ) //Если выход вклчюен и не находится в каком-то переходном процессе
 			{
 				vHWOutSet( out_name );
 			}
@@ -651,14 +668,12 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 	*Dout11_20Status = status2;
 	return;
 }
-
 /*
  *
  */
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
 {
-	ERROR_FLAGS_TYPE error = ERROR_OFF;
-
+   ERROR_FLAGS_TYPE error = ERROR_OFF;
    if (	eChNum < OUT_COUNT )
    {
 	   switch (out[eChNum].SysReg & ERROR_MASK)
@@ -675,10 +690,6 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
    }
 	return (  error );
 }
-
-
-
-
 /*
  *
  */
@@ -697,7 +708,6 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
  {
    /* USER CODE BEGIN vADCTask */
    #ifdef PCM
-
      DOUTGROUP  = 0;
    #endif
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
@@ -708,7 +718,6 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
    HAL_TIM_Base_Start(&htim6);
    for(;;)
    {
-	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
@@ -720,9 +729,9 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
 #endif
 	   vDataConvertToFloat();
 	   vOutControlFSM();
+	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   vADCEnable(); /* Влючаем АЦП, исходя из времени выполнения следующей функции,
 	   к моменту ее завершения, АЦП уже включаться*/
-
    }
    /* USER CODE END vADCTask */
  }
@@ -746,7 +755,7 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
         {
             case CH5_6_9_10:
                 out[ OUT_5 ].ptim->Init.Prescaler =  168000 / Freq;
-                HAL_TIM_Base_Init(out[ 4 ].ptim);
+                HAL_TIM_Base_Init(out[ OUT_5 ].ptim);
                 out[ OUT_5 ].PWM_Freg =Freq;
                 out[ OUT_6 ].PWM_Freg =Freq;
                 out[ OUT_7 ].PWM_Freg =Freq;
@@ -754,38 +763,38 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum )
                 break;
             case CH11_12_16:
                 out[ OUT_11 ].ptim->Init.Prescaler = 84000 / Freq;
-                HAL_TIM_Base_Init(out[ 10 ].ptim);
+                HAL_TIM_Base_Init(out[ OUT_11 ].ptim);
                 out[ OUT_11 ].PWM_Freg =Freq;
                 out[ OUT_12 ].PWM_Freg =Freq;
                 out[ OUT_16 ].PWM_Freg =Freq;
                 break;
             case CH4_15:
                 out[ OUT_4 ].ptim->Init.Prescaler = 84000 / Freq;
-                HAL_TIM_Base_Init(out[ 3 ].ptim);
+                HAL_TIM_Base_Init(out[ OUT_4  ].ptim);
                 out[ OUT_4 ].PWM_Freg =Freq;
                 out[ OUT_15 ].PWM_Freg =Freq;
                 break;
             case CH1_2_8_20:
-                out[ 0 ].ptim->Init.Prescaler = 84000 / Freq;
-                HAL_TIM_Base_Init(out[ 0 ].ptim);
-                out[ 0 ].PWM_Freg =Freq;
-                out[ 1 ].PWM_Freg =Freq;
-                out[ 7 ].PWM_Freg =Freq;
-                out[ 19 ].PWM_Freg =Freq;
+                out[ OUT_1 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ OUT_1 ].ptim);
+                out[ OUT_1 ].PWM_Freg =Freq;
+                out[ OUT_2 ].PWM_Freg =Freq;
+                out[ OUT_8 ].PWM_Freg =Freq;
+                out[ OUT_20 ].PWM_Freg =Freq;
                 break;
             case CH13_14_17_18:
-                out[ 12 ].ptim->Init.Prescaler = 168000 / Freq;
-                HAL_TIM_Base_Init(out[ 12 ].ptim);
-                out[ 12 ].PWM_Freg =Freq;
-                out[ 13 ].PWM_Freg =Freq;
-                out[ 16 ].PWM_Freg =Freq;
-                out[ 17 ].PWM_Freg =Freq;
+                out[ OUT_13 ].ptim->Init.Prescaler = 168000 / Freq;
+                HAL_TIM_Base_Init(out[ OUT_13 ].ptim);
+                out[ OUT_13 ].PWM_Freg =Freq;
+                out[ OUT_14 ].PWM_Freg =Freq;
+                out[ OUT_17 ].PWM_Freg =Freq;
+                out[ OUT_18 ].PWM_Freg =Freq;
                 break;
             case CH7_19:
-                out[ 6 ].ptim->Init.Prescaler = 84000 / Freq;
-                HAL_TIM_Base_Init(out[ 6 ].ptim);
-                out[ 6 ].PWM_Freg =Freq;
-                out[ 18 ].PWM_Freg =Freq;
+                out[ OUT_7 ].ptim->Init.Prescaler = 84000 / Freq;
+                HAL_TIM_Base_Init(out[ OUT_7 ].ptim);
+                out[ OUT_7].PWM_Freg =Freq;
+                out[ OUT_19 ].PWM_Freg =Freq;
                 break;
             default:
                 break;
