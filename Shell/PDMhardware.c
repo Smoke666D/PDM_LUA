@@ -29,7 +29,7 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 
 PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawVData[AIN_COUNT + 2]   		__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
@@ -39,7 +39,7 @@ static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 
 
 
-static KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
+static const KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
 										{{K002O20,V002O20},{K01O20,V01O20},{K10O20,V10O20},{K15O20,V15O20}},
@@ -447,15 +447,14 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 			//Проверяем что хоты одно значение АЦП не равно нулю,что-то не словить делением на ноль.
 			if ((CurSensData[out_name][j].Data != 0.0) || (CurSensData[out_name][j+1].Data != 0.0 ))
 			{
-				float temp;
+			    float temp;
 				float temp1;
-				float temp2;
+                vABLineKoofFinde(&temp, &temp1,
+                                CurSensData[out_name][j].Data, CurSensData[out_name][j+1].Data,
+                                CurSensData[out_name][j].KOOF, CurSensData[out_name][j+1].KOOF);
 				out[out_name].CSC[j].data = CurSensData[out_name][j+1].Data;
-				out[out_name].CSC[j].k = (float)( CurSensData[out_name][j].KOOF -  CurSensData[out_name][j+1].KOOF) /(float) ( CurSensData[out_name][j].Data- CurSensData[out_name][j+1].Data);
-				temp =  CurSensData[out_name][j].Data   * CurSensData[out_name][j+1].KOOF;
-				temp1 = CurSensData[out_name][j+1].Data * CurSensData[out_name][j].KOOF;
-				temp2 = CurSensData[out_name][j+1].Data - CurSensData[out_name][j].Data;
-				out[out_name].CSC[j].b = (temp1 - temp)/temp2;
+				out[out_name].CSC[j].k = temp;
+				out[out_name].CSC[j].b = temp1;
 			}
 		}
 		TIM_OC_InitTypeDef sConfigOC = {0U};

@@ -96,5 +96,30 @@ CAL_ERROR_CODE  eAinCalDataConfig(AIN_NAME_t name, uint8_t cal_point_count )
  */
 CAL_ERROR_CODE  eSetAinCalPoint(AIN_NAME_t name, POINT_t * cal_point, uint16_t PointNumber )
 {
-    CAL_ERROR_CODE res = CAL_SUCCESS;
+	CAL_ERROR_CODE res = CAL_SUCCESS;
+
+	if ( PointNumber < xAinData[ name ].coof_count)
+	{
+		uint16_t index = PointNumber + xAinData[ name ].index;
+		vABLineKoofFinde ( &xKoofData[index].k, &xKoofData[index].b,
+									cal_point[0].X, cal_point[ 1 ].X, cal_point[0].Y,cal_point[1].Y);
+		xKoofData[usCurMaxIndex].data = cal_point[1 ].X;
+	}
+	else
+	{
+		res = CAL_OVERWRITE_ERROR;
+	}
+	return (res);
 }
+
+/*
+ *
+ */
+void vABLineKoofFinde(float * k, float * b,  float x1, float x2, float y1, float y2)
+{
+		 *k = (float)( y1 - y2 ) /(float) (x1 - x2);
+		 *b = (float)(y1*x2 - y2*x1) / (float) (x2-x1);
+		 return;
+}
+
+
