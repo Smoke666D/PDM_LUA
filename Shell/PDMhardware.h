@@ -163,6 +163,7 @@ typedef struct __packed
    TIM_HandleTypeDef * ptim;
    uint32_t  channel;
    float power;
+   uint8_t state;
    float overload_power;
    float current;
    uint8_t error_counter;

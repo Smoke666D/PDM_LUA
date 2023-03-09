@@ -8,8 +8,31 @@
 #ifndef PLATFORM_INIT_H_
 #define PLATFORM_INIT_H_
 
+
+
+
+
 #define PDM
 //#define PCM
+
+
+#ifdef PDM
+    #define BAT_INDEX           3U
+    #define TEMP_INDEX           4U
+    #define ADC1_CHANNELS      9U
+    #define ADC2_CHANNELS      7U
+    #define ADC3_CHANNELS      9U
+    #define AIN_NUMBER          3U        //Количесвто аналоговых входов
+#endif
+#ifdef PCM
+    #define TEMP_INDEX           13U
+    #define BAT_INDEX           12U
+    #define ADC1_CHANNELS      8U
+    #define ADC2_CHANNELS      6U
+    #define ADC3_CHANNELS      4U
+    #define AIN_NUMBER             12U        //Количесвто аналоговых входов
+#endif
+
 
 #ifdef PDM
 #define OUT1_PIN  InCH20_1_Pin
