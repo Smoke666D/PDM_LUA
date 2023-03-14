@@ -418,6 +418,10 @@ void vHWOutEnable(OUT_NAME_TYPE out_name)
 {
 	HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
 }
+void vHWOutDisable(OUT_NAME_TYPE out_name)
+{
+	HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+}
 /*
  *
  */
@@ -477,7 +481,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
 		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
 		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-		//HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
 	}
 	return;
 }

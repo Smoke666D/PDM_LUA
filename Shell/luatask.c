@@ -65,6 +65,7 @@ static void vSafeModeOutState()
 	 for (uint8_t i = 0; i<OUT_COUNT; i++ )
 	 {
 		 vHWOutOFF( i );
+		 vHWOutDisable( i );
      }
 	 return;
 }

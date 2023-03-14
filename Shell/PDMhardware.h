@@ -277,4 +277,5 @@ ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
 float fOutGetPrintCurrent ( OUT_NAME_TYPE eChNum);
 void vHWOutEnable(OUT_NAME_TYPE out_name);
+void vHWOutDisable(OUT_NAME_TYPE out_name);
 #endif /* PDMHARDWARE_H_ */
