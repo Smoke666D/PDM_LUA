@@ -30,7 +30,7 @@
 
 #include "usbhid.h"
 #include "pdm_input.h"
-#include "system.h""
+#include "system.h"
 #include "common.h"
 
 /* USER CODE END Includes */
@@ -183,7 +183,7 @@ int main(void)
   MX_TIM13_Init();
   MX_TIM6_Init();
   MX_RTC_Init();
- // MX_IWDG_Init();
+  MX_IWDG_Init();
   MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
@@ -763,7 +763,7 @@ static void MX_IWDG_Init(void)
 
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
@@ -1700,6 +1700,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  WDT_Reset();
     osDelay(1);
 
   }
