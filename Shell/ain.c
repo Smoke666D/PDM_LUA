@@ -30,9 +30,9 @@ void vAINInit()
 static float fConvertCalData( AIN_NAME_t name, float in_data )
 {
     float out_data = 0;
-    for (uint16_t i =  xAinData[ name ].index; i < xAinData[ name ].coof_count; i++ )
+    for (uint16_t i =  xAinData[ name ].index; i < (xAinData[ name ].index + xAinData[ name ].coof_count ); i++ )
     {
-        if ( (i ==  xAinData[ name ].coof_count) || (in_data <= xKoofData[i].data ) )
+        if ( (i ==  (xAinData[ name ].index + xAinData[ name ].coof_count)) || (in_data <= xKoofData[i].data ) )
         {
             out_data = xKoofData[i].k * in_data + xKoofData[i].b;
         }
@@ -70,7 +70,7 @@ CAL_ERROR_CODE  eAinCalDataConfig(AIN_NAME_t name, uint8_t cal_point_count )
     {
         if (  xAinData[ name ].coof_count == 0 )
         {
-            if  ( (cal_point_count +  usCurMaxIndex) > MAX_CAL_POINT )
+            if  ( (cal_point_count +  usCurMaxIndex) > MAX_TOTAL_CAL_POINT )
             {
                 res = CAL_MEMORY_FULL;
             }
@@ -103,7 +103,7 @@ CAL_ERROR_CODE  eSetAinCalPoint(AIN_NAME_t name, POINT_t * cal_point, uint16_t P
 		uint16_t index = PointNumber + xAinData[ name ].index;
 		vABLineKoofFinde ( &xKoofData[index].k, &xKoofData[index].b,
 									cal_point[0].X, cal_point[ 1 ].X, cal_point[0].Y,cal_point[1].Y);
-		xKoofData[usCurMaxIndex].data = cal_point[1 ].X;
+		xKoofData[usCurMaxIndex].data = cal_point[ 1 ].X;
 	}
 	else
 	{

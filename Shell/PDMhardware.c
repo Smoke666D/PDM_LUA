@@ -5,7 +5,7 @@
 #include "system.h"
 #include "dma_pdm.h"
 #include "platform_init.h"
-
+#include "ain.h"
 
 
 extern ADC_HandleTypeDef hadc1;
@@ -120,10 +120,10 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
 	{
 		RESET_FLAG(out_name,ENABLE_FLAG);
-	//	if ( (overload_timer <= MAX_OVERLOAD_TIMER) && (
-	//				((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
-	//				((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ) )
-	//		   )
+		/*if ( (overload_timer <= MAX_OVERLOAD_TIMER) && ( power > 0) && (overload_power > 0) &&
+					(((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
+					((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ))
+			   )*/
 			{
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
@@ -151,6 +151,7 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 	if ( out_name < OUT_COUNT )      //Проверяем корекность номера канала
 	{
 		RESET_FLAG(out_name,ENABLE_FLAG);;
+		out[out_name].max_error_counter = restart_count;
 		out[out_name].error_counter = restart_count;
 		out[out_name].restart_timer = 0U;
 		out[out_name].restart_config_timer = timer;
@@ -337,7 +338,9 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
- return  ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
+  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
+
+ return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*
  *
@@ -366,19 +369,19 @@ void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
        switch (groupe)
        {
            case CH5_6_9_10:
-               out[ 4 ].ptim->Init.Prescaler =  168000 / Freq;
-               HAL_TIM_Base_Init(out[ 4 ].ptim);
-               out[ 4 ].PWM_Freg =Freq;
-               out[ 5 ].PWM_Freg =Freq;
-               out[ 8 ].PWM_Freg =Freq;
-               out[ 9 ].PWM_Freg =Freq;
+               out[ OUT_5 ].ptim->Init.Prescaler =  168000 / Freq;
+               HAL_TIM_Base_Init(out[ OUT_5 ].ptim);
+               out[ OUT_5 ].PWM_Freg =Freq;
+               out[ OUT_6 ].PWM_Freg =Freq;
+               out[ OUT_9 ].PWM_Freg =Freq;
+               out[ OUT_10 ].PWM_Freg =Freq;
                break;
            case CH11_12_16:
-               out[ 10 ].ptim->Init.Prescaler = 84000 / Freq;
-               HAL_TIM_Base_Init(out[ 10 ].ptim);
-               out[ 10 ].PWM_Freg =Freq;
-               out[ 11 ].PWM_Freg =Freq;
-               out[ 15 ].PWM_Freg =Freq;
+               out[ OUT_11 ].ptim->Init.Prescaler = 84000 / Freq;
+               HAL_TIM_Base_Init(out[ OUT_11 ].ptim);
+               out[ OUT_11 ].PWM_Freg =Freq;
+               out[ OUT_12 ].PWM_Freg =Freq;
+               out[ OUT_16 ].PWM_Freg =Freq;
                break;
            case CH4_15:
                out[ 3 ].ptim->Init.Prescaler = 84000 / Freq;
@@ -605,7 +608,7 @@ static void vDataConvertToFloat( void)
 	 out[ ucChannel ].restart_timer = 0U;
 	 out[ ucChannel ].soft_start_timer = 0;
 	 vHWOutOFF(ucChannel);
-	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_HOVERLOAD_POWER : MAX_LOVERLOAD_POWER ) )
+	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_OVERLOAD_HPOWER : MAX_OVERLOAD_LPOWER ) )
 	 {
 		 out[ucChannel].current = fCurr;
 	 }
@@ -661,8 +664,8 @@ static void vDataConvertToFloat( void)
  						}
  						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
  						{
- 						 		vHWOutSet(i,MAX_POWER);
- 						 		out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+ 						 		//vHWOutSet(i,MAX_POWER);
+ 						 		//out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
  						}
  						else
  						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
@@ -671,7 +674,7 @@ static void vDataConvertToFloat( void)
  						 		{
  						 			ucCurrentPower = MAX_POWER;
  						 		}
- 						 		vHWOutSet( i, ucCurrentPower );
+ 						 		//vHWOutSet( i, ucCurrentPower );
  						 }
  					}
  					else*/
@@ -711,6 +714,7 @@ static void vDataConvertToFloat( void)
  					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
  					{
  						SET_STATE_FLAG(i, FSM_ON_PROCESS );
+ 						vHWOutSet( i );
  						out[ i ].restart_timer =0;
  						RESET_FLAG(i,ERROR_MASK);
  						if ( out[i].error_counter !=0 )
@@ -736,6 +740,7 @@ static void vDataConvertToFloat( void)
        		if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
        		{
        				SET_STATE_FLAG(i, FSM_OFF_STATE );
+       				out[i].error_counter =  out[i].max_error_counter;
        		 	 	vHWOutOFF(i);
        		 }
        		 if ( IS_FLAG_SET( i, CONTROL_ON_STATE ) &&  IS_FLAG_SET(i, FSM_OFF_STATE) )

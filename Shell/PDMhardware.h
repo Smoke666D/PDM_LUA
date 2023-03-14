@@ -24,19 +24,19 @@
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
 #define TEMPERATURE_COUNT   1U     /* Количество каналов температуры */
 #define ANGLE_COUNT         2U     /* Количество каналов углов */
-#define DEFAULT_HPOWER      59.0  // Номинальный ток по умолчания для мощных каналов
-#define MAX_HPOWER			59.0  // Максимальный номинальый ток для мощных каналов
-#define MAX_HOVERLOAD_POWER 60.0
+#define DEFAULT_HPOWER      30.0  // Номинальный ток по умолчания для мощных каналов
+#define MAX_HPOWER			30.0  // Максимальный номинальый ток для мощных каналов
+//#define MAX_HOVERLOAD_POWER 60.0
 #define DEFAULT_LPOWER      8.0  // Номинальый ток маломощных каналов
-#define MAX_LPOWER			25.0  //Максимальный номинальый ток для маломощных каналов
-#define MAX_LOVERLOAD_POWER 20.0
+#define MAX_LPOWER			15.0  //Максимальный номинальый ток для маломощных каналов
+//#define MAX_LOVERLOAD_POWER 20.0
 #define DEFAULT_OVERLOAD_TIMER_HPOWER   1000U //Время плавного пуска для мощных каналов
-#define MAX_OVERLOAD_TIMER             32767U //Максимальное время плавного пуска для мощных каналов
+#define MAX_OVERLOAD_TIMER             32000U //Максимальное время плавного пуска для мощных каналов
 #define DEFAULT_OVERLOAD_TIMER_LPOWER   0U //Время плавного пуска для маломощнвх каналов
 #define DEFAULT_HPOWER_MAX              60.0 // Ток перегрузки при старте для мощных каналов
-#define MAX_OVERLOAD_HPOWER             60.0 // Максиальный пусковой ток мощных каналов
+#define MAX_OVERLOAD_HPOWER             120.0 // Максиальный пусковой ток мощных каналов
 #define DEFAULT_LPOWER_MAX              15.0 // Ток перегрузки при старте для маломощных каналов
-#define MAX_OVERLOAD_LPOWER             30.0 // Максиальный пусковой ток маломощных каналов
+#define MAX_OVERLOAD_LPOWER             40.0 // Максиальный пусковой ток маломощных каналов
 #define DEFAULT_PWM				100U
 #define MAX_PWM					100U
 #define MAX_POWER				100U
@@ -167,6 +167,7 @@ typedef struct __packed
    float overload_power;
    float current;
    uint8_t error_counter;
+   uint8_t max_error_counter;
    uint8_t PWM;
    uint8_t PWM_err_counter;
    uint8_t POWER_SOFT;

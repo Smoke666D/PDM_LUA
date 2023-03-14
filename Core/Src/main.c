@@ -183,7 +183,7 @@ int main(void)
   MX_TIM13_Init();
   MX_TIM6_Init();
   MX_RTC_Init();
-  MX_IWDG_Init();
+//  MX_IWDG_Init();
   MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
@@ -1679,7 +1679,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void WDT_Reset()
 {
-	HAL_IWDG_Refresh(&hiwdg);
+	//HAL_IWDG_Refresh(&hiwdg);
 }
 /* USER CODE END 4 */
 

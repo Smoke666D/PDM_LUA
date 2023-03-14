@@ -127,15 +127,15 @@ static int isetAINCal (lua_State *L)
    uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT);
    if ( ( argument >= FIVE_ARGUMENT ) && ( (argument -1)%2 == 0 ))
    {
-       if ( eAinCalDataConfig(ucNumber, (argument -1)/2 )== CAL_SUCCESS )
+       if ( eAinCalDataConfig(ucNumber -1 , (argument -1)/2 )== CAL_SUCCESS )
        {
-           for (uint16_t i = 0; i < (argument - 1); i = i + 2)
+           for (uint16_t i = 0; i < argument ; i = i + 2)
            {
-               points[0].X =  lua_tonumber( L, i + 1);
-               points[0].Y =  lua_tonumber( L, i + 2);
-               points[1].X =  lua_tonumber( L, i + 3);
-               points[1].Y =  lua_tonumber( L, i + 4);
-               eSetAinCalPoint(ucNumber,&points[0], i/2 );
+               points[0].X =  lua_tonumber( L, i + 2 );
+               points[0].Y =  lua_tonumber( L, i + 3);
+               points[1].X =  lua_tonumber( L, i + 4);
+               points[1].Y =  lua_tonumber( L, i + 5);
+               eSetAinCalPoint(ucNumber-1,&points[0], i/2 );
            }
            res = 1;
        }
