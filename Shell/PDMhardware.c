@@ -466,7 +466,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		}
 		TIM_OC_InitTypeDef sConfigOC = {0U};
 		sConfigOC.OCMode = TIM_OCMODE_PWM1;
-		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM );
+		sConfigOC.Pulse = (uint32_t)( out[out_name].ptim ->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) + 1;
 		sConfigOC.OCPolarity 	= TIM_OCPOLARITY_HIGH;
 		sConfigOC.OCNPolarity 	= TIM_OCNPOLARITY_HIGH;
 		sConfigOC.OCFastMode 	= TIM_OCFAST_DISABLE;

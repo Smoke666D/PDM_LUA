@@ -621,6 +621,7 @@ void vLuaTask(void *argument)
        case LUA_INIT:
     	   vOutInit();
            vAINInit();
+           vDinInit();
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();
