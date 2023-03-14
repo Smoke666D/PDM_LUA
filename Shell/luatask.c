@@ -29,7 +29,7 @@ static ENABLE_t eSafeModeIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
 static ENABLE_t eMainLoopIsEnable 			__SECTION(RAM_SECTION_CCMRAM)= IS_DISABLE;
 
 static EventGroupHandle_t xPDMstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
-
+static uint8_t RestartFlag  = 0;
 char * pcLuaErrorString 				    __SECTION(RAM_SECTION_CCMRAM) = NULL;
 int res 									__SECTION(RAM_SECTION_CCMRAM) = 0;
 float dd = 0;
@@ -105,6 +105,15 @@ void vLUArestartPDM()
 {
 	state = LUA_RESTART;
 	return;
+}
+
+/*
+ *
+ */
+static int iSysrestart(lua_State *L)
+{
+	RestartFlag = 1;
+	return ( NO_RESULT );
 }
 /*
  *
@@ -405,7 +414,7 @@ int  iOutConfig( lua_State *L )
 		uint16_t overload_time  = (lua_gettop(L) >= FOURTH_ARGUMENT) ? ( uint16_t ) lua_tointeger(L, FOURTH_ARGUMENT) : 0;
 		float overlad_power     = (lua_gettop(L) >= FIVE_ARGUMENT) ? ( float ) lua_tonumber(L, FIVE_ARGUMENT ) : nominal_power; //Пусковой ток
 		vHWOutOverloadConfig( out_number, nominal_power, overload_time  , overlad_power, reset_satate  );
-
+	    vHWOutEnable(out_number);
 	}
 	return ( NO_RESULT );
 }
@@ -619,6 +628,7 @@ void vLuaTask(void *argument)
 	   switch (state)
 	   {
        case LUA_INIT:
+    	   RestartFlag = 0;
     	   vOutInit();
            vAINInit();
            vDinInit();
@@ -650,6 +660,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"setOutSoftStart",iSoftStart);
 	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
            lua_register(L1,"setAINCalTable",isetAINCal);
+           lua_register(L1,"SYSTEM_RESTASRT",iSysrestart);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
@@ -703,6 +714,11 @@ void vLuaTask(void *argument)
 	   	   	   break;
 	   	   }
 	   	   lua_pop( L1, temp);
+	   	   if (RestartFlag != 0)
+	   	   {
+  	   		  vSafeModeOutState();
+	   		  state = LUA_RESTART;
+	   	   }
 	   	   break;
 	   	 case LUA_ERROR:
 	   	 case LUA_STOP:

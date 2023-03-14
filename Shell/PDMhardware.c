@@ -100,7 +100,7 @@ void vOutInit( void )
 	vHWOutInit(OUT_14, &htim8, TIM_CHANNEL_2,GPIOG, Cs_Dis8_13_14_Pin , OUT14_PORT ,OUT14_PIN );
 	vHWOutInit(OUT_15, &htim3, TIM_CHANNEL_1,GPIOG, Cs_Dis8_15_16_Pin , OUT15_PORT ,OUT15_PIN  );
 	vHWOutInit(OUT_16, &htim2, TIM_CHANNEL_2, GPIOG, Cs_Dis8_15_16_Pin ,OUT16_PORT ,OUT16_PIN );
-	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin , OUT17_PORT ,OUT17_PIN 	);
+	vHWOutInit(OUT_17, &htim8, TIM_CHANNEL_3, GPIOG,  Cs_Dis8_17_18_Pin , OUT17_PORT ,OUT17_PIN );
 	vHWOutInit(OUT_18,  &htim8, TIM_CHANNEL_4, GPIOG, Cs_Dis8_17_18_Pin , OUT18_PORT ,OUT18_PIN );
 	vHWOutInit(OUT_19, &htim12, TIM_CHANNEL_2,GPIOD,Cs_Dis8_19_20_Pin , OUT19_PORT ,OUT19_PIN );
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,OUT20_PORT ,OUT20_PIN  );
@@ -414,6 +414,10 @@ void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
 	}
    return;
 }
+void vHWOutEnable(OUT_NAME_TYPE out_name)
+{
+	HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+}
 /*
  *
  */
@@ -473,7 +477,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
 		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
 		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
-		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+		//HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
 	}
 	return;
 }
