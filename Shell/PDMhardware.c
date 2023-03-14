@@ -120,10 +120,10 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
 	{
 		RESET_FLAG(out_name,ENABLE_FLAG);
-		/*if ( (overload_timer <= MAX_OVERLOAD_TIMER) && ( power > 0) && (overload_power > 0) &&
+		if ( (overload_timer <= MAX_OVERLOAD_TIMER) && ( power > 0) && (overload_power > 0) &&
 					(((power <= MAX_LPOWER) &&  (overload_power<= MAX_OVERLOAD_LPOWER)) ||
 					((power <= MAX_HPOWER) &&  (overload_power<= MAX_OVERLOAD_HPOWER) && ( out_name < OUT_HPOWER_COUNT) ))
-			   )*/
+			   )
 			{
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
@@ -166,7 +166,7 @@ ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 {
 	ERROR_CODE res = INVALID_ARG;
-	if ((out_name <  OUT_COUNT ) && (PWM <=MAX_PWM)) //Проверяем коректность агрументов
+	if ((out_name <  OUT_COUNT ) && (PWM <=MAX_PWM) && (out[out_name].PWM_Freg!=0)) //Проверяем коректность агрументов
 	{
 		if ( out[out_name].PWM != PWM )
 		{
@@ -445,6 +445,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].PWM_err_counter  = 0;
 		out[out_name].POWER_SOFT 	   = 0;
 		out[out_name].state 		   = 0;
+		out[out_name].PWM_Freg         = 0;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
