@@ -27,7 +27,7 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 #define TEMP_DATA    5
 
 
-PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
+static PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
@@ -173,7 +173,14 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 			out[out_name].PWM = PWM;
 			TIM_OC_InitTypeDef sConfigOC = {0};
 			sConfigOC.OCMode = TIM_OCMODE_PWM1;
-			sConfigOC.Pulse = (uint32_t )(  (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+			if (PWM < 100 )
+			{
+				sConfigOC.Pulse = (uint32_t )(  (out[out_name].ptim->Init.Period *(float)out[out_name].PWM/ MAX_PWM ) )+1U;
+			}
+			else
+			{
+				sConfigOC.Pulse = 1001;
+			}
 			sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 			sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 			HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
@@ -364,7 +371,7 @@ float fTemperatureGet ( uint8_t chanel )
 
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
 {
-	if ((Freq > 0) && (Freq < 2000))
+	if ((Freq > 0) && (Freq < 6000))
 	{
        switch (groupe)
        {
@@ -446,6 +453,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].POWER_SOFT 	   = 0;
 		out[out_name].state 		   = 0;
 		out[out_name].PWM_Freg         = 0;
+		out[out_name].PWM              = 100;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
@@ -505,7 +513,14 @@ static void vHWOutSet( OUT_NAME_TYPE out_name )
 	//sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 	//HAL_TIM_PWM_Stop(out[out_name].ptim,out[out_name].channel);
 	//HAL_TIM_PWM_ConfigChannel(out[out_name].ptim, &sConfigOC, out[out_name].channel);
-	HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+	//if ( out[out_name].PWM !=100)
+	//{
+		HAL_TIM_PWM_Start(out[out_name].ptim,out[out_name].channel);
+//	}
+//	else
+//	{
+//		HAL_GPIO_WritePin(out[out_name].OutGPIOx, out[out_name].OutGPIO_Pin,GPIO_PIN_SET);
+//	}
    return;
 }
 /*
@@ -531,6 +546,7 @@ static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t In
 void vHWOutOFF( uint8_t ucChannel )
 {
 	HAL_TIM_PWM_Stop(out[ucChannel].ptim,  out[ucChannel].channel);
+//	HAL_GPIO_WritePin(out[ucChannel].OutGPIOx, out[ucChannel].OutGPIO_Pin,GPIO_PIN_RESET);
 	out[ucChannel].POWER_SOFT = 0;
 
 	return;
@@ -607,7 +623,6 @@ static void vDataConvertToFloat( void)
      }
 	 SET_ERROR_FLAG( ucChannel, OVERLOAD_ERROR);
 	 out[ ucChannel ].restart_timer = 0U;
-	 out[ ucChannel ].soft_start_timer = 0;
 	 vHWOutOFF(ucChannel);
 	 if ( fCurr < ( ucChannel < OUT_HPOWER_COUNT ? MAX_OVERLOAD_HPOWER : MAX_OVERLOAD_LPOWER ) )
 	 {
@@ -650,13 +665,12 @@ static void vDataConvertToFloat( void)
  					out[i].current 	   		 = 0U;
  					out[i].restart_timer   	 = 0U;
  					RESET_FLAG(i,ERROR_MASK);
- 					out[i].soft_start_timer  = 0U;
  					break;
  				case FSM_ON_PROCESS: //Состояния влючения
 
  					out[i].restart_timer++;
- 					out[i].soft_start_timer++;
- 					/*if (out[i].soft_start_timer !=0)
+ 					uint8_t ucCurrentPower;
+ 					if ((out[i].soft_start_timer !=0) && (out[i].PWM_Freg != 0))
  					{
  						if  ( fCurrent  > out[i].power )
  						{
@@ -665,20 +679,20 @@ static void vDataConvertToFloat( void)
  						}
  						if  ( out[i].restart_timer >= out[i].soft_start_timer ) //Если прошло время полонго пуска
  						{
- 						 		//vHWOutSet(i,MAX_POWER);
- 						 		//out[i].out_state = STATE_OUT_ON; //переходим в стосония влючено и запускаем выход на 100% мощности
+ 							  SET_STATE_FLAG(i, FSM_ON_STATE );
+ 							  ucCurrentPower = MAX_POWER;
  						}
  						else
  						 {   //время пуска не прошоло, вычисляем текущую мощность, котору надо пдать на выход.
- 						 		uint8_t ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
- 						 		if (ucCurrentPower  > MAX_POWER)
+ 						 	    ucCurrentPower = out[i].soft_start_power + (uint8_t) (((float)out[i].restart_timer/(float)out[i].soft_start_timer)*(MAX_POWER - out[i].soft_start_power));
+ 						 		if (ucCurrentPower  >= MAX_POWER)
  						 		{
  						 			ucCurrentPower = MAX_POWER;
  						 		}
- 						 		//vHWOutSet( i, ucCurrentPower );
  						 }
+ 						vOutSetPWM(i, ucCurrentPower );
  					}
- 					else*/
+ 					else
  					{
 
  						 if ( out[i].restart_timer  < 2 )
