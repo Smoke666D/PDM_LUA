@@ -200,7 +200,7 @@ ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM)
 ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power)
 {
 	ERROR_CODE res = INVALID_ARG;
-	if (out_name <  OUT_COUNT ) //Проверяем коректность агрументов
+	if ((out_name <  OUT_COUNT ) && (power < 100)) //Проверяем коректность агрументов
 	{
 		out[out_name].soft_start_timer = timer;
 		out[out_name].soft_start_power = power;
@@ -672,7 +672,7 @@ static void vDataConvertToFloat( void)
  					uint8_t ucCurrentPower;
  					if ((out[i].soft_start_timer !=0) && (out[i].PWM_Freg != 0))
  					{
- 						if  ( fCurrent  > out[i].power )
+ 						if  ( fCurrent  > out[i].overload_power)
  						{
  							vGotoRestartState(i,fCurrent);
  							break;
