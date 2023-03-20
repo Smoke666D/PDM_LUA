@@ -269,7 +269,7 @@ void vDinTask(void *argument)
 /*
  *
 */
-uint8_t ucDinGet( PDM_INPUT_NAME eChNum )
+uint8_t ucDinGet( DIN_INPUT_NAME eChNum )
 {
 	return ( (eChNum < DIN_CHANNEL) ? xDinConfig[ eChNum ].ucValue: 0U );
 }

@@ -37,7 +37,7 @@ extern "C" {
 #define DWT_LAR_KEY  0xC5ACCE55 /* DWT register unlock key */
 #define ALGO_FREQ  100U /* Algorithm frequency 100Hz */
 #define ACC_ODR  ((float)ALGO_FREQ)
-#define ACC_FS  2 /* FS = <-2g, 2g> */
+#define ACC_FS  1 /* FS = <-2g, 2g> */
 #define ALGO_PERIOD  (1000000U / ALGO_FREQ) /* Algorithm period [us] */
 #define FROM_MG_TO_G  0.001f
 #define FROM_G_TO_MG  1000.0f
@@ -45,6 +45,8 @@ extern "C" {
 #define FROM_DPS_TO_MDPS  1000.0f
 #define FROM_MGAUSS_TO_UT50  (0.1f/50.0f)
 #define FROM_UT50_TO_MGAUSS  500.0f
+
+extern TIM_HandleTypeDef htim7;
 
 /* Public variables ----------------------------------------------------------*/
 uint32_t AlgoFreq = ALGO_FREQ;
@@ -61,6 +63,14 @@ static int64_t Timestamp = 0;
 /* Private function prototypes -----------------------------------------------*/
 static void MEMS_INT1_Force_Low(void);
 static void MEMS_INT1_Init(void);
+
+
+static uint32_t ulRestartTimer()
+{
+	uint32_t data = htim7.Instance->CNT;
+	htim7.Instance->CNT = 0U;
+	return ( data );
+}
 
 
 void MX_MEMS_Init(void)
@@ -134,7 +144,7 @@ void MX_MEMS_Process(void)
 	data_in.Gyro[2] = (float)GyrValue.z * FROM_MDPS_TO_DPS;
 
 	data_in.Timestamp = Timestamp;
-	Timestamp += ALGO_PERIOD;
+	Timestamp += ulRestartTimer()*10;// ALGO_PERIOD;
 
 	/* Run Dynamic Inclinometer algorithm */
 

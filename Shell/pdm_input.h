@@ -66,7 +66,7 @@ typedef enum {
 		INPUT_18 = 17U,
 		INPUT_19 = 18U,
 		INPUT_20 = 19U
-} PDM_INPUT_NAME;
+} DIN_INPUT_NAME;
 
 typedef enum  {
 		CONFIG_OK = 0,
@@ -103,5 +103,5 @@ void vDinInit( void );
 void vDinTask(void *argument);
 PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType ,uint32_t ulHFront, uint32_t ulLFront);
 void vSystemDinTimer(void);
-uint8_t ucDinGet(PDM_INPUT_NAME channel);
+uint8_t ucDinGet(DIN_INPUT_NAME channel);
 #endif /* PDM_INPUT_H_ */

@@ -51,7 +51,7 @@ void vDATAupdate ( void )
   }
   for ( uint8_t i=0U; i<DIN_CHANNEL; i++ )
   {
-    telemetry.din[i] = ucDinGet( ( PDM_INPUT_NAME )i );
+    telemetry.din[i] = ucDinGet( ( DIN_INPUT_NAME )i );
   }
   for ( uint8_t i=0U; i<OUT_COUNT; i++ )
   {
