@@ -58,6 +58,7 @@ MDI_cal_type_t GyrCalMode = MDI_CAL_NONE;
 /* Private variables ---------------------------------------------------------*/
 static MOTION_SENSOR_Axes_t AccValue __SECTION(RAM_SECTION_CCMRAM);
 static MOTION_SENSOR_Axes_t GyrValue __SECTION(RAM_SECTION_CCMRAM);
+static int32_t MEMSInitFlag __SECTION(RAM_SECTION_CCMRAM);
 static int64_t Timestamp = 0;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,19 +83,26 @@ void MX_MEMS_Init(void)
 	   */
 	  MEMS_INT1_Force_Low();
 	  /* Initialize (disabled) sensors */
+	  if ( BSP_SENSOR_ACC_Init() == BSP_ERROR_NONE )
+	  {
+		  MEMSInitFlag = 1;
+		  BSP_SENSOR_GYR_Init();
+		 	  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+		 	  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
 
-	  BSP_SENSOR_ACC_Init();
-	  BSP_SENSOR_GYR_Init();
-	  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
-	  BSP_SENSOR_ACC_SetFullScale(ACC_FS);
+		 	  /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
+		 	  MEMS_INT1_Init();
+		 	  /* DynamicInclinometer API initialization function */
+		 	  MotionDI_manager_init((int)ALGO_FREQ);
+		 	  BSP_SENSOR_ACC_Enable();
+		 	  BSP_SENSOR_GYR_Enable();
 
-	  /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
-	  MEMS_INT1_Init();
-	  /* DynamicInclinometer API initialization function */
-	  MotionDI_manager_init((int)ALGO_FREQ);
-	  BSP_SENSOR_ACC_Enable();
-	  BSP_SENSOR_GYR_Enable();
-}
+	  }
+	  else
+	  {
+		  MEMSInitFlag = 0;
+	  }
+ }
 
 
 float YAW = 0;
@@ -129,6 +137,10 @@ void MX_MEMS_Process(void)
 	MDI_cal_type_t   gyro_cal_mode;
 	MDI_cal_output_t acc_cal;
 	MDI_cal_output_t gyro_cal;
+
+
+	if ( MEMSInitFlag == 1)
+	{
 
 	BSP_SENSOR_ACC_GetAxes(&AccValue);
 	BSP_SENSOR_GYR_GetAxes(&GyrValue);
@@ -182,6 +194,13 @@ void MX_MEMS_Process(void)
 	ROLL = data_out.rotation[1];
 	PITCH = data_out.rotation[2];
 	YAW = data_out.rotation[0];
+	}
+	else
+	{
+		ROLL 	= 0;
+		PITCH 	= 0;
+		YAW 	= 0;
+	}
 }
 
 

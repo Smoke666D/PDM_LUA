@@ -426,11 +426,17 @@ void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq)
 }
 void vHWOutEnable(OUT_NAME_TYPE out_name)
 {
-	HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+	if ( out_name < OUT_COUNT )
+	{
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+	}
 }
 void vHWOutDisable(OUT_NAME_TYPE out_name)
 {
-	HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+	if ( out_name < OUT_COUNT )
+	{
+		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_DISABLE);
+	}
 }
 /*
  *

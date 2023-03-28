@@ -25,9 +25,9 @@
   * @param  None
   * @retval None
   */
-void BSP_SENSOR_ACC_Init(void)
+int32_t BSP_SENSOR_ACC_Init(void)
 {
-  (void)CUSTOM_MOTION_SENSOR_Init(CUSTOM_ACC_INSTANCE_0, MOTION_ACCELERO);
+  return ( CUSTOM_MOTION_SENSOR_Init(CUSTOM_ACC_INSTANCE_0, MOTION_ACCELERO) );
 }
 
 /**

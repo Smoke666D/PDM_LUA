@@ -24,7 +24,7 @@
 #define  SERIAL_TX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
-#define  USB_TASK_PRIORITY              osPriorityNormal
+#define  USB_TASK_PRIORITY              osPriorityHigh
 #define  DIN_TASK_PRIORITY              osPriorityLow
 #define  MEMS_TASK_PRIORITY             osPriorityNormal
 

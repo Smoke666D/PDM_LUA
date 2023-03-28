@@ -38,7 +38,7 @@ typedef struct
   int32_t z;
 } MOTION_SENSOR_Axes_t;
 
-void BSP_SENSOR_ACC_Init(void);
+int32_t BSP_SENSOR_ACC_Init(void);
 void BSP_SENSOR_GYR_Init(void);
 
 
