@@ -229,7 +229,6 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
-
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -253,6 +252,9 @@ void SystemClock_Config(void)
   {
   }
   LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+  while (LL_PWR_IsActiveFlag_VOS() == 0)
+  {
+  }
   LL_RCC_HSE_Enable();
 
    /* Wait till HSE is ready */
@@ -763,7 +765,7 @@ static void MX_IWDG_Init(void)
 
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
@@ -1203,7 +1205,7 @@ static void MX_TIM7_Init(void)
 
   /* USER CODE END TIM7_Init 1 */
   htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 840;
+  htim7.Init.Prescaler = 0;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim7.Init.Period = 65535;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -1555,6 +1557,8 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -1573,16 +1577,17 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOG, Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-                          |Cs_Dis8_17_18_Pin|USB_PULLUP_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin
-                          |Cs_Dis20_4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOG, CS_DIS3_Pin|CS_DIS1_Pin|USB_PULLUP_Pin|Cs_Dis8_15_16_Pin
+                          |Cs_Dis20_3_Pin|Cs_Dis20_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_DIS4_GPIO_Port, CS_DIS4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin
-                          |GPIO_PIN_2, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, CS_DIS5_Pin|GPIO_PIN_2, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(CS_DSI2_GPIO_Port, CS_DSI2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : Din3_Pin Din4_Pin Din5_Pin Din1_Pin
                            Din2_Pin */
@@ -1624,26 +1629,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Cs_Dis20_5_Pin Cs_Dis20_2_Pin Cs_Dis20_1_Pin Cs_Dis8_13_14_Pin
-                           Cs_Dis8_17_18_Pin Cs_Dis8_15_16_Pin Cs_Dis20_3_Pin Cs_Dis20_4_Pin */
-  GPIO_InitStruct.Pin = Cs_Dis20_5_Pin|Cs_Dis20_2_Pin|Cs_Dis20_1_Pin|Cs_Dis8_13_14_Pin
-                          |Cs_Dis8_17_18_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin|Cs_Dis20_4_Pin;
+  /*Configure GPIO pins : CS_DIS3_Pin CS_DIS1_Pin Cs_Dis8_15_16_Pin Cs_Dis20_3_Pin
+                           Cs_Dis20_4_Pin */
+  GPIO_InitStruct.Pin = CS_DIS3_Pin|CS_DIS1_Pin|Cs_Dis8_15_16_Pin|Cs_Dis20_3_Pin
+                          |Cs_Dis20_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Cs_Dis20_6_Pin Cs_Dis8_9_10_Pin */
-  GPIO_InitStruct.Pin = Cs_Dis20_6_Pin|Cs_Dis8_9_10_Pin;
+  /*Configure GPIO pin : CS_DIS4_Pin */
+  GPIO_InitStruct.Pin = CS_DIS4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(CS_DIS4_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Cs_Dis8_11_12_Pin Cs_Dis20_7_Pin Cs_Dis8_19_20_Pin Cs_Dis20_8_Pin
-                           PD2 */
-  GPIO_InitStruct.Pin = Cs_Dis8_11_12_Pin|Cs_Dis20_7_Pin|Cs_Dis8_19_20_Pin|Cs_Dis20_8_Pin
-                          |GPIO_PIN_2;
+  /*Configure GPIO pins : CS_DIS5_Pin PD2 */
+  GPIO_InitStruct.Pin = CS_DIS5_Pin|GPIO_PIN_2;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1668,12 +1671,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : CS_DSI2_Pin */
+  GPIO_InitStruct.Pin = CS_DSI2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(CS_DSI2_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : Din8_Pin */
   GPIO_InitStruct.Pin = Din8_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(Din8_GPIO_Port, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

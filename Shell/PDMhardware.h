@@ -184,7 +184,14 @@ typedef struct __packed
 } PDM_OUTPUT_TYPE;
 
 
-
+typedef enum
+{
+    CS_1 =0,
+    CS_2 =1,
+    CS_3 =2,
+    CS_4 =3,
+    CS_5 =4
+} CS_type;
 
 #define ENABLE_FLAG  	  0x00000001
 #define RESETTEBLE_FLAG   0x00000002

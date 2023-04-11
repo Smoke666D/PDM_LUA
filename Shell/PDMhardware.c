@@ -166,26 +166,26 @@ void vOutInit( void )
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,OUT20_PORT ,OUT20_PIN  );
 #endif
 #ifdef PCM
-    vHWOutInit(OUT_1, &htim8, TIM_CHANNEL_4, CS1_PORT ,CS1_PIN, OUT1_PORT ,OUT1_PIN );
-    vHWOutInit(OUT_2, &htim8, TIM_CHANNEL_3, CS1_PORT,CS1_PIN, OUT2_PORT ,OUT2_PIN  );
-    vHWOutInit(OUT_3, &htim8, TIM_CHANNEL_2, CS1_PORT,CS1_PIN, OUT3_PORT ,OUT3_PIN );
-    vHWOutInit(OUT_4, &htim8, TIM_CHANNEL_1, CS1_PORT,CS1_PIN, OUT4_PORT ,OUT4_PIN );
-    vHWOutInit(OUT_5, &htim2, TIM_CHANNEL_1, CS2_PORT,CS2_PIN,OUT5_PORT ,OUT5_PIN );
-    vHWOutInit(OUT_6, &htim2, TIM_CHANNEL_2, CS2_PORT,CS2_PIN,OUT6_PORT ,OUT6_PIN );
-    vHWOutInit(OUT_7, &htim3, TIM_CHANNEL_1, CS2_PORT,CS2_PIN, OUT7_PORT ,OUT7_PIN );
-    vHWOutInit(OUT_8, &htim3, TIM_CHANNEL_2, CS2_PORT,CS2_PIN ,OUT8_PORT ,OUT8_PIN  );
-    vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  CS3_PORT,CS3_PIN,  OUT9_PORT ,OUT9_PIN  );
-    vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, CS3_PORT,CS3_PIN , OUT10_PORT ,OUT10_PIN );
-    vHWOutInit(OUT_11, &htim1, TIM_CHANNEL_3, CS3_PORT,CS3_PIN , OUT11_PORT ,OUT11_PIN );
-    vHWOutInit(OUT_12, &htim1, TIM_CHANNEL_4, CS3_PORT,CS3_PIN ,OUT12_PORT ,OUT12_PIN  );
-    vHWOutInit(OUT_13, &htim2, TIM_CHANNEL_3, CS4_PORT,CS4_PIN , OUT13_PORT ,OUT13_PIN  );
-    vHWOutInit(OUT_14, &htim2, TIM_CHANNEL_4, CS4_PORT,CS4_PIN , OUT14_PORT ,OUT14_PIN );
-    vHWOutInit(OUT_15, &htim12, TIM_CHANNEL_1, CS4_PORT,CS4_PIN , OUT15_PORT ,OUT15_PIN  );
-    vHWOutInit(OUT_16, &htim12, TIM_CHANNEL_2, CS4_PORT,CS4_PIN ,OUT16_PORT ,OUT16_PIN );
-    vHWOutInit(OUT_17, &htim4, TIM_CHANNEL_1, CS5_PORT,CS5_PIN , OUT17_PORT ,OUT17_PIN     );
-    vHWOutInit(OUT_18,  &htim4, TIM_CHANNEL_1, CS5_PORT,CS5_PIN , OUT18_PORT ,OUT18_PIN );
-    vHWOutInit(OUT_19, &htim4, TIM_CHANNEL_3,CS5_PORT,CS5_PIN, OUT19_PORT ,OUT19_PIN );
-    vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_4, CS5_PORT,CS5_PIN,OUT20_PORT ,OUT20_PIN  );
+    vHWOutInit(OUT_1, &htim8, TIM_CHANNEL_4,  CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT1_PORT ,OUT1_PIN );
+    vHWOutInit(OUT_2, &htim8, TIM_CHANNEL_3, CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT2_PORT ,OUT2_PIN  );
+    vHWOutInit(OUT_3, &htim8, TIM_CHANNEL_2, CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT3_PORT ,OUT3_PIN );
+    vHWOutInit(OUT_4, &htim8, TIM_CHANNEL_1, CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT4_PORT ,OUT4_PIN );
+    vHWOutInit(OUT_5, &htim2, TIM_CHANNEL_1, CS_DSI2_GPIO_Port,CS_DSI2_Pin,OUT5_PORT ,OUT5_PIN );
+    vHWOutInit(OUT_6, &htim2, TIM_CHANNEL_2, CS_DSI2_GPIO_Port,CS_DSI2_Pin,OUT6_PORT ,OUT6_PIN );
+    vHWOutInit(OUT_7, &htim3, TIM_CHANNEL_1, CS_DSI2_GPIO_Port,CS_DSI2_Pin, OUT7_PORT ,OUT7_PIN );
+    vHWOutInit(OUT_8, &htim3, TIM_CHANNEL_2, CS_DSI2_GPIO_Port,CS_DSI2_Pin ,OUT8_PORT ,OUT8_PIN  );
+    vHWOutInit(OUT_9, &htim1, TIM_CHANNEL_1,  CS_DIS3_GPIO_Port,CS_DIS3_Pin,  OUT9_PORT ,OUT9_PIN  );
+    vHWOutInit(OUT_10, &htim1, TIM_CHANNEL_2, CS_DIS3_GPIO_Port,CS_DIS3_Pin , OUT10_PORT ,OUT10_PIN );
+    vHWOutInit(OUT_11, &htim1, TIM_CHANNEL_3, CS_DIS3_GPIO_Port,CS_DIS3_Pin , OUT11_PORT ,OUT11_PIN );
+    vHWOutInit(OUT_12, &htim1, TIM_CHANNEL_4, CS_DIS3_GPIO_Port,CS_DIS3_Pin ,OUT12_PORT ,OUT12_PIN  );
+    vHWOutInit(OUT_13, &htim2, TIM_CHANNEL_3, CS_DIS4_GPIO_Port,CS_DIS4_Pin , OUT13_PORT ,OUT13_PIN  );
+    vHWOutInit(OUT_14, &htim2, TIM_CHANNEL_4, CS_DIS4_GPIO_Port,CS_DIS4_Pin , OUT14_PORT ,OUT14_PIN );
+    vHWOutInit(OUT_15, &htim12, TIM_CHANNEL_1, CS_DIS4_GPIO_Port,CS_DIS4_Pin , OUT15_PORT ,OUT15_PIN  );
+    vHWOutInit(OUT_16, &htim12, TIM_CHANNEL_2, CS_DIS4_GPIO_Port,CS_DIS4_Pin ,OUT16_PORT ,OUT16_PIN );
+    vHWOutInit(OUT_17, &htim4, TIM_CHANNEL_1, CS_DIS5_GPIO_Port,CS_DIS5_Pin , OUT17_PORT ,OUT17_PIN     );
+    vHWOutInit(OUT_18, &htim4, TIM_CHANNEL_2, CS_DIS5_GPIO_Port,CS_DIS5_Pin , OUT18_PORT ,OUT18_PIN );
+    vHWOutInit(OUT_19, &htim4, TIM_CHANNEL_3,CS_DIS5_GPIO_Port,CS_DIS5_Pin, OUT19_PORT ,OUT19_PIN );
+    vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_4, CS_DIS5_GPIO_Port,CS_DIS5_Pin,OUT20_PORT ,OUT20_PIN  );
 #endif
 	HAL_TIM_Base_Start_IT(&htim2);
 	return;
@@ -437,7 +437,14 @@ float fAinGetState ( AIN_NAME_TYPE channel )
  */
 float fBatteryGet ( void )
 {
+#ifdef PDM
 	 return (float)muRawVData[3] * AINCOOF1 + INDIOD;
+#endif
+#ifdef PCM
+	 return (float)muRawVData[13] * AINCOOF1 + INDIOD;
+#endif
+
+
 }
 /*
  *
@@ -445,7 +452,13 @@ float fBatteryGet ( void )
 
 float fTemperatureGet ( uint8_t chanel )
 {
+#ifdef PDM
 	return ((float)muRawVData[4] * K - 0.76) /0.0025 + 25;
+#endif
+#ifdef PCM
+	return ((float)muRawVData[14] * K - 0.76) /0.0025 + 25;
+#endif
+
 }
 /*
  *

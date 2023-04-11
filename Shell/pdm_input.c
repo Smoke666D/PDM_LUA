@@ -33,7 +33,7 @@ const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,Din1_GPIO_Port},
 											    {Din9_Pin,Din9_GPIO_Port},
 											    {Din10_Pin,Din10_GPIO_Port},
 											    {Din11_Pin,Din11_GPIO_Port}
-#ifdef PCM
+/*#ifdef PCM
 											    ,{Din12_Pin,Din12_GPIO_Port},
 											    {Din13_Pin,Din13_GPIO_Port},
 											    {Din14_Pin,Din14_GPIO_Port},
@@ -43,7 +43,7 @@ const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,Din1_GPIO_Port},
 											    {Din18_Pin,Din18_GPIO_Port},
 											    {Din19_Pin,Din19_GPIO_Port},
 											    {Din20_Pin,Din20_GPIO_Port}
-#endif
+#endif*/
 };
 /*
  *
