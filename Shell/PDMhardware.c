@@ -437,14 +437,7 @@ float fAinGetState ( AIN_NAME_TYPE channel )
  */
 float fBatteryGet ( void )
 {
-#ifdef PDM
-	 return (float)muRawVData[3] * AINCOOF1 + INDIOD;
-#endif
-#ifdef PCM
-	 return (float)muRawVData[13] * AINCOOF1 + INDIOD;
-#endif
-
-
+	 return (float)muRawVData[BAT_INDEX] * AINCOOF1 + INDIOD;
 }
 /*
  *
@@ -452,13 +445,7 @@ float fBatteryGet ( void )
 
 float fTemperatureGet ( uint8_t chanel )
 {
-#ifdef PDM
-	return ((float)muRawVData[4] * K - 0.76) /0.0025 + 25;
-#endif
-#ifdef PCM
-	return ((float)muRawVData[14] * K - 0.76) /0.0025 + 25;
-#endif
-
+	return ((float)muRawVData[TEMP_INDEX] * K - 0.76) /0.0025 + 25;
 }
 /*
  *
@@ -696,7 +683,7 @@ static void vDataConvertToFloat( void)
 #endif
 #ifdef PCM
      // Полчени из буфера ADC 1 данныех каналов АЦП  7-13
-         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 7U, 7U , ADC1_CHANNELS);
+         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 6U, 7U , ADC1_CHANNELS);
          // Полчени из буфера ADC 1 данныех термодатчика
          vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
          // Полчени из буфера ADC 2 данныех каналов АЦП 1-6

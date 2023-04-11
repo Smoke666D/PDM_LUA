@@ -255,6 +255,16 @@ typedef enum {
 	AIN_2 = 1,
 	AIN_3 = 2,
 	AIN_4 = 3,
+#ifdef PCM
+	AIN_5 = 4,
+	AIN_6 = 5,
+	AIN_7 = 6,
+	AIN_8 = 7,
+	AIN_9 = 8,
+	AIN_10 = 9,
+	AIN_11 = 10,
+	AIN_12 = 11,
+#endif
 } AIN_NAME_TYPE;
 
 typedef enum {

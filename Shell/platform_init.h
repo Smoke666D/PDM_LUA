@@ -25,11 +25,8 @@
     #define AIN_NUMBER          3U        //Количесвто аналоговых входов
 #endif
 #ifdef PCM
-    #define TEMP_INDEX           13U
-    #define BAT_INDEX           12U
-    #define ADC1_CHANNELS      8U
-    #define ADC2_CHANNELS      6U
-    #define ADC3_CHANNELS      4U
+    #define TEMP_INDEX         13U
+    #define BAT_INDEX          12U
     #define AIN_NUMBER             12U        //Количесвто аналоговых входов
 #endif
 
