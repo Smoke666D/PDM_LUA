@@ -14,8 +14,15 @@
 
 #define REV_2 				1
 
+#ifdef PDM
 #define CS_ENABLE	   		GPIO_PIN_SET
 #define CS_DISABLE	   		GPIO_PIN_RESET
+#endif
+
+#ifdef PCM
+#define CS_ENABLE	   		GPIO_PIN_RESET
+#define CS_DISABLE	   		GPIO_PIN_SET
+#endif
 
 
 #define AIN_COUNT			3U		//Количесвто аналоговых входов
@@ -49,9 +56,16 @@
 #define ADC3_READY         0x04
 #define OUT_BUSY		   0x08
 #define ADC_DATA_READY     0x10
+#ifdef PDM
 #define ADC1_CHANNELS      9U
 #define ADC2_CHANNELS      7U
 #define ADC3_CHANNELS      9U
+#endif
+#ifdef PCM
+#define ADC1_CHANNELS      8U
+#define ADC2_CHANNELS      6U
+#define ADC3_CHANNELS      4U
+#endif
 #define ADC_FRAME_SIZE     3U
 #define R1  10000.0
 #define R2  3000.0
@@ -59,18 +73,31 @@
 #define RA1  60400.0
 #define RA2  3000.0
 #define RA3  10000.0
+#define RAA1  15000.0
 
+#ifdef PDM
+#define BAT_COOF AINCOOF1
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
+#endif
+#ifdef PCM
+#define AINCOOF1  ( ( RAA1 + RA3 ) /(float)RAA1) * K
+#define BAT_COOF ( ( 43000 + RA3 ) /RA3) * K
+#endif
+
 #define INDIOD  0.2
 
-#define K   ( 3.3 / 0xFFF )
+#define K   ( 3.3 /(float) 0xFFF )
 
 
-
+#ifdef PDM
 #ifdef REV_2
 	#define RR  300.0
 #else
 	#define RR  330.0
+#endif
+#endif
+#ifdef PCM
+	#define RR  1750.0
 #endif
 #define K15O20   16450U
 #define V15O20   (float)(15.0/K15O20*RR)
@@ -89,8 +116,19 @@
 #define V10O08	(float)(10.0/K10O08*RR)
 #define K05O08  15520U
 #define V05O08	(float)(5.0/K05O08*RR)
-#define ERROR_CURRENT  (uint16_t)(4000U)
 
+
+
+#define K005 2420U
+#define V005  (float)(0.05/K005*RR)
+#define K01  1860U
+#define V01  (float)(1.0/K01*RR)
+#define K02  1760U
+#define V02  (float)(2.0/K02*RR)
+#define K04  1740U
+#define V04  (float)(4.0/K04*RR)
+
+#define ERROR_CURRENT  (uint16_t)(4000U)
 #define CIRCUT_BREAK_CURRENT  0.1
 #define COOF  ( ( R1 + R2 ) /R2) * K
 #define COOF1  ( ( R1 + R3 ) /R3) * K
@@ -273,7 +311,9 @@ typedef enum {
   ANGLE_TYPE_YAW
 } ANGLE_TYPE;
 
-
+#ifdef PCM
+float fVRefGet( void);
+#endif
 void vHWOutOFF( uint8_t ucChannel );
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);

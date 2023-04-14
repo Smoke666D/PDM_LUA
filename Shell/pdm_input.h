@@ -25,7 +25,7 @@
 	#define DIN_CHANNEL 11U
 #endif
 #ifdef PCM
-	#define DIN_CHANNEL 20U
+	#define DIN_CHANNEL 11U//20U
 #endif
 
 #define DIN_VALID   3U

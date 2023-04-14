@@ -37,6 +37,7 @@ static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 static CS_type DOUTGROUP = CS_1;
 #endif
 
+#ifdef PDM
 #ifdef REV_2
 
 
@@ -63,11 +64,40 @@ static const KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K002O20,V002O20}
 										{{K05O08,V05O08},{K10O08,V10O08},{K15O08,V15O08},{K30O08,V30O08}},
 										};
 #endif
+#endif
+
 
 #ifdef PCM
+
+
+static const KAL_DATA CurSensData[OUT_COUNT][KOOF_COUNT] ={   {{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										{{K005,V005},{K01,V01},{K02,V02},{K04,V04}},
+										};
+
 static uint8_t ucGetDOUTGroup();
 static void vGrpopFSM();
+float fVRefGet( void);
+static float fVAinRessistanceGet(OUT_NAME_TYPE eChNum );
 #endif
+
 static void vHWOutSet( OUT_NAME_TYPE out_name) ;
 static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_t  uiChannel, GPIO_TypeDef* EnablePort, uint16_t EnablePin, GPIO_TypeDef* OutPort, uint16_t OutPin );
 void vHWOutOFF( uint8_t ucChannel );
@@ -88,7 +118,7 @@ static void vGrpopFSM()
                 HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
-                DOUTGROUP = CS_2;
+               // DOUTGROUP = CS_2;
                 break;
             case CS_2:
                 HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
@@ -96,15 +126,15 @@ static void vGrpopFSM()
                 HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
-                DOUTGROUP = CS_3;
+              //  DOUTGROUP = CS_3;
                 break;
             case CS_3:
-                HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
-                HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin , CS_DISABLE);
-                HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_ENABLE);
-                HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
+                HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin ,  CS_DISABLE);
+                HAL_GPIO_WritePin(out[OUT_5].GPIOx, out[OUT_5].GPIO_Pin ,  CS_DISABLE);
+                HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin ,  CS_ENABLE);
+                HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin , CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
-                DOUTGROUP = CS_4;
+               // DOUTGROUP = CS_4;
                 break;
             case CS_4:
                 HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
@@ -112,7 +142,7 @@ static void vGrpopFSM()
                 HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_ENABLE);
                 HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_DISABLE);
-                DOUTGROUP = CS_5;
+               // DOUTGROUP = CS_5;
                 break;
             case CS_5:
                 HAL_GPIO_WritePin(out[OUT_1].GPIOx, out[OUT_1].GPIO_Pin , CS_DISABLE);
@@ -120,7 +150,7 @@ static void vGrpopFSM()
                 HAL_GPIO_WritePin(out[OUT_9].GPIOx, out[OUT_9].GPIO_Pin , CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_13].GPIOx, out[OUT_13].GPIO_Pin ,CS_DISABLE);
                 HAL_GPIO_WritePin(out[OUT_17].GPIOx, out[OUT_17].GPIO_Pin , CS_ENABLE);
-                DOUTGROUP = CS_1;
+                //DOUTGROUP = CS_1;
                 break;
     }
     return;
@@ -429,7 +459,7 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
-
+res =  fVAinRessistanceGet(channel);
  return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*
@@ -437,8 +467,32 @@ float fAinGetState ( AIN_NAME_TYPE channel )
  */
 float fBatteryGet ( void )
 {
-	 return (float)muRawVData[BAT_INDEX] * AINCOOF1 + INDIOD;
+#ifdef PDM
+	 return (float)muRawVData[BAT_INDEX] * BAT_COOF + INDIOD;
+#endif
+	 return  ((float)muRawVData[11U] *  AINCOOF1 );
 }
+
+
+#ifdef PCM
+float fVRefGet( void)
+{
+	 return  ((float)muRawVData[11U] *  AINCOOF1 );
+}
+
+float VR;
+float IR;
+float RRV;
+static float fVAinRessistanceGet(OUT_NAME_TYPE eChNum )
+{
+	VR = (float) muRawVData[eChNum] *  AINCOOF1 ;
+	IR = (fVRefGet() - VR )/120;
+    RRV =VR/IR;
+	return (RRV) ;
+}
+
+
+#endif
 /*
  *
  */
@@ -582,7 +636,9 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		sConfigOC.OCIdleState	= TIM_OCIDLESTATE_RESET;
 		sConfigOC.OCNIdleState 	= TIM_OCNIDLESTATE_RESET;
 		HAL_TIM_PWM_ConfigChannel(out[out_name].ptim , &sConfigOC, out[out_name].channel) ;
+#ifdef PDM
 		HAL_GPIO_WritePin(out[out_name].GPIOx, out[out_name].GPIO_Pin , CS_ENABLE);
+#endif
 	}
 	return;
 }
@@ -685,9 +741,9 @@ static void vDataConvertToFloat( void)
      // Полчени из буфера ADC 1 данныех каналов АЦП  7-13
          vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 0U, 6U, 7U , ADC1_CHANNELS);
          // Полчени из буфера ADC 1 данныех термодатчика
-         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 6U, 13U, 1U , ADC1_CHANNELS);
+         vGetAverDataFromRAW((uint16_t *)&ADC1_IN_Buffer, (uint16_t *)&muRawVData, 7U, 13U, 1U , ADC1_CHANNELS);
          // Полчени из буфера ADC 2 данныех каналов АЦП 1-6
-         vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawCurData,0U, 0U, 6U , ADC2_CHANNELS);
+         vGetAverDataFromRAW((uint16_t *)&ADC2_IN_Buffer, (uint16_t *)&muRawVData,0U, 0U, 6U , ADC2_CHANNELS);
          // Полчени из буфера ADC 3 данныех каналов каналов тока
          vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, ucGetDOUTGroup()*4 , 4U , ADC3_CHANNELS);
 #endif
@@ -882,7 +938,7 @@ static void vDataConvertToFloat( void)
    pADCEvent = xEventGroupCreateStatic(&xADCCreatedEventGroup );
    pxPDMstatusEvent = osLUAetPDMstatusHandle();
    TickType_t xLastWakeTime;
-   const TickType_t xPeriod = pdMS_TO_TICKS( 1 );
+   const TickType_t xPeriod = pdMS_TO_TICKS( 2 );
    xLastWakeTime = xTaskGetTickCount();
 
    HAL_TIM_Base_Start(&htim6);
@@ -897,10 +953,20 @@ static void vDataConvertToFloat( void)
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
 	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
 	   ADC_STOP();
+	   vDataConvertToFloat();
 #ifdef PCM
+	   if (DOUTGROUP == CS_5)
+		{
+		   DOUTGROUP = CS_1;
+		}
+	   else
+	   {
+		   DOUTGROUP ++;
+	   }
+
        vGrpopFSM();
 #endif
-	   vDataConvertToFloat();
+
 	   vOutControlFSM();
 	   vADCEnable();
 	    /* Влючаем АЦП, исходя из времени выполнения следующей функции,

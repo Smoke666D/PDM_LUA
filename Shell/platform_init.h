@@ -26,8 +26,8 @@
 #endif
 #ifdef PCM
     #define TEMP_INDEX         13U
-    #define BAT_INDEX          12U
-    #define AIN_NUMBER             12U        //Количесвто аналоговых входов
+    #define BAT_INDEX          11U
+    #define AIN_NUMBER         12U        //Количесвто аналоговых входов
 #endif
 
 

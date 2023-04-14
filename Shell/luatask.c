@@ -686,16 +686,17 @@ void vLuaTask(void *argument)
 	   	   }
            lua_pushnumber( L1, uGetRPM1( ) );
            lua_pushnumber( L1, uGetRPM2( ) );
-           lua_pushnumber( L1, fAinGetState(0));
-           lua_pushnumber( L1, fAinGetState(1));
-           lua_pushnumber( L1, fAinGetState(2));
+           for (uint8_t i=0U; i < 11; i++)
+           {
+        	   lua_pushnumber( L1, fAinGetState(i));
+           }
            lua_pushnumber( L1, fBatteryGet() );
 
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_ROLL) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_PITCH) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_YAW) );
            int temp;
-           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+4+3), &temp) )
+           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+12+3), &temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)
