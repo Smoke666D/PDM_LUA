@@ -183,7 +183,7 @@ int main(void)
   MX_TIM13_Init();
   MX_TIM6_Init();
   MX_RTC_Init();
-  MX_IWDG_Init();
+ // MX_IWDG_Init();
   MX_MEMS_Init();
   /* USER CODE BEGIN 2 */
 
@@ -677,10 +677,10 @@ static void MX_CAN1_Init(void)
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  //if (HAL_CAN_Init(&hcan1) != HAL_OK)
+ // {
+ //   Error_Handler();
+ // }
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
@@ -1679,7 +1679,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void WDT_Reset()
 {
-	HAL_IWDG_Refresh(&hiwdg);
+	//HAL_IWDG_Refresh(&hiwdg);
 }
 /* USER CODE END 4 */
 

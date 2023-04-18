@@ -66,14 +66,16 @@ CO_ReturnError_t CO_CANmodule_init(
 
         uint16_t                CANbitRate)
 {
+	HAL_CAN_DeInit(pPDMCan);
     //Конфигурация драйвера
     pPDMCan->Init.Mode = CAN_MODE_NORMAL;
     pPDMCan->Init.TimeTriggeredMode = DISABLE;
-    pPDMCan->Init.AutoBusOff = DISABLE;
+    pPDMCan->Init.AutoBusOff = ENABLE;
     pPDMCan->Init.AutoWakeUp = DISABLE;
     pPDMCan->Init.AutoRetransmission = ENABLE;
     pPDMCan->Init.ReceiveFifoLocked = DISABLE;
     pPDMCan->Init.TransmitFifoPriority = ENABLE;
+    pPDMCan->ErrorCode = 0x00;
 
     /* Configure CAN timing */
       switch (CANbitRate)
@@ -109,11 +111,21 @@ CO_ReturnError_t CO_CANmodule_init(
                   0
 				  | CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL | CAN_IT_RX_FIFO0_OVERRUN
 				  | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL | CAN_IT_RX_FIFO1_OVERRUN
-				  | CAN_IT_ERROR_WARNING |  CAN_IT_ERROR_PASSIVE      | CAN_IT_BUSOFF
-				  | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR
+				 // | CAN_IT_ERROR_WARNING |  CAN_IT_ERROR_PASSIVE      | CAN_IT_BUSOFF
+				  | CAN_IT_LAST_ERROR_CODE //| CAN_IT_ERROR
+				  | CAN_IT_WAKEUP
 		  ) != HAL_OK) {
          return CO_ERROR_ILLEGAL_ARGUMENT;
       }
+    /* if (HAL_CAN_ActivateNotification(pPDMCan,
+                       0
+				| CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL | CAN_IT_RX_FIFO0_OVERRUN
+				| CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL | CAN_IT_RX_FIFO1_OVERRUN
+     			| CAN_IT_BUSOFF |  CAN_IT_ERROR_PASSIVE | CAN_IT_ERROR  | CAN_IT_ERROR_WARNING |
+				| CAN_IT_WAKEUP
+     		  ) != HAL_OK) {
+              return CO_ERROR_ILLEGAL_ARGUMENT;
+           }*/
      HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
      HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
      HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
