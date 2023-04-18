@@ -132,6 +132,7 @@ void vSYSqueueInit ( void )
 void vSYSeventInit ( void )
 {
 *(osLUAetPDMstatusHandle () ) = xEventGroupCreateStatic(&xPDMstatusEventGroup );
+
 }
 
 

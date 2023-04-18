@@ -45,9 +45,10 @@
 #define END_OF_FILE_BYTE  0xFF
 
 
-#define RUN_STATE  0x01
-#define STOPR_STATE  0x02
+#define RUN_STATE 	   0x01
+#define STOPR_STATE    0x02
 #define RESTART_STATE  0x04
+#define CAN_ERROR      0x08
 
 
 #define RPM_STATE   0x02

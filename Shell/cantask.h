@@ -43,6 +43,15 @@ typedef struct {
     uint16_t filter_id;
 } CAN_FRAME_TYPE;
 
+typedef enum {
+	CAN_OFF		 	= 0,
+	CAN_NORMAL	 	= 1,
+	CAN_CUT_OFF 	= 2,
+	CAN_SHORT_CUT 	= 3,
+
+} CAN_ERROR_TYPE;
+
+EventGroupHandle_t* osCANstatusHandle ( void );
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan);
 void vCANinit();
 void vCANBoudInit( uint16_t boudrate );

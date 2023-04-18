@@ -14,9 +14,12 @@
 
 
 extern CAN_HandleTypeDef hcan1;
+static CAN_ERROR_TYPE eCanError __SECTION(RAM_SECTION_CCMRAM);
+
 QueueHandle_t pCanRXHandle  __SECTION(RAM_SECTION_CCMRAM);
 QueueHandle_t pCanTXHandle  __SECTION(RAM_SECTION_CCMRAM);
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
+
 
 /*
  *
@@ -218,17 +221,27 @@ void vCanInsertTXData(uint32_t CanID, uint8_t * data, uint8_t data_len )
 	return;
 }
 
-
+static uint16_t boundrate_can1;
 /*
  *
  */
 void vCANBoudInit( uint16_t boudrate )
 {
+
 	CO_CANsetConfigurationMode();
 	CO_CANmodule_disable();
-	CO_CANmodule_init( boudrate);
+	boundrate_can1 = boudrate;
+	CO_CANmodule_init( boundrate_can1);
 	CO_CANsetNormalMode();
     return;
+}
+
+void vReinit()
+{
+	xQueueReset(pCanTXHandle);
+	xQueueReset(pCanRXHandle);
+	vCANBoudInit(boundrate_can1);
+
 }
 /*
  *
@@ -236,9 +249,10 @@ void vCANBoudInit( uint16_t boudrate )
 
 void vCANinit()
 {
+	eCanError = CAN_OFF;
 	vInitMailBoxBuffer();
 	vConfigCAN(&hcan1);
-	vCANBoudInit( 1000 );
+	//vCANBoudInit( 1000 );
 	return;
 }
 /*
@@ -247,33 +261,54 @@ void vCANinit()
 void vCanTXTask(void *argument)
 {
 	CAN_TX_FRAME_TYPE TXPacket;
-	uint8_t res = 0;
 	while(1)
 	{
+
 		xQueuePeek( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		if (uPDMGetCanReady() > 0 )
 		{
 			xQueueReceive( pCanTXHandle, &TXPacket, 1);
 			uPDMCanSend(&TXPacket);
+			eCanError = CAN_NORMAL;
 		}
 	}
 }
 
+void HAL_CAN_WakeUpFromRxMsgCallback(CAN_HandleTypeDef *hcan)
+{
+
+}
+
+static uint32_t error;
+
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
-	uint32_t error =hcan->ErrorCode;
+
+
 	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR0)
 	{
 		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX0);
 	}
 	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR1)
 	{
-			HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX1);
+		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX1);
 	}
 	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR2)
 	{
-			HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX2);
+		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX2);
 	}
+	error =hcan->ErrorCode;
+	hcan->ErrorCode = HAL_CAN_ERROR_NONE;
+	if (error & HAL_CAN_ERROR_ACK)
+	{
+		eCanError = CAN_CUT_OFF;
+	}
+	if  ((error & HAL_CAN_ERROR_BD) || (error & HAL_CAN_ERROR_BR ))
+	{
+		eCanError = CAN_SHORT_CUT;
+	}
+
+
 }
 
 /*
@@ -286,5 +321,6 @@ void vCanRXTask(void *argument)
 	{
 		xQueueReceive( pCanRXHandle, &RXPacket,  portMAX_DELAY );
 		vCanInsertRXData(&RXPacket);
+		eCanError = CAN_NORMAL;
 	}
 }

@@ -52,7 +52,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+void vRestartNode();
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

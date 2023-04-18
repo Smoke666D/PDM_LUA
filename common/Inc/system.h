@@ -17,15 +17,15 @@
 
 #define  DEFAULT_TASK_PRIORITY          osPriorityNormal
 #define  LUA_TASK_PRIORITY              osPriorityAboveNormal
-#define  ADC_TASK_PRIORITY              osPriorityHigh
-#define  DOUT_TASK_PRIORITY             osPriorityHigh
-#define  CAN_RX_TASK_PRIORITY           osPriorityHigh
-#define  CAN_TX_TASK_PRIORITY           osPriorityHigh
+#define  ADC_TASK_PRIORITY              osPriorityRealtime
+#define  DOUT_TASK_PRIORITY             osPriorityRealtime
+#define  CAN_RX_TASK_PRIORITY           osPriorityNormal
+#define  CAN_TX_TASK_PRIORITY           osPriorityNormal
 #define  SERIAL_TX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_RX_TASK_PRIORITY        osPriorityLow
 #define  SERIAL_PROTECT_TASK_PRIORITY   osPriorityLow
 #define  USB_TASK_PRIORITY              osPriorityHigh
-#define  DIN_TASK_PRIORITY              osPriorityLow
+#define  DIN_TASK_PRIORITY              osPriorityAboveNormal
 #define  MEMS_TASK_PRIORITY             osPriorityNormal
 
 #define  MEMS_TASK_STACK_SIZE           5000U
