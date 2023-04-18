@@ -15,16 +15,12 @@
 
 extern CAN_HandleTypeDef hcan1;
 static CAN_ERROR_TYPE eCanError __SECTION(RAM_SECTION_CCMRAM);
-static EventGroupHandle_t xCANstatusEvent 	__SECTION(RAM_SECTION_CCMRAM);
+
 QueueHandle_t pCanRXHandle  __SECTION(RAM_SECTION_CCMRAM);
 QueueHandle_t pCanTXHandle  __SECTION(RAM_SECTION_CCMRAM);
 CANRX MailBoxBuffer[MAILBOXSIZE] __SECTION(RAM_SECTION_CCMRAM);
 
 
-EventGroupHandle_t* osCANstatusHandle ( void )
-{
-  return ( &xCANstatusEvent );
-}
 /*
  *
  */
@@ -245,7 +241,7 @@ void vReinit()
 	xQueueReset(pCanTXHandle);
 	xQueueReset(pCanRXHandle);
 	vCANBoudInit(boundrate_can1);
-	xEventGroupSetBits( xCANstatusEvent, RUN_STATE );
+
 }
 /*
  *
@@ -265,16 +261,9 @@ void vCANinit()
 void vCanTXTask(void *argument)
 {
 	CAN_TX_FRAME_TYPE TXPacket;
-	EventBits_t uxBits;
 	while(1)
 	{
-		uxBits = xEventGroupWaitBits( xCANstatusEvent, RUN_STATE | CAN_ERROR, pdFALSE, pdFALSE, portMAX_DELAY );
-		if (uxBits & CAN_ERROR )
-		{
-			xEventGroupClearBits( xCANstatusEvent, CAN_ERROR );
-			vTaskDelay(2000);
-			vReinit();
-		}
+
 		xQueuePeek( pCanTXHandle, &TXPacket, portMAX_DELAY);
 		if (uPDMGetCanReady() > 0 )
 		{
@@ -287,18 +276,15 @@ void vCanTXTask(void *argument)
 
 void HAL_CAN_WakeUpFromRxMsgCallback(CAN_HandleTypeDef *hcan)
 {
-	static portBASE_TYPE xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
-	xEventGroupSetBitsFromISR( xCANstatusEvent, RUN_STATE ,&xHigherPriorityTaskWoken);
-	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+
 }
 
+static uint32_t error;
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
 
 
-//	uint32_t error =hcan->ErrorCode;
 	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_TERR0)
 	{
 		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX0);
@@ -311,25 +297,18 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 	{
 		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX2);
 	}
-	if __HAL_CAN_GET_FLAG(hcan,CAN_FLAG_BOF )
+	error =hcan->ErrorCode;
+	hcan->ErrorCode = HAL_CAN_ERROR_NONE;
+	if (error & HAL_CAN_ERROR_ACK)
+	{
+		eCanError = CAN_CUT_OFF;
+	}
+	if  ((error & HAL_CAN_ERROR_BD) || (error & HAL_CAN_ERROR_BR ))
 	{
 		eCanError = CAN_SHORT_CUT;
-		/*HAL_CAN_DeactivateNotification(hcan,
-		                  0
-						  | CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL | CAN_IT_RX_FIFO0_OVERRUN
-						  | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL | CAN_IT_RX_FIFO1_OVERRUN
-						  | CAN_IT_ERROR_WARNING |  CAN_IT_ERROR_PASSIVE      | CAN_IT_BUSOFF
-						  | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR  | CAN_IT_WAKEUP
-				  );
-		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX0);
-		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX1);
-		HAL_CAN_AbortTxRequest(hcan,CAN_TX_MAILBOX2);
-		CO_CANsetConfigurationMode();
-		static portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		xEventGroupClearBitsFromISR( xCANstatusEvent, RUN_STATE );
-		xEventGroupSetBitsFromISR( xCANstatusEvent, CAN_ERROR ,&xHigherPriorityTaskWoken);
-		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );*/
 	}
+
+
 }
 
 /*
@@ -337,17 +316,9 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
  */
 void vCanRXTask(void *argument)
 {
-	EventBits_t uxBits;
 	CAN_FRAME_TYPE RXPacket;
 	while(1)
 	{
-		uxBits = xEventGroupWaitBits( xCANstatusEvent, RUN_STATE | CAN_ERROR, pdFALSE, pdFALSE, portMAX_DELAY );
-		if (uxBits & CAN_ERROR )
-		{
-			xEventGroupClearBits( xCANstatusEvent, CAN_ERROR );
-			vTaskDelay(2000);
-			vReinit();
-		}
 		xQueueReceive( pCanRXHandle, &RXPacket,  portMAX_DELAY );
 		vCanInsertRXData(&RXPacket);
 		eCanError = CAN_NORMAL;

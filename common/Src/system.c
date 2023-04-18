@@ -56,7 +56,6 @@ static osThreadId_t memsTaskHandle         	    __section( TASK_RAM_SECTION ) = 
 
 
 static StaticEventGroup_t xPDMstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
-static StaticEventGroup_t xCANstatusEventGroup  __section( TASK_RAM_SECTION ) = { 0 };
 static uint8_t canTXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]    __section( TASK_RAM_SECTION ) = { 0U };
 static uint8_t canRXBuffer[ CANRX_QUEUE_SIZE * sizeof( CAN_FRAME_TYPE )  ] 		__section( TASK_RAM_SECTION ) = { 0U };
 //static uint8_t can2TXBuffer[ CANTX_QUEUE_SIZE * sizeof( CAN_TX_FRAME_TYPE ) ]   __section( TASK_RAM_SECTION ) = { 0U };
@@ -133,7 +132,7 @@ void vSYSqueueInit ( void )
 void vSYSeventInit ( void )
 {
 *(osLUAetPDMstatusHandle () ) = xEventGroupCreateStatic(&xPDMstatusEventGroup );
-*(osCANstatusHandle () )      = xEventGroupCreateStatic(&xCANstatusEventGroup );
+
 }
 
 
