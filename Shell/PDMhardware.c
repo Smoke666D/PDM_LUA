@@ -28,7 +28,7 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 
 
 static PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t	muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
@@ -196,6 +196,10 @@ void vOutInit( void )
 	vHWOutInit(OUT_20, &htim4, TIM_CHANNEL_1, GPIOD,Cs_Dis8_19_20_Pin,OUT20_PORT ,OUT20_PIN  );
 #endif
 #ifdef PCM
+	for (int i=0; i<OUT_COUNT;i++)
+	{
+		muRawCurData[i] = 0;
+	}
     vHWOutInit(OUT_1, &htim8, TIM_CHANNEL_4,  CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT1_PORT ,OUT1_PIN );
     vHWOutInit(OUT_2, &htim8, TIM_CHANNEL_3, CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT2_PORT ,OUT2_PIN  );
     vHWOutInit(OUT_3, &htim8, TIM_CHANNEL_2, CS_DIS1_GPIO_Port,CS_DIS1_Pin, OUT3_PORT ,OUT3_PIN );
@@ -470,7 +474,7 @@ float fBatteryGet ( void )
 #ifdef PDM
 	 return (float)muRawVData[BAT_INDEX] * BAT_COOF + INDIOD;
 #endif
-	 return  ((float)muRawVData[11U] *  AINCOOF1 );
+	 return  ((float)muRawVData[12] *  BAT_COOF);
 }
 
 

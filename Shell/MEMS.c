@@ -23,7 +23,7 @@ void vmemsTask(void *argument)
 	HAL_TIM_Base_Start(&htim7);
 	for(;;)
 	{
-
+		//MX_MEMS_Init();
 	   vTaskDelay(10);
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
 	   MX_MEMS_Process();
