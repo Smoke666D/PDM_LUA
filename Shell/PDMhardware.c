@@ -282,26 +282,26 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 				channel_state = 0x02;
 				break;
 			case  OVERLOAD_ERROR :
-				channel_state = 0x03;
+				channel_state = 0x04;
 				break;
 			default:
-				if ( IS_FLAG_SET(i, ( FSM_ON_PROCESS  |  FSM_ON_STATE ) ) )
+				if ( IS_FLAG_SET(i,  FSM_ON_PROCESS)  ||   IS_FLAG_SET(i,  FSM_ON_STATE ) )
 				{
-						channel_state = 1;
+						channel_state = 0x01;
 				}
 				else
 				{
-						channel_state = 0;
+						channel_state = 0x00;
 				}
 				break;
 		  }
 		if (i<10)
 		{
-			status1 |= channel_state<<(2*i);
+			status1 |= channel_state<<(3*i);
 		}
 		else
 		{
-			status2 |= channel_state<<(2*(i-10));
+			status2 |= channel_state<<(3*(i-10));
 		}
 
 	}
@@ -460,6 +460,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].state 		   = 0;
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
+
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
