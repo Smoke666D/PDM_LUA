@@ -27,9 +27,10 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 #define TEMP_DATA    5
 
 
-static PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
+static PDM_OUTPUT_TYPE out[OUT_COUNT]  			    __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t muRawOldOutCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawOldOutCurData[OUT_COUNT]	    __SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawOldVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
@@ -622,6 +623,10 @@ static void vDataConvertToFloat( void)
 	//	 static uint16_t muRawOldCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 	//	 static uint16_t muRawOldOutCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 	 }
+	 for (int i = 0; i<AIN_NUMBER + 2;i++ )
+	 {
+		 muRawVData[i] = vRCFilter(  muRawVData[i] ,&muRawOldVData[i]);
+	 }
 	return;
 }
 /*
@@ -755,6 +760,7 @@ static void vDataConvertToFloat( void)
  					{
  						SET_ERROR_FLAG(i,OPEN_LOAD_ERROR);
  					}
+
  					out[i].current = fCurrent;
  					break;
  				case FSM_RESTART_STATE:
@@ -820,6 +826,10 @@ static void vDataConvertToFloat( void)
    {
 
 	   muRawOldOutCurData[i] = 0;
+   }
+   for (int i=0; i< AIN_NUMBER + 2;i++ )
+   {
+	   muRawOldVData[i] = 0;
    }
    for(;;)
    {
