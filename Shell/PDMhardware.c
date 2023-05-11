@@ -29,6 +29,7 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 
 static PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawOldOutCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
@@ -461,6 +462,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
 
+
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
@@ -530,21 +532,38 @@ static void vHWOutSet( OUT_NAME_TYPE out_name )
 //	}
    return;
 }
+#define A 220
+
+
+static uint16_t vRCFilter( uint16_t input,uint16_t * old_output)
+{
+
+	volatile uint32_t new = input;
+	volatile uint32_t old = *old_output;
+
+
+	volatile uint16_t  output =  ( A * old + (256-A)*new )>>8;
+	//*old_input = input;
+	*old_output = output;
+	return output;
+}
 /*
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
  */
 static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize)
 {
-	uint32_t temp;
+	volatile uint32_t temp;
 	for (uint8_t i=0; i<Size; i++ )
 	{
 		temp = 0;
 		for (uint8_t j=0;j < ADC_FRAME_SIZE; j++ )
 		{
-		  temp += InData[ InIndex + i + j * BufferSize ];
+		  temp += (InData[ InIndex + i + j * BufferSize ]);
 		}
 		OutData[ OutIndex + i ] = temp / ADC_FRAME_SIZE;
+
+
 	}
 	return;
 }
@@ -597,6 +616,12 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+	 for (int i =0;i<OUT_COUNT;i++)
+	 {
+		 muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
+	//	 static uint16_t muRawOldCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+	//	 static uint16_t muRawOldOutCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+	 }
 	return;
 }
 /*
@@ -649,6 +674,7 @@ static void vDataConvertToFloat( void)
 
 
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+    	 //   fCurrent = vRCFilter(fCurrent);
 
     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
     	    {
@@ -790,6 +816,11 @@ static void vDataConvertToFloat( void)
    xLastWakeTime = xTaskGetTickCount();
 
    HAL_TIM_Base_Start(&htim6);
+   for (int i = 0; i< OUT_COUNT;i++)
+   {
+
+	   muRawOldOutCurData[i] = 0;
+   }
    for(;;)
    {
 	   WDT_Reset();
