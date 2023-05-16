@@ -414,7 +414,8 @@ int  iOutConfig( lua_State *L )
 		uint8_t reset_satate    = (lua_gettop(L) >= THIRD_ARGUMENT) ? ( uint8_t ) lua_tointeger(L, THIRD_ARGUMENT) : 1; // режим сброс. Можно ли перезапускать канал выключением
 		uint16_t overload_time  = (lua_gettop(L) >= FOURTH_ARGUMENT) ? ( uint16_t ) lua_tointeger(L, FOURTH_ARGUMENT) : 0;
 		float overlad_power     = (lua_gettop(L) >= FIVE_ARGUMENT) ? ( float ) lua_tonumber(L, FIVE_ARGUMENT ) : nominal_power; //Пусковой ток
-		vHWOutOverloadConfig( out_number, nominal_power, overload_time  , overlad_power, reset_satate  );
+		uint8_t filter_enabele  =  (lua_gettop(L) >= SIX_ARGUMENT) ? ( float ) lua_tonumber(L, SIX_ARGUMENT ) : 1;
+		vHWOutOverloadConfig( out_number, nominal_power, overload_time  , overlad_power, reset_satate , filter_enabele);
 	    vHWOutEnable(out_number);
 	}
 	return ( NO_RESULT );

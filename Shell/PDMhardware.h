@@ -166,6 +166,7 @@ typedef struct __packed
    uint8_t state;
    float overload_power;
    float current;
+   uint8_t filter_enable;
    uint8_t error_counter;
    uint8_t max_error_counter;
    uint8_t PWM;
@@ -181,6 +182,7 @@ typedef struct __packed
    uint16_t restart_config_timer;
    uint32_t SysReg;
    LIN_COOF CSC[KOOF_COUNT -1 ];
+
 } PDM_OUTPUT_TYPE;
 
 
@@ -265,7 +267,7 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, uint8_t off_state);
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state, uint8_t filter_enable);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );

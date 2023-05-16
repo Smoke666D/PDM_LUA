@@ -116,7 +116,7 @@ void vOutInit( void )
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state)
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state, uint8_t filter_enable)
 {
 	ERROR_CODE res = INVALID_ARG;
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
@@ -130,6 +130,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
 				out[out_name].overload_power = overload_power;
+				out[out_name].filter_enable = filter_enable;
 				if  ( off_state == RESETTEBLE_STATE_AFTER_ERROR)
 				{
 					SET_FLAG(out_name,RESETTEBLE_FLAG);
@@ -463,16 +464,16 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
 
-
+		out[out_name].filter_enable     = 1;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR,1);
 		}
 		else
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR);
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR,1);
 		}
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
@@ -617,12 +618,11 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
-	 for (int i =0;i<OUT_COUNT;i++)
-	 {
-		 muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
-	//	 static uint16_t muRawOldCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
-	//	 static uint16_t muRawOldOutCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
-	 }
+	// for (int i =0;i<OUT_COUNT;i++)
+	// {
+	//	 muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
+
+	// }
 	 for (int i = 0; i<AIN_NUMBER + 2;i++ )
 	 {
 		 muRawVData[i] = vRCFilter(  muRawVData[i] ,&muRawOldVData[i]);
@@ -676,8 +676,10 @@ static void vDataConvertToFloat( void)
  	{
     	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
-
-
+    		if (out[i].filter_enable )
+    		{
+    			muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
+    		}
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
     	 //   fCurrent = vRCFilter(fCurrent);
 
