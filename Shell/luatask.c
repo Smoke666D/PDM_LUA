@@ -691,12 +691,12 @@ void vLuaTask(void *argument)
            lua_pushnumber( L1, fAinGetState(1));
            lua_pushnumber( L1, fAinGetState(2));
            lua_pushnumber( L1, fBatteryGet() );
-
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_ROLL) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_PITCH) );
            lua_pushnumber( L1, fAngleGet (ANGLE_TYPE_YAW) );
+           lua_pushnumber( L1, fTemperatureGet () );
            int temp;
-           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+4+3), &temp) )
+           switch ( lua_resume( L1, L, (1+1+2+OUT_COUNT+2+4+3+1), &temp) )
 	   	   {
 	   	     case  LUA_OK:
 	   	   	   if (eMainLoopIsEnable == IS_DISABLE)

@@ -363,7 +363,7 @@ float fBatteryGet ( void )
  *
  */
 
-float fTemperatureGet ( uint8_t chanel )
+float fTemperatureGet (  )
 {
 	return ((float)muRawVData[4] * K - 0.76) /0.0025 + 25;
 }

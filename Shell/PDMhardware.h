@@ -274,7 +274,7 @@ PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
 float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState ( AIN_NAME_TYPE channel );
 float fBatteryGet ( void );
-float fTemperatureGet ( uint8_t chanel );
+float fTemperatureGet (  );
 ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);
