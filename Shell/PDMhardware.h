@@ -60,8 +60,10 @@
 #define RA2  3000.0
 #define RA3  10000.0
 
+
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
-#define INDIOD  0.2
+#define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
+#define INDIOD  0.45
 
 #define K   ( 3.3 / 0xFFF )
 

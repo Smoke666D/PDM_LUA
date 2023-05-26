@@ -348,7 +348,7 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
-  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
+  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF2 );
 
  return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
