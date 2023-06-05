@@ -95,7 +95,9 @@
 #define V05O08	(float)(5.0/K05O08*RR)
 #define ERROR_CURRENT  (uint16_t)(4000U)
 
+#ifdef PDM
 #define CIRCUT_BREAK_CURRENT  0.17
+#endif
 #define COOF  ( ( R1 + R2 ) /R2) * K
 #define COOF1  ( ( R1 + R3 ) /R3) * K
 
