@@ -56,14 +56,16 @@
 #define R1  10000.0
 #define R2  3000.0
 #define R3  1500.0
+
+
+#ifdef PDM
 #define RA1  60400.0
 #define RA2  3000.0
 #define RA3  10000.0
-
-
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
 #define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
 #define INDIOD  0.45
+#endif
 
 #define K   ( 3.3 / 0xFFF )
 
