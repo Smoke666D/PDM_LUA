@@ -33,12 +33,12 @@ typedef struct __packed
 {
   float          battery;                        /* 0 */
   float          voltage[AIN_COUNT];             /* 4 */
-  uint8_t        din[DIN_CHANNEL];               /* 20 */
-  DOUT_TELEMETRY douts[OUT_COUNT];               /* 31 */
-  LUA_TELEMETRY  lua;                            /* 231 */
-  uint16_t       velocity[VELOCITY_COUNT];       /* 236 */
-  float          temperature[TEMPERATURE_COUNT]; /* 240 */
-  float          angle[ANGLE_COUNT];             /* 248 */
+  uint8_t        din[DIN_CHANNEL];               /* 48 */
+  DOUT_TELEMETRY douts[OUT_COUNT];               /* 68 */
+  LUA_TELEMETRY  lua;                            /* 268 */
+  uint16_t       velocity[VELOCITY_COUNT];       /* 274 */
+  float          temperature[TEMPERATURE_COUNT]; /* 278 */
+  float          angle[ANGLE_COUNT];             /* 282 */
 } PDM_TELEMETRY; /* 246 */
 typedef struct __packed
 {
@@ -51,7 +51,7 @@ typedef struct __packed
 
 void     vDATAinit ( void );
 void     vDATAupdate ( void );
-uint8_t  uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out );
+uint8_t  uDATAgetTelemetry ( uint16_t adr, uint8_t size, uint8_t* out );
 uint8_t  uDATAgetErrorString ( uint8_t adr, uint8_t size, uint8_t* out );
 uint32_t ulDATAgetTelemetryLength ( void );
 uint8_t  uDATAgetSystem ( uint8_t adr, uint8_t size, uint8_t* out );

@@ -407,7 +407,7 @@ CLI_STATUS eCLIprocessGet ( void )
             message.length = uCLIversionToStr( FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, FIRMWARE_VERSION_PATCH, message.out );
             break;
           case CLI_VERSION_HARDWARE:
-            message.length = uCLIversionToStr( HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, HARDWARE_VERSION_PATCH, message.out );
+           // message.length = uCLIversionToStr( HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, HARDWARE_VERSION_PATCH, message.out );
             break;
           case CLI_VERSION_LUA:
             ( void )strcpy( message.out, LUA_VERSION_MAJOR );

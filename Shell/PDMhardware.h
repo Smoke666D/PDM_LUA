@@ -25,7 +25,8 @@
 #endif
 
 
-#define AIN_COUNT			3U		//Количесвто аналоговых входов
+	#define AIN_COUNT			(AIN_NUMBER -1)		//Количесвто аналоговых входов
+
 #define OUT_COUNT           20U    //Колчество каналов
 #define OUT_HPOWER_COUNT    8U     //Количесво мощных каналов
 #define VELOCITY_COUNT      2U     // Количество каналов скорости
@@ -70,6 +71,9 @@
 #define R1  10000.0
 #define R2  3000.0
 #define R3  1500.0
+
+
+
 #define RA1  60400.0
 #define RA2  3000.0
 #define RA3  10000.0
@@ -85,6 +89,12 @@
 #endif
 
 #define INDIOD  0.2
+#ifdef PDM
+#define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
+#define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
+#define INDIOD  0.45
+#endif
+
 
 #define K   ( 3.3 /(float) 0xFFF )
 
@@ -119,6 +129,7 @@
 
 
 
+
 #define K005 2420U
 #define V005  (float)(0.05/K005*RR)
 #define K01  1860U
@@ -130,6 +141,11 @@
 
 #define ERROR_CURRENT  (uint16_t)(4000U)
 #define CIRCUT_BREAK_CURRENT  0.1
+
+#ifdef PDM
+#define CIRCUT_BREAK_CURRENT  0.17
+#endif
+
 #define COOF  ( ( R1 + R2 ) /R2) * K
 #define COOF1  ( ( R1 + R3 ) /R3) * K
 
@@ -204,6 +220,7 @@ typedef struct __packed
    uint8_t state;
    float overload_power;
    float current;
+   uint8_t filter_enable;
    uint8_t error_counter;
    uint8_t max_error_counter;
    uint8_t PWM;
@@ -219,6 +236,7 @@ typedef struct __packed
    uint16_t restart_config_timer;
    uint32_t SysReg;
    LIN_COOF CSC[KOOF_COUNT -1 ];
+
 } PDM_OUTPUT_TYPE;
 
 
@@ -322,14 +340,14 @@ void vOutSetState(OUT_NAME_TYPE out_name, uint8_t state);
 void vADC_Ready(uint8_t adc_number);
 void vADCTask(void * argument);
 ERROR_CODE vHWOutResetConfig(OUT_NAME_TYPE out_name, uint8_t restart_count, uint16_t timer);
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, uint8_t off_state);
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state, uint8_t filter_enable);
 ERROR_CODE vOutSetPWM(OUT_NAME_TYPE out_name, uint8_t PWM);
 float fOutGetCurrent(OUT_NAME_TYPE out_name);
 PDM_OUT_STATE_t eOutGetState ( OUT_NAME_TYPE eChNum  );
 float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState ( AIN_NAME_TYPE channel );
 float fBatteryGet ( void );
-float fTemperatureGet ( uint8_t chanel );
+float fTemperatureGet (  );
 ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);

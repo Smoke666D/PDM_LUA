@@ -35,6 +35,7 @@
 #define THIRD_ARGUMENT   3U
 #define FOURTH_ARGUMENT  4U
 #define FIVE_ARGUMENT	 5U
+#define SIX_ARGUMENT	 6U
 #define LAST_ARGUMENT	-1
 
 #define ONE_ARGUMENT	1U

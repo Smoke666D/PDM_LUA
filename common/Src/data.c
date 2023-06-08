@@ -76,7 +76,7 @@ void vDATAupdate ( void )
   return;
 }
 
-static uint8_t uDATAget ( uint8_t adr, uint8_t size, uint8_t* out, uint8_t* data, uint32_t dataSize )
+static uint8_t uDATAget ( uint16_t adr, uint8_t size, uint8_t* out, uint8_t* data, uint32_t dataSize )
 {
   uint8_t* source = &( data )[adr];
   uint32_t remain = dataSize - adr;
@@ -93,7 +93,7 @@ uint32_t ulDATAgetSystemLength ( void )
 {
   return sizeof( PDM_DATA );
 }
-uint8_t uDATAgetTelemetry ( uint8_t adr, uint8_t size, uint8_t* out )
+uint8_t uDATAgetTelemetry ( uint16_t adr, uint8_t size, uint8_t* out )
 {
   return uDATAget( adr, size, out, ( uint8_t* )&telemetry, sizeof( PDM_TELEMETRY ) );
 }

@@ -27,9 +27,13 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 #define TEMP_DATA    5
 
 
-static PDM_OUTPUT_TYPE out[OUT_COUNT]  					__SECTION(RAM_SECTION_CCMRAM);
-static uint16_t	muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+
+
+static PDM_OUTPUT_TYPE out[OUT_COUNT]  			    __SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawOldOutCurData[OUT_COUNT]	    __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
+static uint16_t muRawOldVData[AIN_NUMBER + 2]   		__SECTION(RAM_SECTION_CCMRAM);
 static   EventGroupHandle_t pADCEvent 				__SECTION(RAM_SECTION_CCMRAM);
 static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
@@ -231,7 +235,7 @@ void vOutInit( void )
 /*
  * Функция конфигурация номинальной мощности и режима перегрузки канала, с проверкой коректности парамертов
  */
-ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state)
+ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t overload_timer, float overload_power, OFF_STATE_TYPE off_state, uint8_t filter_enable)
 {
 	ERROR_CODE res = INVALID_ARG;
 	if (out_name < OUT_COUNT)     //Проверяем корекность номера канала
@@ -245,6 +249,7 @@ ERROR_CODE vHWOutOverloadConfig(OUT_NAME_TYPE out_name,  float power, uint16_t o
 				out[out_name].power = power;
 				out[out_name].overload_config_timer = overload_timer;
 				out[out_name].overload_power = overload_power;
+				out[out_name].filter_enable = filter_enable;
 				if  ( off_state == RESETTEBLE_STATE_AFTER_ERROR)
 				{
 					SET_FLAG(out_name,RESETTEBLE_FLAG);
@@ -399,26 +404,26 @@ void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status)
 				channel_state = 0x02;
 				break;
 			case  OVERLOAD_ERROR :
-				channel_state = 0x03;
+				channel_state = 0x04;
 				break;
 			default:
-				if ( IS_FLAG_SET(i, ( FSM_ON_PROCESS  |  FSM_ON_STATE ) ) )
+				if ( IS_FLAG_SET(i,  FSM_ON_PROCESS)  ||   IS_FLAG_SET(i,  FSM_ON_STATE ) )
 				{
-						channel_state = 1;
+						channel_state = 0x01;
 				}
 				else
 				{
-						channel_state = 0;
+						channel_state = 0x00;
 				}
 				break;
 		  }
 		if (i<10)
 		{
-			status1 |= channel_state<<(2*i);
+			status1 |= channel_state<<(3*i);
 		}
 		else
 		{
-			status2 |= channel_state<<(2*(i-10));
+			status2 |= channel_state<<(3*(i-10));
 		}
 
 	}
@@ -462,8 +467,10 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
+
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
 res =  fVAinRessistanceGet(channel);
+
  return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*
@@ -501,7 +508,7 @@ static float fVAinRessistanceGet(OUT_NAME_TYPE eChNum )
  *
  */
 
-float fTemperatureGet ( uint8_t chanel )
+float fTemperatureGet (  )
 {
 	return ((float)muRawVData[TEMP_INDEX] * K - 0.76) /0.0025 + 25;
 }
@@ -601,15 +608,17 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].state 		   = 0;
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
+
+		out[out_name].filter_enable     = 1;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR);
+			vHWOutOverloadConfig(out_name, DEFAULT_HPOWER,DEFAULT_OVERLOAD_TIMER_HPOWER, DEFAULT_HPOWER_MAX, RESETTEBLE_STATE_AFTER_ERROR,1);
 		}
 		else
 		{
-			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR);
+			vHWOutOverloadConfig(out_name, DEFAULT_LPOWER,DEFAULT_OVERLOAD_TIMER_LPOWER, DEFAULT_LPOWER_MAX , RESETTEBLE_STATE_AFTER_ERROR,1);
 		}
 		vHWOutResetConfig(out_name,DEFAULT_RESET_COUNTER, DEFAULT_RESET_TIMER);
 		vOutSetPWM(out_name, DEFAULT_PWM);
@@ -672,21 +681,38 @@ static void vHWOutSet( OUT_NAME_TYPE out_name )
 //	}
    return;
 }
+#define A 220
+
+
+static uint16_t vRCFilter( uint16_t input,uint16_t * old_output)
+{
+
+	volatile uint32_t new = input;
+	volatile uint32_t old = *old_output;
+
+
+	volatile uint16_t  output =  ( A * old + (256-A)*new )>>8;
+	//*old_input = input;
+	*old_output = output;
+	return output;
+}
 /*
  * Функция вытаскивает из входного буфера Indata  (размером FrameSize*BufferSize) со смещением InIndex FrameSize отсчетов,
  * счетает среднее арефмитическое и записывает в буффер OutData со смещением OutIndex
  */
 static void vGetAverDataFromRAW(uint16_t * InData, uint16_t *OutData, uint8_t InIndex, uint8_t OutIndex, uint8_t Size, uint16_t BufferSize)
 {
-	uint32_t temp;
+	volatile uint32_t temp;
 	for (uint8_t i=0; i<Size; i++ )
 	{
 		temp = 0;
 		for (uint8_t j=0;j < ADC_FRAME_SIZE; j++ )
 		{
-		  temp += InData[ InIndex + i + j * BufferSize ];
+		  temp += (InData[ InIndex + i + j * BufferSize ]);
 		}
 		OutData[ OutIndex + i ] = temp / ADC_FRAME_SIZE;
+
+
 	}
 	return;
 }
@@ -740,6 +766,7 @@ static void vDataConvertToFloat( void)
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, 0U, 3U , ADC3_CHANNELS);
 	 // Полчени из буфера ADC 3 данныех каналов каналов тока 13-18
 	 vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 3U, 12U, 6U , ADC3_CHANNELS);
+
 #endif
 #ifdef PCM
      // Полчени из буфера ADC 1 данныех каналов АЦП  7-13
@@ -751,6 +778,16 @@ static void vDataConvertToFloat( void)
          // Полчени из буфера ADC 3 данныех каналов каналов тока
          vGetAverDataFromRAW((uint16_t *)&ADC3_IN_Buffer, (uint16_t *)&muRawCurData, 0U, ucGetDOUTGroup()*4 , 4U , ADC3_CHANNELS);
 #endif
+
+	// for (int i =0;i<OUT_COUNT;i++)
+	// {
+	//	 muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
+
+	// }
+	 for (int i = 0; i<AIN_NUMBER + 2;i++ )
+	 {
+		 muRawVData[i] = vRCFilter(  muRawVData[i] ,&muRawOldVData[i]);
+	 }
 	return;
 }
 /*
@@ -800,9 +837,12 @@ static void vDataConvertToFloat( void)
  	{
     	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
     	{
-
-
+    		if (out[i].filter_enable )
+    		{
+    			muRawCurData[i] = vRCFilter(muRawCurData[i],&muRawOldOutCurData[i]);
+    		}
     	    float fCurrent  = fGetDataFromRaw( ((float) muRawCurData [ i ] *K ) , out[i] );
+    	 //   fCurrent = vRCFilter(fCurrent);
 
     	    if ( ( fCurrent > out[ i ].power) && (out[i].PWM != 100) )
     	    {
@@ -883,6 +923,7 @@ static void vDataConvertToFloat( void)
  					{
  						SET_ERROR_FLAG(i,OPEN_LOAD_ERROR);
  					}
+
  					out[i].current = fCurrent;
  					break;
  				case FSM_RESTART_STATE:
@@ -946,6 +987,15 @@ static void vDataConvertToFloat( void)
    xLastWakeTime = xTaskGetTickCount();
 
    HAL_TIM_Base_Start(&htim6);
+   for (int i = 0; i< OUT_COUNT;i++)
+   {
+
+	   muRawOldOutCurData[i] = 0;
+   }
+   for (int i=0; i< AIN_NUMBER + 2;i++ )
+   {
+	   muRawOldVData[i] = 0;
+   }
    for(;;)
    {
 	   WDT_Reset();
