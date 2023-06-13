@@ -13,6 +13,7 @@
 #include "ain.h"
 
 #define REV_2 				1
+//#define REV_1
 
 #define CS_ENABLE	   		GPIO_PIN_SET
 #define CS_DISABLE	   		GPIO_PIN_RESET
@@ -64,7 +65,14 @@
 #define RA3  10000.0
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
 #define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
+
+#endif
+
+#ifdef REV_2
 #define INDIOD  0.45
+#endif
+#ifdef REV_1
+#define INDIOD  0.2
 #endif
 
 #define K   ( 3.3 / 0xFFF )

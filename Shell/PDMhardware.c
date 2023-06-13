@@ -37,7 +37,7 @@ static   StaticEventGroup_t xADCCreatedEventGroup   __SECTION(RAM_SECTION_CCMRAM
 static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 
 
-#ifdef REV_2
+#ifdef PDM
 
 
 
@@ -348,8 +348,12 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
  */
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
+#ifdef REV_2
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF2 );
-
+#endif
+#ifdef REV_1
+  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
+#endif
  return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*
