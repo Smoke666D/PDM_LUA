@@ -21,6 +21,8 @@
 #include "mems.h"
 #include "ain.h"
 
+
+extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -499,6 +501,52 @@ static int iSetEEPROM( lua_State *L )
 /*
  *
  */
+static int iSetEEPROMTimeStamp( lua_State *L )
+{
+
+
+
+}
+/*
+ * Функция установки из LUA времени и даты
+ */
+static int iSetTime( lua_State *L )
+{
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+    if (lua_gettop(L) == SIX_ARGUMENT )
+	{
+    	time_buffer.Hours   = lua_tointeger( L , FIRST_ARGUMENT );
+	    time_buffer.Minutes = lua_tointeger( L , SECOND_ARGUMENT  );
+		time_buffer.Seconds = lua_tointeger( L , THIRD_ARGUMENT  );
+		date_buffer.Date = lua_tointeger( L ,FOURTH_ARGUMENT  );
+		date_buffer.Month = lua_tointeger( L ,FIVE_ARGUMENT);
+		date_buffer.Year = lua_tointeger( L ,SIX_ARGUMENT );
+		HAL_RTC_SetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
+		HAL_RTC_SetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+	}
+	return ( NO_RESULT );
+}
+/*
+ * Функция чтения из LUA времени и даты
+ */
+static int iGetTime( lua_State *L )
+{
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+	HAL_RTC_GetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+	lua_pushinteger( L, time_buffer.Hours );
+	lua_pushinteger( L,time_buffer.Minutes );
+	lua_pushinteger( L,	time_buffer.Seconds  );
+	lua_pushinteger( L,	date_buffer.Date   );
+	lua_pushinteger( L,	date_buffer.Month );
+	lua_pushinteger( L,	date_buffer.Year );
+	return (  SIX_ARGUMENT );
+}
+/*
+ *
+ */
 static int iGetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
@@ -663,6 +711,8 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
            lua_register(L1,"setAINCalTable",isetAINCal);
            lua_register(L1,"SYSTEM_RESTASRT",iSysrestart);
+           lua_register(L1,"SetTimeDate",iSetTime);
+           lua_register(L1,"GetTimeDate",iGetTime);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

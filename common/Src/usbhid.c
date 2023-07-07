@@ -11,6 +11,7 @@
 #include "flash.h"
 #include "data.h"
 /*----------------------- Structures ----------------------------------------------------------------*/
+extern RTC_HandleTypeDef hrtc;
 extern USBD_HandleTypeDef  hUsbDeviceFS;
 /*----------------------- Constant ------------------------------------------------------------------*/
 /*----------------------- Variables -----------------------------------------------------------------*/
@@ -219,6 +220,46 @@ void eUSBerrorStringToReport ( USB_REPORT* report )
   }
   return;
 }
+
+void vUSBTimeToReport ( USB_REPORT* report )
+{
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+	HAL_RTC_GetTime(&hrtc, &time_buffer,  RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+	report->stat   = USB_REPORT_STATE_OK;
+	report->length = 6;
+	report->data[0] = time_buffer.Hours;
+	report->data[1] = time_buffer.Minutes;
+	report->data[2] = time_buffer.Seconds;
+	report->data[3] = date_buffer.Date;
+	report->data[4] = date_buffer.Month;
+	report->data[5] = date_buffer.Year;
+}
+
+USB_STATUS  eUSBreportToTime  ( USB_REPORT* report )
+{
+    USB_STATUS res = USB_STATUS_DONE;
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+	if (report->length != 6)
+	{
+		res = USB_STATUS_ERROR_LENGTH;
+	}
+	else
+	{
+		time_buffer.Hours    = report->data[0];
+		time_buffer.Minutes  = report->data[1];
+		time_buffer.Seconds	 = report->data[2];
+		date_buffer.Date	 = report->data[3];
+		date_buffer.Month    = report->data[4];
+		date_buffer.Year     = report->data[5];
+		HAL_RTC_SetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
+		HAL_RTC_SetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+
+	}
+	return res;
+}
 /*---------------------------------------------------------------------------------------------------*/
 USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
 {
@@ -396,6 +437,10 @@ void vUSBtask ( void *argument )
       switch( report.cmd )
       {
         /*----------------------------------------*/
+
+        case USB_REPORT_CMD_GET_TIME_DATE:
+        	vUSBsend( &report, vUSBTimeToReport );
+           break;
         case USB_REPORT_CMD_READ_SCRIPT:
           vUSBsend( &report, vUSBscriptToReport );
           break;
@@ -409,6 +454,9 @@ void vUSBtask ( void *argument )
           vUSBsend( &report, eUSBerrorStringToReport );
           break;
         /*----------------------------------------*/
+        case USB_REPORT_CMD_SET_TIME_DATE:
+          vUSBget( &report, eUSBreportToTime );
+             	break;
         case USB_REPORT_CMD_WRITE_SCRIPT:
           vUSBget( &report, eUSBreportToScript );
           break;

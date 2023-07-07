@@ -10,6 +10,7 @@
 #define BOOLEAN_DATA 0x51
 #define INTEGER_DATA 0x52
 #define NUMBER_DATA  0x53
+#define TIME_STAMP   0x80
 #define INVALID_CODE 0x00
 #define WRITE_DATA_FRAME 0x06
 

@@ -1681,6 +1681,9 @@ void WDT_Reset()
 {
 	HAL_IWDG_Refresh(&hiwdg);
 }
+
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
