@@ -14,7 +14,23 @@
 #define INVALID_CODE 0x00
 #define WRITE_DATA_FRAME 0x06
 
+/*
+ * Располжение данных в дисктрипоторе
+ */
+#define REGISTER_VALID_CODE_ADDR 0x00
+#define REGISTER_COUNT_ADDR  	 0x01
+#define RECORD_COUNT_ADDR		 0x03
+#define RECORD_POINTER_ADDR	     0x05
+#define RECORD_SIZE_ADDR		 0x07
+#define DESCRIPTOR_SIZE			 0x08
 
+typedef enum {
+	DATA_STORAGE_OK,
+	DATA_STORAGE_REINIT,
+} DATA_STORAGE_STATUS;
+
+#define LOG_RECORD_SIZE_ADDR 0x02
+#define REGISTER_SIZE 0x05    		 //Размер вертуального регистра
 
 typedef enum {
 	EEPROM_OK,
@@ -29,6 +45,12 @@ typedef struct {
 	uint8_t VALID_FLAG;
 } EEPROM_RECORD_t;
 
+
+typedef enum {
+  DS_OK,
+  OUT_OF_SIZE,
+} DATA_STORAGE_t;
+
 #define EEPROM_DATA_FRAME 5U
 #define EEPROM_ADRESS_SIZE 1U
 #define EEPROM_MAX_ADRRES 0x7FF
@@ -36,8 +58,12 @@ typedef struct {
 
 #define GET_ADDR_MSB( ADDR) (( ADDR >>8U ) & 0x03)
 
-
+#define GET_SHORT(ADD) ( ((uint16_t)datacash[ADD] << 8 ) | datacash[ADD+1] )
+//#define SET_SHORT (ADD,DATA)  datacash[ADD] = DATA >> 8, datacash[ADD+1] = DATA & 0xFF
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
+int eAccessToken( uint16_t token);
+uint16_t usGetEEPROMSize();
+uint16_t usEEPROMReadToUSB(uint16_t addr, uint8_t * data, uint8_t len );
 EERPOM_ERROR_CODE_t eEEPROMReadTpye( uint16_t addr , uint8_t * data_type );
 EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data );
 EERPOM_ERROR_CODE_t eEEPROMWrite( uint16_t addr, uint8_t * data, uint8_t data_type );

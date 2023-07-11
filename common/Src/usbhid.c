@@ -10,6 +10,7 @@
 #include "usb_device.h"
 #include "flash.h"
 #include "data.h"
+#include "datastorage.h"
 /*----------------------- Structures ----------------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
 extern USBD_HandleTypeDef  hUsbDeviceFS;
@@ -221,6 +222,31 @@ void eUSBerrorStringToReport ( USB_REPORT* report )
   return;
 }
 
+void vUSBEEPROMToReport  ( USB_REPORT* report )
+{
+	if ( report->adr  < usGetEEPROMSize() )
+	  {
+	    report->stat   = USB_REPORT_STATE_OK;
+	    report->length = usEEPROMReadToUSB( report->adr, report->data ,  ( USB_DATA_SIZE - 1U ));
+	  }
+	  else
+	  {
+	    report->stat   = USB_REPORT_STATE_BAD_REQ;
+	    report->length = 0U;
+	  }
+	  return;
+}
+
+void vUSBEEPROMSizeToReport ( USB_REPORT* report )
+{
+	uint16_t buffer_data = usGetEEPROMSize();
+	report->stat   = USB_REPORT_STATE_OK;
+	report->length = 2;
+	report->data[0] = buffer_data << 8;
+    report->data[1] = buffer_data & 0xFF;
+}
+
+
 void vUSBTimeToReport ( USB_REPORT* report )
 {
 	RTC_TimeTypeDef time_buffer;
@@ -235,6 +261,20 @@ void vUSBTimeToReport ( USB_REPORT* report )
 	report->data[3] = date_buffer.Date;
 	report->data[4] = date_buffer.Month;
 	report->data[5] = date_buffer.Year;
+}
+
+USB_STATUS  eUSBreportToToken( USB_REPORT* report )
+{
+	USB_STATUS res = USB_STATUS_DONE;
+	if (report->length !=2 )
+	{
+		res = USB_STATUS_ERROR_LENGTH;
+	}
+	else
+	{
+		eAccessToken( (uint16_t)( ( report->data[0] << 8) | (report->data[1]) ));
+	}
+	return (res);
 }
 
 USB_STATUS  eUSBreportToTime  ( USB_REPORT* report )
@@ -437,7 +477,12 @@ void vUSBtask ( void *argument )
       switch( report.cmd )
       {
         /*----------------------------------------*/
-
+      	  case USB_REPORT_CMD_GET_EEPROM:
+      		vUSBsend( &report, vUSBEEPROMToReport );
+      		 break;
+      	  case USB_REPORT_CMD_GET_EEPROM_SIZE:
+            vUSBsend( &report, vUSBEEPROMSizeToReport );
+            break;
         case USB_REPORT_CMD_GET_TIME_DATE:
         	vUSBsend( &report, vUSBTimeToReport );
            break;
@@ -454,13 +499,17 @@ void vUSBtask ( void *argument )
           vUSBsend( &report, eUSBerrorStringToReport );
           break;
         /*----------------------------------------*/
+        case USB_REPORT_CMD_SET_EEPROM:
+        	break;
+        case USB_REPORT_CMD_SEND_ACCESS_TOKEN:
+        	vUSBget( &report, eUSBreportToToken );
+        	break;
         case USB_REPORT_CMD_SET_TIME_DATE:
           vUSBget( &report, eUSBreportToTime );
-             	break;
+          break;
         case USB_REPORT_CMD_WRITE_SCRIPT:
           vUSBget( &report, eUSBreportToScript );
           break;
-        /*----------------------------------------*/
         case USB_REPORT_CMD_UPDATE_TELEMETRY:
           vUSBget( &report, eUSBupdateTelemetry );
           break;
