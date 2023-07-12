@@ -241,9 +241,10 @@ void vUSBEEPROMSizeToReport ( USB_REPORT* report )
 {
 	uint16_t buffer_data = usGetEEPROMSize();
 	report->stat   = USB_REPORT_STATE_OK;
-	report->length = 2;
-	report->data[0] = buffer_data << 8;
-    report->data[1] = buffer_data & 0xFF;
+	report->length = 3;
+	report->data[0] = (buffer_data!=0) ? 1 : 0;
+	report->data[1] = buffer_data >> 8;
+    report->data[2] = buffer_data & 0xFF;
 }
 
 
@@ -277,6 +278,28 @@ USB_STATUS  eUSBreportToToken( USB_REPORT* report )
 	return (res);
 }
 
+USB_STATUS   eUSBStartEEPROMread( USB_REPORT* report )
+{
+	USB_STATUS res = USB_STATUS_DONE;
+	if (iReadEEPROM() == 0)
+	{
+		res = USB_STATUS_FORBIDDEN;
+	}
+
+	return (res);
+}
+
+
+USB_STATUS  eUSBEEPROMwrite( USB_REPORT* report )
+{
+	USB_STATUS res = USB_STATUS_DONE;
+	if (iWriteEEPROM() == 0)
+	{
+		res = USB_STATUS_FORBIDDEN;
+	}
+
+	return (res);
+}
 USB_STATUS  eUSBreportToTime  ( USB_REPORT* report )
 {
     USB_STATUS res = USB_STATUS_DONE;
@@ -321,6 +344,25 @@ USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
   }
   return res;
 }
+
+USB_STATUS eUSBReportToEEPROM( const USB_REPORT* report )
+{
+	USB_STATUS res = USB_STATUS_DONE;
+	  switch ( eEEPROMWriteData( report->adr, report->data, report->length ) )
+	  {
+	    case FLASH_OK:
+	      res = EEPROM_OK;
+	      break;
+	    case EEPROM_NOT_VALIDE_ADRESS:
+	      res = USB_STATUS_ERROR_ADR;
+	      break;
+	    default:
+	      res = USB_STATUS_STORAGE_ERROR;
+	      break;
+	  }
+	  return res;
+}
+
 /*---------------------------------------------------------------------------------------------------*/
 USB_STATUS eUSBstartWriting ( const USB_REPORT* report )
 {
@@ -477,6 +519,7 @@ void vUSBtask ( void *argument )
       switch( report.cmd )
       {
         /*----------------------------------------*/
+
       	  case USB_REPORT_CMD_GET_EEPROM:
       		vUSBsend( &report, vUSBEEPROMToReport );
       		 break;
@@ -499,7 +542,14 @@ void vUSBtask ( void *argument )
           vUSBsend( &report, eUSBerrorStringToReport );
           break;
         /*----------------------------------------*/
+        case USB_REPORT_CMD_END_EEPROM_WRITE:
+        	vUSBget( &report, eUSBEEPROMwrite);
+        	break;
         case USB_REPORT_CMD_SET_EEPROM:
+        	vUSBget( &report, eUSBReportToEEPROM);
+        	break;
+        case USB_REPORT_CMD_START_EEPROM_READ:
+        	vUSBget( &report, eUSBStartEEPROMread );
         	break;
         case USB_REPORT_CMD_SEND_ACCESS_TOKEN:
         	vUSBget( &report, eUSBreportToToken );

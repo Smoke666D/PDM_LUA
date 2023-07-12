@@ -38,6 +38,7 @@ typedef enum {
 	EEPROM_NOT_VALIDE_ADRESS,
 	EEPROM_READ_ERROR,
 	EEPROM_WRITE_ERROR,
+	EEPROM_ACCESS_ERROR,
 } EERPOM_ERROR_CODE_t;
 
 typedef struct {
@@ -62,10 +63,13 @@ typedef enum {
 //#define SET_SHORT (ADD,DATA)  datacash[ADD] = DATA >> 8, datacash[ADD+1] = DATA & 0xFF
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 int eAccessToken( uint16_t token);
+int iReadEEPROM();
+int iWriteEEPROM();
 uint16_t usGetEEPROMSize();
 uint16_t usEEPROMReadToUSB(uint16_t addr, uint8_t * data, uint8_t len );
 EERPOM_ERROR_CODE_t eEEPROMReadTpye( uint16_t addr , uint8_t * data_type );
 EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data );
+EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint8_t len );
 EERPOM_ERROR_CODE_t eEEPROMWrite( uint16_t addr, uint8_t * data, uint8_t data_type );
 
 #endif /* DATASTORAGE_H_ */
