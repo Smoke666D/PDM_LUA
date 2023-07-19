@@ -293,6 +293,7 @@ USB_STATUS   eUSBStartEEPROMread( USB_REPORT* report )
 USB_STATUS  eUSBEEPROMwrite( USB_REPORT* report )
 {
 	USB_STATUS res = USB_STATUS_DONE;
+
 	if (iWriteEEPROM() == 0)
 	{
 		res = USB_STATUS_FORBIDDEN;
@@ -395,6 +396,13 @@ USB_STATUS eUSBrestartLua ( const USB_REPORT* report )
 {
   USB_STATUS res = USB_STATUS_DONE;
   vLUArestartPDM();
+  return res;
+}
+
+USB_STATUS eUSBstopLua ( const USB_REPORT* report )
+{
+  USB_STATUS res = USB_STATUS_DONE;
+  vLUAstopPDM();
   return res;
 }
 /*---------------------------------------------------------------------------------------------------*/
@@ -572,6 +580,9 @@ void vUSBtask ( void *argument )
         case USB_REPORT_CMD_RESTART_LUA:
           vUSBget( &report, eUSBrestartLua );
           break;
+        case USB_REPORT_CMD_STOP_LUA:
+        	vUSBget( &report, eUSBstopLua );
+        	break;
         /*----------------------------------------*/
         default:
           break;
