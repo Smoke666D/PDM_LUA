@@ -475,10 +475,10 @@ int  iOutSetPWM( lua_State *L )
 void vSetRegData(uint8_t * buf, uint8_t * data, uint8_t data_type)
 {
 	buf[0] = data_type;
-	buf[1] = data[3];
-	buf[2] = data[2];
-	buf[3] = data[1];
-	buf[4] = data[0];
+	buf[1] = data[0];
+	buf[2] = data[1];
+	buf[3] = data[2];
+	buf[4] = data[3];
 	return;
 }
 uint8_t temp_data[5];
@@ -597,6 +597,7 @@ static int iSetRecord( lua_State *L )
    uint32_t record_type;
    uint8_t record_size;
    uint8_t record[32];
+   int32_t buffer_data;
    uint8_t argument_number = 1;
    uint16_t data_offset = 0;
    vEEPROMCheckRecord( &record_type ,&record_size);
@@ -625,14 +626,19 @@ static int iSetRecord( lua_State *L )
 		   	   		  data_offset +=5;
 		   	   		  break;
 		   	   	  case 0x01:
-		   	   		  data_offset +=1;
+
+
+		   	      	  buffer_data =lua_tointeger( L, argument_number );
+		   	   		  record[data_offset]  =  (uint8_t)buffer_data;
 		   	   	      argument_number++;
-		   	   		  record[data_offset] =  (uint8_t)lua_tointeger( L, argument_number );
+		   	     	  data_offset +=1;
 		   	   		  break;
 		   	   	  case 0x02:
-		   	   		  data_offset +=2;
-		   	   	      argument_number++;
+
+
 		   	   		  *((uint16_t*)&record[data_offset]) =  (uint16_t)lua_tointeger( L, argument_number );
+		   	   	      argument_number++;
+		   	   	      data_offset +=2;
 		   	   		  break;
 		   	   	  case 0x03:
 		   	    	if ( lua_isinteger( L, argument_number ) )
@@ -663,7 +669,6 @@ static int iSetRecord( lua_State *L )
 		   }
 
 		   record_type= record_type >> 2;
-
 	   }
 	   eEEPROMAddReg(&record);
    }
@@ -823,6 +828,7 @@ void vLuaTask(void *argument)
     	   vOutInit();
            vAINInit();
            vDinInit();
+           eIntiDataStorage();
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();

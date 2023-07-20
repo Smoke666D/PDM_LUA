@@ -278,7 +278,7 @@ USB_STATUS  eUSBreportToToken( USB_REPORT* report )
 	return (res);
 }
 
-USB_STATUS   eUSBStartEEPROMread( USB_REPORT* report )
+USB_STATUS   eUSBStartEEPROMread( const USB_REPORT* report )
 {
 	USB_STATUS res = USB_STATUS_DONE;
 	if (iReadEEPROM() == 0)
@@ -290,7 +290,7 @@ USB_STATUS   eUSBStartEEPROMread( USB_REPORT* report )
 }
 
 
-USB_STATUS  eUSBEEPROMwrite( USB_REPORT* report )
+USB_STATUS  eUSBEEPROMwrite( const USB_REPORT* report )
 {
 	USB_STATUS res = USB_STATUS_DONE;
 
@@ -301,7 +301,7 @@ USB_STATUS  eUSBEEPROMwrite( USB_REPORT* report )
 
 	return (res);
 }
-USB_STATUS  eUSBreportToTime  ( USB_REPORT* report )
+USB_STATUS  eUSBreportToTime  ( const USB_REPORT* report )
 {
     USB_STATUS res = USB_STATUS_DONE;
 	RTC_TimeTypeDef time_buffer;

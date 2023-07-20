@@ -29,9 +29,9 @@ I2C_HandleTypeDef  * I2C;
 #define  MAX_RECORD_SIZE 	  32
 
 static EEPROM_DISCRIPTOR DataStorageDiscriptor;
-static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint8_t len );
+static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t len );
 static DATA_STORAGE_STATUS eResetDataStorage();
-static EERPOM_ERROR_CODE_t eIntiDataStorage();
+
 static void SET_SHORT( uint16_t addr, uint16_t data);
 
 static DATA_STORAGE_STATUS eResetDataStorage()
@@ -51,7 +51,7 @@ static void vInitDescriptor()
 	DataStorageDiscriptor.record_fields_count = 0;
 	if ( datacash[RECORD_SIZE_ADDR ] !=0 )
 	{
-		DataStorageDiscriptor.recod_start_offset = datacash[REGISTER_COUNT_ADDR]*REGISTER_LEN + REGISTER_OFFSET;
+		DataStorageDiscriptor.recod_start_offset = GET_SHORT(REGISTER_COUNT_ADDR)*REGISTER_LEN + REGISTER_OFFSET;
 		DataStorageDiscriptor.max_record_count   = (EEPROM_MAX_ADRRES - DataStorageDiscriptor.recod_start_offset)/datacash[RECORD_SIZE_ADDR ];
 		uint32_t temp_data_format = datacash[RECORD_FORMAT_ADDR] | datacash[RECORD_FORMAT_ADDR+1]<<8 | datacash[RECORD_FORMAT_ADDR+2]<<16 | datacash[RECORD_FORMAT_ADDR+3]<<24;;
 		if ((temp_data_format & 0x03) == 0 )
@@ -112,7 +112,7 @@ uint16_t vAddRecordToStorage()
 	if   ( DataStorageDiscriptor.current_reccord_offset  + datacash[RECORD_SIZE_ADDR] > EEPROM_MAX_ADRRES )
 	{
 		DataStorageDiscriptor.current_reccord_offset  = DataStorageDiscriptor.recod_start_offset;
-		SET_SHORT(RECORD_POINTER_ADDR, 1 );
+		SET_SHORT(RECORD_POINTER_ADDR, 0 );
 	}
 	else
 	{
@@ -120,12 +120,12 @@ uint16_t vAddRecordToStorage()
 	}
 	if ( GET_SHORT(RECORD_COUNT_ADDR)  < DataStorageDiscriptor.max_record_count )
 	{
-	    		SET_SHORT(RECORD_COUNT_ADDR,GET_SHORT(RECORD_COUNT_ADDR) +1 );
+	    SET_SHORT(RECORD_COUNT_ADDR,GET_SHORT(RECORD_COUNT_ADDR) +1 );
 	}
 	current_offset = DataStorageDiscriptor.current_reccord_offset;
 	DataStorageDiscriptor.current_reccord_offset += datacash[RECORD_SIZE_ADDR];
 	eEEPROMWr(0,&datacash,REGISTER_OFFSET);
-	return current_offset;
+	return (current_offset);
 
 
 }
@@ -134,7 +134,7 @@ EERPOM_ERROR_CODE_t eEEPROMAddReg(  uint8_t * data_type )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
 	uint16_t record_start_index = 0;
-    if ( eGetRecordsStatus() == RECORD_IS_CONFIG )
+    if ( ( eGetRecordsStatus() == RECORD_IS_CONFIG ) && (USB_access==0))
     {
 
     	record_start_index  = vAddRecordToStorage();
@@ -148,11 +148,12 @@ EERPOM_ERROR_CODE_t eEEPROMAddReg(  uint8_t * data_type )
 }
 
 
-static EERPOM_ERROR_CODE_t eIntiDataStorage()
+ EERPOM_ERROR_CODE_t eIntiDataStorage()
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_OK;
-	/*Читаем всю память EEPROM в кэш память*/
-    acces_permit = 0;
+
+	//eResetDataStorage();
+	//eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES );
 	if ( eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0], EEPROM_MAX_ADRRES) != EEPROM_OK)
 	{
 		res = EEPROM_READ_ERROR;
@@ -160,12 +161,17 @@ static EERPOM_ERROR_CODE_t eIntiDataStorage()
 	else
 	{
 
-		/*Если не совпадает код, то обнуляем данные*/
+
 		if (datacash[VALIDE_CODE_ADDR ] != VALID_CODE)
 		{
 			eResetDataStorage();
-			res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD , &datacash[0], EEPROM_MAX_ADRRES, 1000 ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
-			eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0], REGISTER_OFFSET);
+			res =  (eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
+			if (res == EEPROM_OK)
+			{
+				eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0], EEPROM_MAX_ADRRES);
+			}
+			else
+				eResetDataStorage();
 
 		}
 		vInitDescriptor();
@@ -189,7 +195,8 @@ int iWriteEEPROM()
 {
 	if (acces_permit == 1 )
 	{
-		HAL_I2C_Master_Transmit(I2C, Device_ADD , &datacash[0],  EEPROM_MAX_ADRRES, EEPROM_TIME_OUT );
+		eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES );
+		//HAL_I2C_Master_Transmit(I2C, Device_ADD , &datacash[0],  EEPROM_MAX_ADRRES, EEPROM_TIME_OUT );
 	}
 	return (acces_permit );
 }
@@ -207,7 +214,8 @@ int eAccessToken( uint16_t token)
 	if (GET_SHORT(ACCESS_TOKEN_ADDR) == 0)
 	{
 		SET_SHORT( ACCESS_TOKEN_ADDR,  token);
-		HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( ACCESS_TOKEN_ADDR) , &datacash[ACCESS_TOKEN_ADDR], 2, EEPROM_TIME_OUT );
+		eEEPROMWr(ACCESS_TOKEN_ADDR, &datacash[ACCESS_TOKEN_ADDR],2);
+		//HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( ACCESS_TOKEN_ADDR) , &datacash[ACCESS_TOKEN_ADDR], 2, EEPROM_TIME_OUT );
 		acces_permit  = 1;
 	}
 	else
@@ -305,41 +313,81 @@ EERPOM_ERROR_CODE_t eEEPROMWriteData ( uint32_t adr, const uint8_t* data, uint32
   return res;
 }
 
+uint8_t ucData[17];
 
-static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint8_t len )
+static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t len )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
-	uint16_t usAddres = addr * EEPROM_DATA_FRAME +len;
-	if (  usAddres  < EEPROM_MAX_ADRRES )
+	uint16_t cur_addr = addr;
+	uint16_t offset = 0;
+	uint8_t cur_len = 0;
+	uint16_t byte_to_send = len;
+	//uint16_t usAddres = addr * EEPROM_DATA_FRAME +len;
+	if ((  addr+ len  <= EEPROM_MAX_ADRRES ) && (len!=0))
 	{
-		uint8_t ucData[len];
-		for (uint8_t i=0;i<len; i++)
-		{
-			ucData[i] = data[i];
+
+	  if (len == 1)
+	  {
+		  ucData[0] = (addr & 0xFF);
+		  ucData[1] = *data;
+		  res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( addr) , &ucData, 1, EEPROM_TIME_OUT ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
+	  }
+	  else
+	  {
+		  res = EEPROM_OK;
+		  while  (byte_to_send > 0)
+		  {
+			  cur_len = 16 - (cur_addr % 16);
+			  if (cur_len > byte_to_send)
+				  cur_len = byte_to_send;
+			  for (uint8_t i=0; i < cur_len; i++)
+			  {
+				  ucData[i+1] = data[offset +i];
+			  }
+			  ucData[0]= (cur_addr & 0xFF);
+			  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( cur_addr) , &ucData, cur_len+1, EEPROM_TIME_OUT ) != HAL_OK )
+			  {
+				  res =  EEPROM_WRITE_ERROR;
+				  break;
+			  }
+			  offset = offset  + cur_len;
+			  byte_to_send = byte_to_send - cur_len;
+			  cur_addr = cur_addr  + cur_len;
+		  }
 		}
-		res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucData[0], len, EEPROM_TIME_OUT ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
+
 	}
 	return ( res );
 
 }
 
 
-EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint8_t len )
+
+
+
+
+EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
-	uint16_t usAddres = addr +len;
-	if (  usAddres  < EEPROM_MAX_ADRRES )
+	//uint16_t usAddres = addr +len;
+
+	if ( (addr +len)  <= EEPROM_MAX_ADRRES )
 	{
 
-		uint8_t ucTemp = (uint8_t)(usAddres & 0xFF);
-		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucTemp, EEPROM_ADRESS_SIZE , EEPROM_TIME_OUT) != HAL_OK )
+	   for (int i =0;i<len;i++)
+	   {
+
+		uint8_t ucTemp = (uint8_t)(addr+i & 0xFF);
+		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr+i ), &ucTemp, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
 		{
+			break;
 			res = EEPROM_READ_ERROR;
 		}
 		else
 		{
-			if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &datacash[usAddres], len, EEPROM_TIME_OUT) != HAL_OK)
+			if ( HAL_I2C_Master_Receive( I2C, Device_ADD, data[i], 1 , 1000) != HAL_OK)
 			{
+				break;
 					res = EEPROM_READ_ERROR;
 			}
 			else
@@ -347,6 +395,7 @@ EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint8_t len )
 				res = EEPROM_OK;
 			}
 		}
+	  }
 	}
 	return ( res );
 }
@@ -358,9 +407,8 @@ void vEEPROMInit(I2C_HandleTypeDef * hi2c2)
  //uint8_t Data[]={0x01,0x22,0x44,0x77,0x44,0x66,0x76,0x24};
  //uint8_t rData[8] ={0x01,0,0,0,0,0,0,0};
  I2C = hi2c2;
-
- eIntiDataStorage();
  acces_permit = 0;
+
  //HAL_I2C_Master_Transmit(I2C, Device_ADD , &Data[0], 8, 1000);
  //HAL_I2C_Master_Transmit(I2C, Device_ADD , &Data[0], 1, 1000);
  //HAL_I2C_Master_Receive( I2C, Device_ADD, &rData[0], 7, 1000);
@@ -407,15 +455,15 @@ EERPOM_ERROR_CODE_t eEEPROMRegWrite( uint16_t addr, uint8_t * data )
 	uint16_t usAddres = addr * REGISTER_LEN + REGISTER_OFFSET ;
 	if (( addr  < GET_SHORT(REGISTER_COUNT_ADDR) ) && (USB_access==0))
 	{
-		uint8_t ucData[WRITE_DATA_FRAME];
+		uint8_t Data[WRITE_DATA_FRAME];
 		for (uint8_t i=0;i<EEPROM_DATA_FRAME; i++)
 		{
-			ucData[i+1U] = data[i];
+			Data[i] = data[i];
 		}
 		uint8_t newdata = 0;
 		for (uint8_t i=0U; i < REGISTER_LEN; i++ )
 		{
-			if (datacash[usAddres + i ] != ucData[i + 1U])
+			if (datacash[usAddres + i ] != Data[i])
 			{
 				newdata = 1;
 				break;
@@ -423,8 +471,9 @@ EERPOM_ERROR_CODE_t eEEPROMRegWrite( uint16_t addr, uint8_t * data )
 		}
 		if (newdata)
 		{
-			ucData[0U] = (usAddres & 0xFF);
-			res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucData[0],WRITE_DATA_FRAME, EEPROM_TIME_OUT ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
+			res = eEEPROMWr(usAddres,&Data[0],WRITE_DATA_FRAME);
+			//ucData[0U] = (usAddres & 0xFF);
+			//res =  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( usAddres ) , &ucData[0],WRITE_DATA_FRAME, EEPROM_TIME_OUT ) == HAL_OK ) ? EEPROM_OK : EEPROM_WRITE_ERROR ;
 			if (res == EEPROM_OK)
 			{
 				for (uint8_t i=0U; i < REGISTER_LEN; i++ )

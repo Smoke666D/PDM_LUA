@@ -12,7 +12,7 @@
 #define NUMBER_DATA  0x20
 #define TIME_STAMP   0x80
 #define INVALID_CODE 0x00
-#define WRITE_DATA_FRAME 0x06
+#define WRITE_DATA_FRAME 0x05
 #define REGISTER_LEN 0x05
 
 /*
@@ -82,7 +82,8 @@ typedef enum {
 #define EEPROM_MAX_ADRRES 0x7FF
 #define EEPROM_TIME_OUT 100U
 
-#define GET_ADDR_MSB( ADDR) (( ADDR >>8U ) & 0x03)
+#define GET_ADDR_MSB( ADDR) (( ADDR >>7U ) & 0x0E)
+//#define GET_ADDR_MSB_R( ADDR) ( ( ADDR >>7U ) & 0x0E )
 
 #define GET_SHORT(ADD) ( ((uint16_t)datacash[ADD] << 8 ) | datacash[ADD+1] )
 //#define SET_SHORT (ADD,DATA)  datacash[ADD] = DATA >> 8, datacash[ADD+1] = DATA & 0xFF
@@ -91,11 +92,12 @@ int eAccessToken( uint16_t token);
 int iReadEEPROM();
 int iWriteEEPROM();
 uint16_t usGetEEPROMSize();
+EERPOM_ERROR_CODE_t eIntiDataStorage();
 uint16_t usEEPROMReadToUSB(uint16_t addr, uint8_t * data, uint8_t len );
 EERPOM_ERROR_CODE_t eEEPROMReadRegTpye( uint16_t addr , uint8_t * data_type );
 void vEEPROMCheckRecord( uint32_t * data_type, uint8_t * record_szie );
 EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data );
-EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint8_t len );
+EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len );
 EERPOM_ERROR_CODE_t eEEPROMRegWrite( uint16_t addr, uint8_t * data );
 void vSetTimeToReg( uint8_t * DataStorage, PDM_DATA_TIME data);
 
