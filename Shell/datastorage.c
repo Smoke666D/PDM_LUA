@@ -9,6 +9,7 @@
 #include "datastorage.h"
 #include "stm32f4xx_hal.h"
 #include "system.h"
+#include "main.h"
 
 static uint8_t datacash[EEPROM_MAX_ADRRES]		__SECTION(RAM_SECTION_CCMRAM);
 static uint8_t  acces_permit					__SECTION(RAM_SECTION_CCMRAM);
@@ -42,6 +43,13 @@ static DATA_STORAGE_STATUS eResetDataStorage()
 		datacash[i] = 0;
 }
 
+static DATA_STORAGE_STATUS eResetDataStorage1()
+{
+
+	datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
+	for (int i = 0 ; i< EEPROM_MAX_ADRRES;i++)
+		datacash[i] = i;
+}
 #define I2C_NO_OPTION_FRAME       0xFFFF0000U /*!< XferOptions default value */
 
 
@@ -152,9 +160,10 @@ EERPOM_ERROR_CODE_t eEEPROMAddReg(  uint8_t * data_type )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_OK;
 
+  //  eResetDataStorage1();
+	//eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], 1000 );
 	//eResetDataStorage();
-	//eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES );
-	if ( eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0], EEPROM_MAX_ADRRES) != EEPROM_OK)
+	if ( eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0],EEPROM_MAX_ADRRES ) != EEPROM_OK)
 	{
 		res = EEPROM_READ_ERROR;
     }
@@ -322,7 +331,6 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 	uint16_t offset = 0;
 	uint8_t cur_len = 0;
 	uint16_t byte_to_send = len;
-	//uint16_t usAddres = addr * EEPROM_DATA_FRAME +len;
 	if ((  addr+ len  <= EEPROM_MAX_ADRRES ) && (len!=0))
 	{
 
@@ -335,7 +343,21 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 	  else
 	  {
 		  res = EEPROM_OK;
-		  while  (byte_to_send > 0)
+		 /* vTaskSuspendAll();
+		 /for (int i = 0; i< len;i++)
+		  {
+			  ucData[0]= ((addr+i) & 0xFF);
+			  ucData[1]= data[i];
+
+			  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( addr+i) , &ucData, 2, EEPROM_TIME_OUT ) != HAL_OK )
+			  			  {
+			  				  res =  EEPROM_WRITE_ERROR;
+			  				  break;
+			  			  }
+
+		  }
+		  xTaskResumeAll();*/
+		   while  (byte_to_send > 0)
 		  {
 			  cur_len = 16 - (cur_addr % 16);
 			  if (cur_len > byte_to_send)
@@ -350,6 +372,7 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 				  res =  EEPROM_WRITE_ERROR;
 				  break;
 			  }
+			  osDelay(5);
 			  offset = offset  + cur_len;
 			  byte_to_send = byte_to_send - cur_len;
 			  cur_addr = cur_addr  + cur_len;
@@ -370,24 +393,75 @@ EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
 	//uint16_t usAddres = addr +len;
+	uint16_t cur_addr = addr;
+	uint16_t offset = 0;
+	uint8_t cur_len = 0;
+	uint16_t byte_to_read = len;
+
 
 	if ( (addr +len)  <= EEPROM_MAX_ADRRES )
 	{
+		/*uint8_t ucTemp = (uint8_t)(addr & 0xFF);
+		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr ), &ucTemp, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
+		{
+			res = EEPROM_READ_ERROR;
 
-	   for (int i =0;i<len;i++)
+		}
+		if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &data, len , 1000) != HAL_OK)
+		{
+
+				res = EEPROM_READ_ERROR;
+
+		}
+		else
+		{
+			    res = EEPROM_OK;
+		}*/
+
+		/*  while  (byte_to_read > 0)
+	      {
+					 cur_len = 16 - (cur_addr % 16);
+					  if (cur_len > byte_to_read)
+						  cur_len = byte_to_read;
+
+					  ucData[0]= (cur_addr & 0xFF);
+					  if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(cur_addr ), &ucData, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
+					  		{
+					  			break;
+					  			res = EEPROM_READ_ERROR;
+					  		}
+					  if ( HAL_I2C_Master_Receive( I2C, Device_ADD, data[offset],  cur_len, 1000) != HAL_OK)
+					  			{
+					  				break;
+					  					res = EEPROM_READ_ERROR;
+					  			}
+					  			else
+					  			{
+					  				res = EEPROM_OK;
+					  			}
+
+
+					  offset = offset  + cur_len;
+					  byte_to_read = byte_to_read - cur_len;
+					  cur_addr = cur_addr  + cur_len;
+
+	      }*/
+
+	  //for (int i =0;i<len;i=i+100)
 	   {
-
+  int i = 0;
 		uint8_t ucTemp = (uint8_t)(addr+i & 0xFF);
+
 		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr+i ), &ucTemp, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
 		{
-			break;
+			//break;
 			res = EEPROM_READ_ERROR;
 		}
 		else
 		{
-			if ( HAL_I2C_Master_Receive( I2C, Device_ADD, data[i], 1 , 1000) != HAL_OK)
+			if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &data[i], len , 1000) != HAL_OK)
 			{
-				break;
+				//break;
 					res = EEPROM_READ_ERROR;
 			}
 			else
@@ -395,7 +469,9 @@ EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len )
 				res = EEPROM_OK;
 			}
 		}
+
 	  }
+
 	}
 	return ( res );
 }
