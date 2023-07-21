@@ -204,8 +204,7 @@ int iWriteEEPROM()
 {
 	if (acces_permit == 1 )
 	{
-		eEEPROMWr(VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES );
-		//HAL_I2C_Master_Transmit(I2C, Device_ADD , &datacash[0],  EEPROM_MAX_ADRRES, EEPROM_TIME_OUT );
+		eEEPROMWr( VALIDE_CODE_ADDR , &datacash[0], EEPROM_MAX_ADRRES );
 	}
 	return (acces_permit );
 }
@@ -213,7 +212,7 @@ int iReadEEPROM()
 {
 	if (acces_permit == 1 )
 	{
-		eEEPROMRd(VALIDE_CODE_ADDR,&datacash[0], EEPROM_MAX_ADRRES);
+		eEEPROMRd( VALIDE_CODE_ADDR, &datacash[0], EEPROM_MAX_ADRRES );
 	}
 	return (acces_permit );
 }
@@ -303,7 +302,7 @@ EERPOM_ERROR_CODE_t eEEPROMWriteData ( uint32_t adr, const uint8_t* data, uint32
 	EERPOM_ERROR_CODE_t     res       = EEPROM_OK;
 	if ( acces_permit)
 	{
-		if ( length + adr  < EEPROM_MAX_ADRRES )
+		if ( length + adr  <= EEPROM_MAX_ADRRES )
 		{
 			USB_access = 1;
 			uint8_t* source = &datacash[adr];
@@ -343,20 +342,6 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 	  else
 	  {
 		  res = EEPROM_OK;
-		 /* vTaskSuspendAll();
-		 /for (int i = 0; i< len;i++)
-		  {
-			  ucData[0]= ((addr+i) & 0xFF);
-			  ucData[1]= data[i];
-
-			  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( addr+i) , &ucData, 2, EEPROM_TIME_OUT ) != HAL_OK )
-			  			  {
-			  				  res =  EEPROM_WRITE_ERROR;
-			  				  break;
-			  			  }
-
-		  }
-		  xTaskResumeAll();*/
 		   while  (byte_to_send > 0)
 		  {
 			  cur_len = 16 - (cur_addr % 16);
@@ -367,12 +352,14 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 				  ucData[i+1] = data[offset +i];
 			  }
 			  ucData[0]= (cur_addr & 0xFF);
+			  //if (HAL_I2C_IsDeviceReady() == HAL_OK;
+
 			  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( cur_addr) , &ucData, cur_len+1, EEPROM_TIME_OUT ) != HAL_OK )
 			  {
 				  res =  EEPROM_WRITE_ERROR;
 				  break;
 			  }
-			  osDelay(5);
+			  //osDelay(5);
 			  offset = offset  + cur_len;
 			  byte_to_send = byte_to_send - cur_len;
 			  cur_addr = cur_addr  + cur_len;
@@ -392,12 +379,6 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len )
 {
 	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
-	//uint16_t usAddres = addr +len;
-	uint16_t cur_addr = addr;
-	uint16_t offset = 0;
-	uint8_t cur_len = 0;
-	uint16_t byte_to_read = len;
-
 
 	if ( (addr +len)  <= EEPROM_MAX_ADRRES )
 	{
