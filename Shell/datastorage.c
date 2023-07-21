@@ -359,7 +359,7 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 				  res =  EEPROM_WRITE_ERROR;
 				  break;
 			  }
-			  //osDelay(5);
+			  osDelay(5);
 			  offset = offset  + cur_len;
 			  byte_to_send = byte_to_send - cur_len;
 			  cur_addr = cur_addr  + cur_len;
@@ -373,88 +373,24 @@ static EERPOM_ERROR_CODE_t eEEPROMWr( uint16_t addr, uint8_t * data, uint16_t le
 
 
 
-
-
-
+/*
+* Функция чтения блока данных из EEPROM
+*/
 EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len )
 {
-	EERPOM_ERROR_CODE_t res = EEPROM_NOT_VALIDE_ADRESS;
-
 	if ( (addr +len)  <= EEPROM_MAX_ADRRES )
 	{
-		/*uint8_t ucTemp = (uint8_t)(addr & 0xFF);
-		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr ), &ucTemp, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
+		uint8_t ucTemp = (uint8_t)(addr & 0xFF);
+		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr ), &ucTemp, EEPROM_ADRESS_SIZE ,EEPROM_TIME_OUT ) != HAL_OK )
 		{
-			res = EEPROM_READ_ERROR;
-
-		}
-		if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &data, len , 1000) != HAL_OK)
-		{
-
-				res = EEPROM_READ_ERROR;
-
+			return ( EEPROM_READ_ERROR );
 		}
 		else
 		{
-			    res = EEPROM_OK;
-		}*/
-
-		/*  while  (byte_to_read > 0)
-	      {
-					 cur_len = 16 - (cur_addr % 16);
-					  if (cur_len > byte_to_read)
-						  cur_len = byte_to_read;
-
-					  ucData[0]= (cur_addr & 0xFF);
-					  if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(cur_addr ), &ucData, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
-					  		{
-					  			break;
-					  			res = EEPROM_READ_ERROR;
-					  		}
-					  if ( HAL_I2C_Master_Receive( I2C, Device_ADD, data[offset],  cur_len, 1000) != HAL_OK)
-					  			{
-					  				break;
-					  					res = EEPROM_READ_ERROR;
-					  			}
-					  			else
-					  			{
-					  				res = EEPROM_OK;
-					  			}
-
-
-					  offset = offset  + cur_len;
-					  byte_to_read = byte_to_read - cur_len;
-					  cur_addr = cur_addr  + cur_len;
-
-	      }*/
-
-	  //for (int i =0;i<len;i=i+100)
-	   {
-  int i = 0;
-		uint8_t ucTemp = (uint8_t)(addr+i & 0xFF);
-
-		if ( HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB(addr+i ), &ucTemp, EEPROM_ADRESS_SIZE , 1000) != HAL_OK )
-		{
-			//break;
-			res = EEPROM_READ_ERROR;
-		}
-		else
-		{
-			if ( HAL_I2C_Master_Receive( I2C, Device_ADD, &data[i], len , 1000) != HAL_OK)
-			{
-				//break;
-					res = EEPROM_READ_ERROR;
-			}
-			else
-			{
-				res = EEPROM_OK;
-			}
-		}
-
-	  }
-
+			return ( ( HAL_I2C_Master_Receive( I2C, Device_ADD, data, len ,EEPROM_TIME_OUT) != HAL_OK) ? EEPROM_READ_ERROR : EEPROM_OK );
+	    }
 	}
-	return ( res );
+	return ( EEPROM_NOT_VALIDE_ADRESS );
 }
 
 
