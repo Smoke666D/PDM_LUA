@@ -41,6 +41,7 @@ static EventGroupHandle_t  * pxPDMstatusEvent		__SECTION(RAM_SECTION_CCMRAM);
 static CS_type DOUTGROUP = CS_1;
 #endif
 
+
 #ifdef PDM
 #ifdef REV_2
 
@@ -468,9 +469,17 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 float fAinGetState ( AIN_NAME_TYPE channel )
 {
 
+
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
 res =  fVAinRessistanceGet(channel);
-
+#ifdef PDM
+#ifdef REV_2
+  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF2 );
+#endif
+#ifdef REV_1
+  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
+#endif
+#endif
  return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*

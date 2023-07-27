@@ -37,7 +37,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#define WD
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -185,9 +185,15 @@ int main(void)
   MX_RTC_Init();
 
 
+
 //  MX_IWDG_Init();
 
 
+
+
+#ifdef WD
+  MX_IWDG_Init();
+#endif
 
   MX_MEMS_Init();
 
@@ -676,8 +682,8 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 100000;
-  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.ClockSpeed = 400000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_16_9;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -1626,8 +1632,17 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void WDT_Reset()
 {
+
 	//HAL_IWDG_Refresh(&hiwdg);
+
+#ifdef WD
+	HAL_IWDG_Refresh(&hiwdg);
+#endif
+
 }
+
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */

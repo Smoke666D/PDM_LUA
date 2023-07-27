@@ -13,6 +13,7 @@
 #include "ain.h"
 
 #define REV_2 				1
+//#define REV_1
 
 #ifdef PDM
 #define CS_ENABLE	   		GPIO_PIN_SET
@@ -92,9 +93,18 @@
 #ifdef PDM
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
 #define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
-#define INDIOD  0.45
+
 #endif
 
+
+#ifdef PDM
+#ifdef REV_2
+#define INDIOD  0.45
+#endif
+#ifdef REV_1
+#define INDIOD  0.2
+#endif
+#endif
 
 #define K   ( 3.3 /(float) 0xFFF )
 

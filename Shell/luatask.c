@@ -21,6 +21,8 @@
 #include "mems.h"
 #include "ain.h"
 
+
+extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim11;
 static LUA_STATE_t state 					__SECTION(RAM_SECTION_CCMRAM) = 0U;
 uint32_t ulWorkCicleIn10us					__SECTION(RAM_SECTION_CCMRAM) = 0U;
@@ -107,6 +109,8 @@ void vLUArestartPDM()
 	state = LUA_RESTART;
 	return;
 }
+
+
 
 /*
  *
@@ -465,33 +469,83 @@ int  iOutSetPWM( lua_State *L )
 /*
  * Функция записи в EEPROM
  */
+
+
+
+void vSetRegData(uint8_t * buf, uint8_t * data, uint8_t data_type)
+{
+	buf[0] = data_type;
+	buf[1] = data[0];
+	buf[2] = data[1];
+	buf[3] = data[2];
+	buf[4] = data[3];
+	return;
+}
+uint8_t temp_data[5];
+
 static int iSetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
-	if (lua_gettop(L) == TWO_ARGUMENTS )
+	PDM_DATA_TIME temp_time;
+	uint16_t adr;
+
+	switch (lua_gettop(L))
 	{
-		uint16_t adr = lua_tointeger( L , FIRST_ARGUMENT );
-		if ( lua_isinteger( L, SECOND_ARGUMENT ) )
-		{
-			int idata = lua_tointeger( L, SECOND_ARGUMENT );
-			res = ( eEEPROMWrite( adr, (uint8_t *)&idata, INTEGER_DATA ) == EEPROM_OK )? SUCSESS : ERROR;
-		}
-		else
-		{
-			if ( lua_isnumber( L, SECOND_ARGUMENT ) )
+		case TWO_ARGUMENTS:
+			adr = lua_tointeger( L , FIRST_ARGUMENT );
+			if ( lua_isinteger( L, SECOND_ARGUMENT ) )
 			{
-				float fdata = lua_tonumber( L, SECOND_ARGUMENT);
-				res = ( eEEPROMWrite( adr, (uint8_t *)&fdata, NUMBER_DATA  ) == EEPROM_OK ) ? SUCSESS : ERROR;
+				uint32_t temp_int = lua_tointeger( L, SECOND_ARGUMENT );
+				vSetRegData(&temp_data,(uint8_t *)&temp_int,INTEGER_DATA  );
+				res = (eEEPROMRegWrite( adr, &temp_data ) == EEPROM_OK )? SUCSESS : ERROR;
 			}
 			else
 			{
-				if ( lua_isboolean ( L, SECOND_ARGUMENT ) )
+				if ( lua_isnumber( L, SECOND_ARGUMENT ) )
 				{
-					int idata = lua_toboolean( L, SECOND_ARGUMENT );
-					res = ( eEEPROMWrite( adr, (uint8_t *)&idata, BOOLEAN_DATA  ) == EEPROM_OK ) ? SUCSESS : ERROR;
+					float temp_float = lua_tonumber( L, SECOND_ARGUMENT);
+
+					vSetRegData(&temp_data,(uint8_t *)&temp_float,NUMBER_DATA  );
+					res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+				}
+				else
+				{
+					if ( lua_isboolean ( L, SECOND_ARGUMENT ) )
+					{
+						uint32_t temp_bool = lua_toboolean( L, SECOND_ARGUMENT );
+						vSetRegData(&temp_data,(uint8_t *)&temp_bool,BOOLEAN_DATA );
+						res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+					}
 				}
 			}
-		}
+			break;
+		case 1:
+			adr = lua_tointeger( L , FIRST_ARGUMENT );
+			RTC_TimeTypeDef time_buffer;
+			RTC_DateTypeDef date_buffer;
+			HAL_RTC_GetTime(&hrtc, &time_buffer,  RTC_FORMAT_BIN);
+			HAL_RTC_GetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+			temp_time.Day = date_buffer.Date;
+			temp_time.Month =  date_buffer.Month;
+			temp_time.Year = date_buffer.Year;
+			temp_time.Hour = time_buffer.Hours;
+			temp_time.Minute = time_buffer.Minutes;
+			temp_time.Second = time_buffer.Seconds;
+			vSetTimeToReg( &temp_data[0], temp_time);
+			res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+			break;
+		case 7:
+			adr = lua_tointeger( L , FIRST_ARGUMENT );
+			temp_time.Day = lua_tointeger( L, SECOND_ARGUMENT );
+			temp_time.Month =  lua_tointeger( L, THIRD_ARGUMENT );
+			temp_time.Year = lua_tointeger( L, FOURTH_ARGUMENT );
+			temp_time.Hour = lua_tointeger( L, FIVE_ARGUMENT	);
+			temp_time.Minute = lua_tointeger( L, SIX_ARGUMENT );
+			temp_time.Second = lua_tointeger( L,  SEVEN_ARGUMENT  );
+			vSetTimeToReg( &temp_data[0], temp_time);
+			res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+			break;
+		default: break;
 	}
 	lua_pushnumber(L, res );
 	return ( ONE_RESULT );
@@ -499,43 +553,183 @@ static int iSetEEPROM( lua_State *L )
 /*
  *
  */
+
+/*
+ * Функция установки из LUA времени и даты
+ */
+static int iSetTime( lua_State *L )
+{
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+    if (lua_gettop(L) == SIX_ARGUMENT )
+	{
+    	time_buffer.Hours   = lua_tointeger( L , FIRST_ARGUMENT );
+	    time_buffer.Minutes = lua_tointeger( L , SECOND_ARGUMENT  );
+		time_buffer.Seconds = lua_tointeger( L , THIRD_ARGUMENT  );
+		date_buffer.Date = lua_tointeger( L ,FOURTH_ARGUMENT  );
+		date_buffer.Month = lua_tointeger( L ,FIVE_ARGUMENT);
+		date_buffer.Year = lua_tointeger( L ,SIX_ARGUMENT );
+		HAL_RTC_SetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
+		HAL_RTC_SetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+	}
+	return ( NO_RESULT );
+}
+/*
+ * Функция чтения из LUA времени и даты
+ */
+static int iGetTime( lua_State *L )
+{
+	RTC_TimeTypeDef time_buffer;
+	RTC_DateTypeDef date_buffer;
+	HAL_RTC_GetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+	lua_pushinteger( L, time_buffer.Hours );
+	lua_pushinteger( L, time_buffer.Minutes );
+	lua_pushinteger( L,	time_buffer.Seconds );
+	lua_pushinteger( L,	date_buffer.Date  );
+	lua_pushinteger( L,	date_buffer.Month );
+	lua_pushinteger( L,	date_buffer.Year );
+	return (  SIX_ARGUMENT );
+}
+
+static int iSetRecord( lua_State *L )
+{
+   uint32_t record_type;
+   uint8_t record_size;
+   uint8_t record[32];
+   int32_t buffer_data;
+   uint8_t argument_number = 1;
+   uint16_t data_offset = 0;
+   vEEPROMCheckRecord( &record_type ,&record_size);
+   if (record_size !=0)
+   {
+	   for (uint8_t i = 0; i < record_size; i++ )
+	   {
+		   if (lua_gettop( L )>=argument_number)
+		   {
+			   uint8_t data_type =  (record_type & 0x03);
+			   switch (data_type)
+			   {
+		   	   	  case 0x00:
+		   	   		  RTC_TimeTypeDef time_buffer;
+		   	   		  RTC_DateTypeDef date_buffer;
+		   	   	      PDM_DATA_TIME temp_time;
+		   	   		  HAL_RTC_GetTime(&hrtc, &time_buffer,  RTC_FORMAT_BIN);
+		   	   		  HAL_RTC_GetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
+		   	   		  temp_time.Day = date_buffer.Date;
+		   	   		  temp_time.Month =  date_buffer.Month;
+		   	   		  temp_time.Year = date_buffer.Year;
+		   	   		  temp_time.Hour = time_buffer.Hours;
+		   	   		  temp_time.Minute = time_buffer.Minutes;
+		   	   		  temp_time.Second = time_buffer.Seconds;
+		   	   		  vSetTimeToReg( &record[data_offset], temp_time);
+		   	   		  data_offset +=5;
+		   	   		  break;
+		   	   	  case 0x01:
+
+
+		   	      	  buffer_data =lua_tointeger( L, argument_number );
+		   	   		  record[data_offset]  =  (uint8_t)buffer_data;
+		   	   	      argument_number++;
+		   	     	  data_offset +=1;
+		   	   		  break;
+		   	   	  case 0x02:
+
+
+		   	   		  *((uint16_t*)&record[data_offset]) =  (uint16_t)lua_tointeger( L, argument_number );
+		   	   	      argument_number++;
+		   	   	      data_offset +=2;
+		   	   		  break;
+		   	   	  case 0x03:
+		   	    	if ( lua_isinteger( L, argument_number ) )
+		   	   		{
+		   	   			uint32_t temp_int = lua_tointeger( L, argument_number );
+		   	   			vSetRegData(&record[data_offset],(uint8_t *)&temp_int,INTEGER_DATA  );
+		   	   		}
+		   	   		else
+		   	   		{
+		   	   			if ( lua_isnumber( L, argument_number ) )
+		   	   			{
+		   	   				float temp_float = lua_tonumber( L, argument_number);
+		   	   				vSetRegData(&record[data_offset],(uint8_t *)&temp_float,NUMBER_DATA  );
+		   	   			}
+		   	   			else
+		   	   			{
+		   	   				if ( lua_isboolean ( L, argument_number ) )
+		   	   				{
+		   	   					uint32_t temp_bool = lua_toboolean( L, argument_number );
+		   	   					vSetRegData(&record[data_offset],(uint8_t *)&temp_bool,BOOLEAN_DATA );
+		   	   				}
+		   	   			}
+		   	   		}
+		   	    	argument_number++;
+		   	   		 data_offset +=5;
+		   	   		  break;
+			   }
+		   }
+
+		   record_type= record_type >> 2;
+	   }
+	   eEEPROMAddReg(&record);
+   }
+
+}
+/*
+ *
+ */
 static int iGetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
+	int idata;
 	if ( lua_gettop( L ) == ONE_ARGUMENT )
 	{
 		uint16_t adr = (uint16_t) lua_tointeger( L, FIRST_ARGUMENT );
 		uint8_t  data_type;
-		res = eEEPROMReadTpye( adr , &data_type );
-		if ( data_type == INTEGER_DATA )
+		res = eEEPROMReadRegTpye( adr , &data_type );
+		switch (data_type & 0xF0)
 		{
-			int idata;
-			if ( eEEPROMRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
-			{
-				lua_pushinteger( L, idata );
-				res = SUCSESS;
-			}
-		}
-		else
-		{
-			if ( data_type == BOOLEAN_DATA )
-			{
-				int idata;
-				if ( eEEPROMRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
+			case INTEGER_DATA:
+
+				if ( eEEPROMRegRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
+				{
+					lua_pushinteger( L, idata );
+					res = SUCSESS;
+				}
+			break;
+			case BOOLEAN_DATA:
+
+				if ( eEEPROMRegRead( adr, (uint8_t *)&idata ) == EEPROM_OK )
 				{
 					lua_pushboolean( L, idata);
 					res = SUCSESS;
 				}
-			}
-			else
-			{
+				break;
+			case NUMBER_DATA:
 				float fdata;
-				if ( eEEPROMRead( adr, (uint8_t *)&fdata ) == EEPROM_OK )
+				if ( eEEPROMRegRead( adr, (uint8_t *)&fdata ) == EEPROM_OK )
 				{
 					lua_pushnumber( L, fdata);
 					res = SUCSESS;
 				}
-			}
+				break;
+			case TIME_STAMP:
+				PDM_DATA_TIME data;
+				uint8_t temp[5];
+				eEEPROMRegRead( adr, (uint8_t *)&temp[1] );
+				res = SUCSESS;
+				temp[0] = data_type;
+				vGetRegToTime( &temp,  &data);
+				lua_pushnumber( L, data.Day);
+				lua_pushnumber( L, data.Month);
+				lua_pushnumber( L, data.Year);
+				lua_pushnumber( L, data.Hour);
+				lua_pushnumber( L, data.Minute);
+				lua_pushnumber( L, data.Second);
+				lua_pushnumber( L, res );
+				return (7);
+				break;
+			default:
+				break;
 		}
 	}
 	if ( res == ERROR)
@@ -634,6 +828,7 @@ void vLuaTask(void *argument)
     	   vOutInit();
            vAINInit();
            vDinInit();
+           eIntiDataStorage();
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();
@@ -654,8 +849,8 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"GetRequest",iCanGetMessage);
 	   	   lua_register(L1,"GetRequestToTable",iCanGetResivedData);
 	   	   lua_register(L1,"ConfigCan",iCanSetConfig);
-	   	   lua_register(L1,"GetEEPROM",iGetEEPROM);
-	   	   lua_register(L1,"SetEEPROM",iSetEEPROM);
+	   	   lua_register(L1,"GetEEPROMReg",iGetEEPROM);
+	   	   lua_register(L1,"SetEEPROMReg",iSetEEPROM);
 	   	   lua_register(L1,"setPID",iSetPID);
 	   	   lua_register(L1,"resetPID",iResetPID);
 	   	   lua_register(L1,"processPID",iProcessPID);
@@ -663,6 +858,9 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
            lua_register(L1,"setAINCalTable",isetAINCal);
            lua_register(L1,"SYSTEM_RESTASRT",iSysrestart);
+           lua_register(L1,"SetTimeDate",iSetTime);
+           lua_register(L1,"GetTimeDate",iGetTime);
+           lua_register(L1,"AddReccord",iSetRecord);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

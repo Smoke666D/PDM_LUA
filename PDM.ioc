@@ -143,8 +143,13 @@ FREERTOS.configUSE_TIMERS=1
 FREERTOS.configUSE_TRACE_FACILITY=1
 File.Version=6
 GPIO.groupedBy=Group By Peripherals
+<<<<<<< HEAD
 IWDG.IPParameters=Prescaler
 IWDG.Prescaler=IWDG_PRESCALER_16
+=======
+I2C2.I2C_Mode=I2C_Fast
+I2C2.IPParameters=I2C_Mode
+>>>>>>> releasev1_1
 KeepUserPlacement=false
 Mcu.CPN=STM32F405ZGT6
 Mcu.Family=STM32F4
