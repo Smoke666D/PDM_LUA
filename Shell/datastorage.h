@@ -6,7 +6,7 @@
 #include "main.h"
 
 #define Device_ADD 0x00A0
-#define VALID_CODE   0x75
+#define VALID_CODE   0x85
 #define BOOLEAN_DATA 0x10
 #define INTEGER_DATA 0x40
 #define NUMBER_DATA  0x20
