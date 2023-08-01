@@ -42,7 +42,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "EEPROM.H"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

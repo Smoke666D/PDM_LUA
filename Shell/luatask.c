@@ -496,25 +496,21 @@ static int iSetEEPROM( lua_State *L )
 			if ( lua_isinteger( L, SECOND_ARGUMENT ) )
 			{
 				uint32_t temp_int = lua_tointeger( L, SECOND_ARGUMENT );
-				vSetRegData(&temp_data,(uint8_t *)&temp_int,INTEGER_DATA  );
-				res = (eEEPROMRegWrite( adr, &temp_data ) == EEPROM_OK )? SUCSESS : ERROR;
+				res = (eEEPROMRegTypeWrite( adr, (uint8_t *)&temp_int,INTEGER_DATA ) == EEPROM_OK )? SUCSESS : ERROR;
 			}
 			else
 			{
 				if ( lua_isnumber( L, SECOND_ARGUMENT ) )
 				{
 					float temp_float = lua_tonumber( L, SECOND_ARGUMENT);
-
-					vSetRegData(&temp_data,(uint8_t *)&temp_float,NUMBER_DATA  );
-					res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+					res = (eEEPROMRegTypeWrite( adr,(uint8_t *)&temp_float,NUMBER_DATA ) == EEPROM_OK )? SUCSESS : ERROR;
 				}
 				else
 				{
 					if ( lua_isboolean ( L, SECOND_ARGUMENT ) )
 					{
 						uint32_t temp_bool = lua_toboolean( L, SECOND_ARGUMENT );
-						vSetRegData(&temp_data,(uint8_t *)&temp_bool,BOOLEAN_DATA );
-						res = (eEEPROMRegWrite( adr,&temp_data) == EEPROM_OK )? SUCSESS : ERROR;
+						res = (eEEPROMRegTypeWrite( adr,(uint8_t *)&temp_bool,BOOLEAN_DATA ) == EEPROM_OK )? SUCSESS : ERROR;
 					}
 				}
 			}
