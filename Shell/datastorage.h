@@ -29,6 +29,8 @@
 #define EEPROM_DATA_FRAME 5U
 #define  MAX_RECORD_SIZE 	  16
 #define REGISTER_TYPE_MASK    0xF0
+#define RECORD_TYPE_MASK	  0x03
+
 
 #define SECOND_MASK  0x3F
 #define MINUTE_MASK  0x3F
@@ -55,6 +57,23 @@ typedef enum
  TIME_STAMP  = 0x80,
  INVALID_CODE = 0x00,
 } REGISTE_DATA_TYPE_t;
+
+typedef enum
+{
+	RECORD_TIME_STAMP = 0x00,
+	RECORD_BYTE		  = 0x01,
+	RECORD_SHORT      = 0x02,
+	RECORD_LUA		  = 0x04,
+	RECORD_ERROR	  = 0xFF,
+
+} RECORD_DATA_TYPE_t;
+
+
+typedef enum
+{
+  STORAGE_OK,
+  STORAGE_OUT_OF_RANGE,
+} STORAGE_ERROR;
 
 //#define GET_ADDR_MSB_R( ADDR) ( ( ADDR >>7U ) & 0x0E )
 #if ADDRESS_SIZE_BYTES == 2
@@ -89,7 +108,7 @@ typedef struct {
 	EEPROM_ADRESS_TYPE record_count;
 	EEPROM_ADRESS_TYPE register_count;
 	EEPROM_ADRESS_TYPE record_pointer;
-
+	uint32_t            record_mask;
 } EEPROM_DISCRIPTOR;
 
 
@@ -120,11 +139,11 @@ void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 EERPOM_ERROR_CODE_t eIntiDataStorage();
 EERPOM_ERROR_CODE_t eEEPROMRegTypeWrite( EEPROM_ADRESS_TYPE addr, void * data, uint8_t datatype );
 EERPOM_ERROR_CODE_t eEEPROMRegWrite( EEPROM_ADRESS_TYPE addr, uint8_t * data );
-void vSetRecordData(uint8_t index, uint8_t * data);
+STORAGE_ERROR vSetRecordData(uint8_t index, uint8_t * data);
 EERPOM_ERROR_CODE_t eEEPROMRecordADD();
 REGISTE_DATA_TYPE_t eEEPROMReadRegister( EEPROM_ADRESS_TYPE addr, void * pData );
 void vGetRegToTime( uint8_t * DataStorage, PDM_DATA_TIME * data);
-
+RECORD_DATA_TYPE_t eGetReocrdFieldsType(uint8_t index );
 
 int eAccessToken( uint16_t token);
 int iReadEEPROM();

@@ -640,7 +640,7 @@ static int iSetRecord( lua_State *L )
 	   {
 		   if (lua_gettop( L )>=argument_number)
 		   {
-			   switch (record_type & 0x03)
+			   switch ( eGetReocrdFieldsType(i ) )
 			   {
 		   	   	  case 0x00:
 		   	   	      vSetRecordData(i,0);

@@ -178,52 +178,59 @@ void vEEPROMCheckRecord( uint32_t * data_type, uint8_t * record_szie )
 {
 	if ( DataStorageDiscriptor.max_record_count != 0 )
 	{
-		*data_type = datacash[RECORD_FORMAT_ADDR];
-		*data_type |= datacash[RECORD_FORMAT_ADDR+1]<<8;
-		*data_type |= datacash[RECORD_FORMAT_ADDR+2]<<16;
-		*data_type |= datacash[RECORD_FORMAT_ADDR+3]<<24;
+		*data_type = DataStorageDiscriptor.record_mask;
 		*record_szie =DataStorageDiscriptor.record_fields_count;
 	}
 	else
 	{
-		data_type[0] = 0;
+		*data_type  =0;
 		*record_szie = 0;
 	}
 }
 
 static uint8_t record_data[REGISTER_SIZE*MAX_RECORD_SIZE];
 
-void vSetRecordData(uint8_t index, uint8_t * data)
+RECORD_DATA_TYPE_t eGetReocrdFieldsType(uint8_t index )
 {
-	   uint32_t record_type;
-	   uint8_t record_size;
+	if (index < DataStorageDiscriptor.record_fields_count)
+	{
+		return ( ( DataStorageDiscriptor.record_mask >>(2*index) ) & RECORD_TYPE_MASK );
+	}
+	else
+	{
+		return (RECORD_ERROR);
+	}
+}
+
+
+STORAGE_ERROR vSetRecordData(uint8_t index, uint8_t * data)
+{
+	   uint32_t record_type  = DataStorageDiscriptor.record_mask;
 	   uint16_t data_offset = 0;
-	   vEEPROMCheckRecord( &record_type ,&record_size);
-	   if (record_size !=0)
+	   if (index < DataStorageDiscriptor.record_fields_count)
 	   {
 		   for (uint8_t i=0;i<index;i++)
 		   {
-			   switch (record_type & 0x03)
+			   switch (record_type & RECORD_TYPE_MASK)
 			   {
-				  case 0x00:
-				  case 0x03:
+				  case RECORD_TIME_STAMP:
+				  case RECORD_LUA:
 					    data_offset +=5;
 					   	break;
-				  case 0x01:
+				  case RECORD_BYTE:
 					   	data_offset +=1;
 					   	break;
-				  case 0x02:
+				  case RECORD_SHORT:
 					   	data_offset +=2;
 					   	break;
 				  default:
-				 				   break;
+				 		break;
 			   }
-
 			   record_type= record_type >> 2;
 		   }
-		    switch (record_type & 0x03)
+		    switch (record_type & RECORD_TYPE_MASK)
 		    {
-			   	   	  case 0x00:
+			   	   	  case RECORD_TIME_STAMP:
 			   	   		  RTC_TimeTypeDef time_buffer;
 			   	   		  RTC_DateTypeDef date_buffer;
 			   	   	      PDM_DATA_TIME temp_time;
@@ -237,17 +244,21 @@ void vSetRecordData(uint8_t index, uint8_t * data)
 			   	   		  temp_time.Second = time_buffer.Seconds;
 			   	   		  vSetTimeToReg( record_data, temp_time);
 			   	   		  break;
-			   	   	  case 0x01:
+			   	   	  case RECORD_BYTE:
 			   	      	  record_data[data_offset]  =  (uint8_t)*data;
 			   	   		  break;
-			   	   	  case 0x02:
+			   	   	  case RECORD_SHORT:
 			   	   		  *((uint16_t*)&record_data[data_offset]) =  *((uint16_t*)data);
 			   	   		  break;
-			   	   	  case 0x03:
+			   	   	  case RECORD_LUA:
 			   	   		  memcpy(&record_data[data_offset],data,REGISTER_SIZE );
 			   	   		  break;
+			   	   	  default:
+			   	   		  break;
 			   }
+		    return (STORAGE_ERROR);
 		   }
+	   return (STORAGE_OK)
 }
 EERPOM_ERROR_CODE_t eEEPROMRecordADD()
 {
@@ -397,8 +408,9 @@ static void vInitDescriptor()
 		DataStorageDiscriptor.record_count       = GET_REG(RECORD_COUNT_ADDR);
 		DataStorageDiscriptor.recod_start_offset = GET_REG(REGISTER_COUNT_ADDR)*REGISTER_SIZE + REGISTER_OFFSET;
 		DataStorageDiscriptor.max_record_count   = (EEPROM_MAX_ADRRES - DataStorageDiscriptor.recod_start_offset)/datacash[RECORD_SIZE_ADDR ];
-		uint32_t temp_data_format = datacash[RECORD_FORMAT_ADDR] | datacash[RECORD_FORMAT_ADDR+1]<<8 | datacash[RECORD_FORMAT_ADDR+2]<<16 | datacash[RECORD_FORMAT_ADDR+3]<<24;;
-		if ((temp_data_format & DATA_TYPE_MASK) == 0 )
+		DataStorageDiscriptor.record_mask = datacash[RECORD_FORMAT_ADDR] | datacash[RECORD_FORMAT_ADDR+1]<<8 | datacash[RECORD_FORMAT_ADDR+2]<<16 | datacash[RECORD_FORMAT_ADDR+3]<<24;;
+		uint32_t temp_data_format = DataStorageDiscriptor.record_mask;
+		if ((DataStorageDiscriptor.record_mask & DATA_TYPE_MASK) == 0 )
 		{
 			offset = 1;
 			DataStorageDiscriptor.record_fields_count = 1;
@@ -424,6 +436,7 @@ static void vInitDescriptor()
 		DataStorageDiscriptor.record_fields_count = 0;
 		DataStorageDiscriptor.record_count = 0;
 		DataStorageDiscriptor.record_pointer = 0;
+		DataStorageDiscriptor.record_mask = 0;
 	}
 }
 
