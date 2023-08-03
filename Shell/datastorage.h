@@ -8,7 +8,7 @@
 /*
  *  Настрйоки драйвера
  */
-#define VALID_CODE   0x34
+#define VALID_CODE   0x33
 
 #define WRITE_DATA_FRAME 0x05
 #define REGISTER_SIZE 0x05    		 //Размер вертуального регистра
@@ -28,7 +28,24 @@
 #define REGISTER_OFFSET      (RECORD_FORMAT_ADDR + 4U)
 #define EEPROM_DATA_FRAME 5U
 #define  MAX_RECORD_SIZE 	  16
+#define REGISTER_TYPE_MASK    0xF0
 
+#define SECOND_MASK  0x3F
+#define MINUTE_MASK  0x3F
+#define MINUTE_OFS     6
+#define HOUR_MASK    0x1F
+#define HOUR_OFS      12
+#define YEAR_MASK    0x7F
+#define YEAR_OFS      17
+#define MONTH_MASK    0x0F
+#define MONTH_OFS      24
+#define DAY_MASK_LSB    0x0F
+#define DAY_OFS_LSB      28
+#define DAY_MASK_MSB    0x01
+#define DAY_OFS_MSB      4
+#define SECOND_BYTE_OFS   8
+#define THRID_BYTE_OFS   16
+#define FOURTH_BYTE_OFS   24
 
 typedef enum
 {
@@ -40,7 +57,7 @@ typedef enum
 } REGISTE_DATA_TYPE_t;
 
 //#define GET_ADDR_MSB_R( ADDR) ( ( ADDR >>7U ) & 0x0E )
-#ifdef ADDRESS_SIZE_BYTES == 2
+#if ADDRESS_SIZE_BYTES == 2
 	#define GET_REG(ADD) ( GET_SHORT(ADD) )
 #else
 #define GET_REG(ADD) ( GET_LONG(ADD) )
@@ -75,17 +92,8 @@ typedef struct {
 
 } EEPROM_DISCRIPTOR;
 
-typedef enum {
-	RECORD_IS_CONFIG,
-	RECORD_NOT_CONFIG,
-} STORAGE_STATUS;
 
 
-
-typedef struct {
-	uint8_t DATA[4];
-	uint8_t VALID_FLAG;
-} EEPROM_RECORD_t;
 
 typedef struct {
 	uint8_t Second;
@@ -110,21 +118,21 @@ typedef enum {
 
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 EERPOM_ERROR_CODE_t eIntiDataStorage();
-EERPOM_ERROR_CODE_t eEEPROMRegTypeWrite( EEPROM_ADRESS_TYPE addr, uint8_t * data, uint8_t datatype );
+EERPOM_ERROR_CODE_t eEEPROMRegTypeWrite( EEPROM_ADRESS_TYPE addr, void * data, uint8_t datatype );
 EERPOM_ERROR_CODE_t eEEPROMRegWrite( EEPROM_ADRESS_TYPE addr, uint8_t * data );
+void vSetRecordData(uint8_t index, uint8_t * data);
+EERPOM_ERROR_CODE_t eEEPROMRecordADD();
+REGISTE_DATA_TYPE_t eEEPROMReadRegister( EEPROM_ADRESS_TYPE addr, void * pData );
+void vGetRegToTime( uint8_t * DataStorage, PDM_DATA_TIME * data);
+
 
 int eAccessToken( uint16_t token);
 int iReadEEPROM();
 int iWriteEEPROM();
 uint16_t usGetEEPROMSize();
 uint16_t usEEPROMReadToUSB(uint16_t addr, uint8_t * data, uint8_t len );
-EERPOM_ERROR_CODE_t eEEPROMReadRegTpye( uint16_t addr , uint8_t * data_type );
 void vEEPROMCheckRecord( uint32_t * data_type, uint8_t * record_szie );
-EERPOM_ERROR_CODE_t eEEPROMRead( uint16_t addr, uint8_t * data );
 EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len );
-void vSetTimeToReg( uint8_t * DataStorage, PDM_DATA_TIME data);
 
 
-
-STORAGE_STATUS eGetRecordsStatus();
 #endif /* DATASTORAGE_H_ */

@@ -58,6 +58,7 @@
 #define NO_RESULT  0U
 #define ONE_RESULT 1U
 #define TWO_RESULT 2U
+#define SEVEN_RESULT   7U
 #define SUCSESS    1U
 #define ERROR	   0U
 
