@@ -469,19 +469,6 @@ int  iOutSetPWM( lua_State *L )
 /*
  * Функция записи в EEPROM
  */
-
-
-
-void vSetRegData(uint8_t * buf, uint8_t * data, uint8_t data_type)
-{
-	buf[0] = data_type;
-	buf[1] = data[0];
-	buf[2] = data[1];
-	buf[3] = data[2];
-	buf[4] = data[3];
-	return;
-}
-
 static int iSetEEPROM( lua_State *L )
 {
 	uint32_t res = ERROR;
@@ -630,62 +617,58 @@ static int iGetTime( lua_State *L )
 
 static int iSetRecord( lua_State *L )
 {
-   uint32_t record_type;
-   uint8_t record_size;
-   uint8_t record[5];
-   uint8_t argument_number = 1;
-   vEEPROMCheckRecord( &record_type ,&record_size);
-
-	   for (uint8_t i = 0; i < record_size; i++ )
+	   int start_index = 0;
+       if (eGetReocrdFieldsType( 0 ) == RECORD_TIME_STAMP)
+       {
+    	   vSetRecordData(0,0);
+    	   start_index ++;
+       }
+	   for (uint8_t i = 0; i < lua_gettop( L ) ; i++ )
 	   {
-		   if (lua_gettop( L )>=argument_number)
-		   {
-			   switch ( eGetReocrdFieldsType(i ) )
+			   switch ( eGetReocrdFieldsType( i + start_index ) )
 			   {
-		   	   	  case 0x00:
-		   	   	      vSetRecordData(i,0);
+			      case RECORD_ERROR:
+			      case RECORD_TIME_STAMP:
+			    	  break;
+		   	   	  case RECORD_BYTE:
+		   	      	  uint8_t cd =lua_tointeger( L, i + 1 );
+		   	      	  vSetRecordData(i + start_index,&cd);
 		   	   		  break;
-		   	   	  case 0x01:
-		   	      	  uint8_t cd =lua_tointeger( L, argument_number );
-		   	      	  vSetRecordData(i,&cd);
-		   	   	      argument_number++;
+		   	   	  case RECORD_SHORT:
+                      uint16_t sd = (uint16_t)lua_tointeger( L, i +1  );
+		   	     	  vSetRecordData(i + start_index,(uint8_t *)&sd);
 		   	   		  break;
-		   	   	  case 0x02:
-                      uint16_t sd = (uint16_t)lua_tointeger( L, argument_number );
-		   	     	  vSetRecordData(i,&sd);
-		   	   	      argument_number++;
-		   	   		  break;
-		   	   	  case 0x03:
-		   	    	if ( lua_isinteger( L, argument_number ) )
-		   	   		{
-		   	   			uint32_t temp_int = lua_tointeger( L, argument_number );
-		   	   			vSetRegData(record,(uint8_t *)&temp_int,INTEGER_DATA  );
-		   	   		}
-		   	   		else
-		   	   		{
-		   	   			if ( lua_isnumber( L, argument_number ) )
-		   	   			{
-		   	   				float temp_float = lua_tonumber( L, argument_number);
-		   	   				vSetRegData(record,(uint8_t *)&temp_float,NUMBER_DATA  );
-		   	   			}
-		   	   			else
-		   	   			{
-		   	   				if ( lua_isboolean ( L, argument_number ) )
-		   	   				{
-		   	   					uint32_t temp_bool = lua_toboolean( L, argument_number );
-		   	   					vSetRegData(record,(uint8_t *)&temp_bool,BOOLEAN_DATA );
-		   	   				}
-		   	   			}
-		   	   		}
-		   	    	vSetRecordData(i,record);
-		   	    	argument_number++;
+		   	   	  case RECORD_LUA:
+		   	   	    uint8_t record[REGISTER_SIZE];
+		   	   	    switch (lua_type(  L, i+1) )
+		   	   	    {
+		   	   	    		case LUA_TNUMBER:
+		   	   	    			if ( lua_isinteger( L, i+1 ) )
+		   	   	    			{
+		   	   	    				   uint32_t temp_int = lua_tointeger( L, i +1 );
+		   	   	    				   vSetRegData(record,(uint8_t *)&temp_int,INTEGER_DATA  );
+		   	   	    		    }
+		   	   	    			else
+		   	   	    			{
+		   	   	    					float temp_float = lua_tonumber( L, i+1);
+		   	   	    					vSetRegData(record,(uint8_t *)&temp_float,NUMBER_DATA  );
+		   	   	    			}
+		   	   	    			break;
+		   	   	    		case LUA_TBOOLEAN:
+		   	   	    		    uint32_t temp_bool = lua_toboolean( L, i+1 );
+		   	   	    		    vSetRegData(record,(uint8_t *)&temp_bool,BOOLEAN_DATA );
+		   	   	    			break;
+		   	   	    		default:
+		   	   	    			break;
+
+		   	   	    }
+		   	    	vSetRecordData(i + start_index,record);
 		   	   		break;
 		   	   	  default: break;
 			   }
-		   }
-		   record_type= record_type >> 2;
 	   }
 	   eEEPROMRecordADD();
+	  return ( NO_RESULT );
 }
 
 

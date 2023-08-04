@@ -9,10 +9,9 @@
  *  Настрйоки драйвера
  */
 #define VALID_CODE   0x33
-
 #define WRITE_DATA_FRAME 0x05
 #define REGISTER_SIZE 0x05    		 //Размер вертуального регистра
-
+#define EXTERN_READ_BUFFER_SIZE        100 //Размер буфера для чтения данных во внешний источник
 /*
  *  Внутрение константы
  */
@@ -30,7 +29,7 @@
 #define  MAX_RECORD_SIZE 	  16
 #define REGISTER_TYPE_MASK    0xF0
 #define RECORD_TYPE_MASK	  0x03
-
+#define BYTE_MASK             0xFF
 
 #define SECOND_MASK  0x3F
 #define MINUTE_MASK  0x3F
@@ -43,11 +42,18 @@
 #define MONTH_OFS      24
 #define DAY_MASK_LSB    0x0F
 #define DAY_OFS_LSB      28
-#define DAY_MASK_MSB    0x01
+#define DAY_MASK_MSB    0x10
 #define DAY_OFS_MSB      4
+
+
 #define SECOND_BYTE_OFS   8
-#define THRID_BYTE_OFS   16
+#define SECOND_BYTE_ADDR  1
+#define THRID_BYTE_OFS    16
+#define THRID_BYTE_ADDR   2
 #define FOURTH_BYTE_OFS   24
+#define FOURTH_BYTE_ADDR  3
+
+
 
 typedef enum
 {
@@ -63,16 +69,16 @@ typedef enum
 	RECORD_TIME_STAMP = 0x00,
 	RECORD_BYTE		  = 0x01,
 	RECORD_SHORT      = 0x02,
-	RECORD_LUA		  = 0x04,
+	RECORD_LUA		  = 0x03,
 	RECORD_ERROR	  = 0xFF,
 
 } RECORD_DATA_TYPE_t;
-
 
 typedef enum
 {
   STORAGE_OK,
   STORAGE_OUT_OF_RANGE,
+  STORAGE_NEW,
 } STORAGE_ERROR;
 
 //#define GET_ADDR_MSB_R( ADDR) ( ( ADDR >>7U ) & 0x0E )
@@ -82,15 +88,13 @@ typedef enum
 #define GET_REG(ADD) ( GET_LONG(ADD) )
 #endif
 
-
 #define GET_LONG(ADD) ( ((uint32_t)datacash[ADD] << 24 ) | (uint32_t)(datacash[ADD+1]<<16) | (uint32_t)(datacash[ADD+2]<<8) | (uint32_t)(datacash[ADD+3]) )
 #define GET_SHORT(ADD) ( ((uint16_t)datacash[ADD] << 8 ) | datacash[ADD+1] )
-/*
- * Располжение данных в дисктрипоторе
- */
 
-
-
+typedef enum {
+	ACCESS_DENIED = 0,
+	ACCESS_ALLOWED = 1,
+} STRORAGE_ACCESS_TYPE_t;
 
 typedef enum {
 	DATA_STORAGE_OK,
@@ -98,7 +102,6 @@ typedef enum {
 } DATA_STORAGE_STATUS;
 
 #define LOG_RECORD_SIZE_ADDR 0x02
-
 
 typedef struct {
 	uint8_t  record_fields_count;
@@ -109,9 +112,10 @@ typedef struct {
 	EEPROM_ADRESS_TYPE register_count;
 	EEPROM_ADRESS_TYPE record_pointer;
 	uint32_t            record_mask;
+	uint16_t			access_code;
+	uint8_t 			record_byte_size;
+	STRORAGE_ACCESS_TYPE_t access;
 } EEPROM_DISCRIPTOR;
-
-
 
 
 typedef struct {
@@ -123,17 +127,6 @@ typedef struct {
 	uint8_t Year;
 } PDM_DATA_TIME;
 
-typedef enum {
-  DS_OK,
-  OUT_OF_SIZE,
-} DATA_STORAGE_t;
-
-
-
-
-
-
-
 
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 EERPOM_ERROR_CODE_t eIntiDataStorage();
@@ -144,13 +137,12 @@ EERPOM_ERROR_CODE_t eEEPROMRecordADD();
 REGISTE_DATA_TYPE_t eEEPROMReadRegister( EEPROM_ADRESS_TYPE addr, void * pData );
 void vGetRegToTime( uint8_t * DataStorage, PDM_DATA_TIME * data);
 RECORD_DATA_TYPE_t eGetReocrdFieldsType(uint8_t index );
+void vSetRegData(uint8_t * buf, uint8_t * data, uint8_t data_type);
 
+EERPOM_ERROR_CODE_t eEEPROMWriteExternData ( uint32_t adr, const uint8_t* data, uint32_t length );
 int eAccessToken( uint16_t token);
-int iReadEEPROM();
-int iWriteEEPROM();
 uint16_t usGetEEPROMSize();
-uint16_t usEEPROMReadToUSB(uint16_t addr, uint8_t * data, uint8_t len );
-void vEEPROMCheckRecord( uint32_t * data_type, uint8_t * record_szie );
+uint16_t usEEPROMReadToExternData(EEPROM_ADRESS_TYPE addr, uint8_t * data, uint8_t len );
 EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len );
 
 
