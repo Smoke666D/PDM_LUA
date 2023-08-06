@@ -8,7 +8,7 @@
 /*
  *  Настрйоки драйвера
  */
-#define VALID_CODE   0x33
+#define VALID_CODE   0x88
 #define WRITE_DATA_FRAME 0x05
 #define REGISTER_SIZE 0x05    		 //Размер вертуального регистра
 #define EXTERN_READ_BUFFER_SIZE        100 //Размер буфера для чтения данных во внешний источник

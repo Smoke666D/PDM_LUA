@@ -53,9 +53,10 @@ EERPOM_ERROR_CODE_t eIntiDataStorage()
 		if (datacash[VALIDE_CODE_ADDR ] != VALID_CODE)
 		{
 			eResetDataStorage();
-			datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
-			res =   eEEPROMWr( VALIDE_CODE_ADDR , datacash, REGISTER_OFFSET  );
 
+			datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
+			res =   eEEPROMWr( VALIDE_CODE_ADDR , datacash, 1 );
+			eEEPROMRd(VALIDE_CODE_ADDR, datacash, REGISTER_OFFSET  );
 		}
 		vInitDescriptor();
 	}
@@ -384,6 +385,7 @@ static void eResetDataStorage()
 {
 	 uint8_t data_buffer[SECTOR_SIZE];
 	 ( void )memset(data_buffer,0U,SECTOR_SIZE);
+	 DataStorageDiscriptor.access = ACCESS_ALLOWED;
 	 for (uint16_t i=0;i<EEPROM_SIZE;i=i+SECTOR_SIZE)
 	 {
 		 eEEPROMWriteExternData(i, data_buffer,SECTOR_SIZE);

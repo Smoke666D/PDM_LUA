@@ -11,8 +11,6 @@ static uint8_t sector_buffer[SECTOR_SIZE + ADDRESS_DATA];
 static I2C_HandleTypeDef  * I2C;
 
 
-
-
 void eEEPROM(I2C_HandleTypeDef * hi2c2)
 {
 	I2C = hi2c2;
@@ -63,7 +61,6 @@ void eEEPROM(I2C_HandleTypeDef * hi2c2)
 		}
 	}
 	return ( res );
-
 }
 
  /*
