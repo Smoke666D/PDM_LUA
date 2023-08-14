@@ -968,7 +968,7 @@ HAL_StatusTypeDef HAL_I2C_UnRegisterAddrCallback(I2C_HandleTypeDef *hi2c)
     (#) Blocking mode functions are :
         (++) HAL_I2C_Master_Transmit()
         (++) HAL_I2C_Master_Receive()
-        (++) HAL_I2C_Slave_Transmit()
+        (++) HAL_I2C_Slave_TrHAL_I2C_Mem_Read()
         (++) HAL_I2C_Slave_Receive()
         (++) HAL_I2C_Mem_Write()
         (++) HAL_I2C_Mem_Read()

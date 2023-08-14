@@ -760,7 +760,9 @@ void vLuaTask(void *argument)
     	   vOutInit();
            vAINInit();
            vDinInit();
-           eIntiDataStorage();
+         //  eIntiDataStorage();
+           uint8_t d[4]={RECORD_TIME_STAMP,RECORD_BYTE,RECORD_LUA,RECORD_LUA};
+           eCreateDataStorage(15, d, 4);
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();

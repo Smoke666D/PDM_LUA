@@ -20,6 +20,7 @@ static uint8_t  USB_access  = 0;
 static EEPROM_DISCRIPTOR DataStorageDiscriptor  __SECTION(RAM_SECTION_CCMRAM);
 static uint8_t record_data[REGISTER_SIZE*MAX_RECORD_SIZE];
 
+static uint8_t buf[EEPROM_SIZE];
 
 static void eResetDataStorage();
 static void vInitDescriptor();
@@ -37,6 +38,7 @@ void vEEPROMInit(I2C_HandleTypeDef * hi2c2)
 {
  eEEPROM( hi2c2);
  DataStorageDiscriptor.access = ACCESS_DENIED;
+
  return;
 }
 
@@ -53,10 +55,6 @@ EERPOM_ERROR_CODE_t eIntiDataStorage()
 		if (datacash[VALIDE_CODE_ADDR ] != VALID_CODE)
 		{
 			eResetDataStorage();
-
-			datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
-			res =   eEEPROMWr( VALIDE_CODE_ADDR , datacash, 1 );
-			eEEPROMRd(VALIDE_CODE_ADDR, datacash, REGISTER_OFFSET  );
 		}
 		vInitDescriptor();
 	}
@@ -65,17 +63,17 @@ EERPOM_ERROR_CODE_t eIntiDataStorage()
 
 STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count)
 {
-	EEPROM_DISCRIPTOR tempDataStorageDiscriptor;
+	volatile EEPROM_DISCRIPTOR tempDataStorageDiscriptor;
 	if ( ((reg_count * REGISTER_SIZE + REGISTER_OFFSET) < EEPROM_SIZE) && ( record_count <= MAX_RECORD_SIZE ) )
 	{
 		tempDataStorageDiscriptor.register_count  = reg_count;
 		tempDataStorageDiscriptor.record_fields_count = record_count;
 		tempDataStorageDiscriptor.record_mask = 0;
 		tempDataStorageDiscriptor.record_byte_size = 0;
-		for (uint8_t i=0; i < record_count ;i++)
+		for (int i=record_count-1; i >=0 ;i--)
 		{
-			tempDataStorageDiscriptor.record_mask  |= (record_format_data[i] & RECORD_TYPE_MASK);
 			tempDataStorageDiscriptor.record_mask  = tempDataStorageDiscriptor.record_mask  <<2;
+			tempDataStorageDiscriptor.record_mask  |= (record_format_data[i] & RECORD_TYPE_MASK);
 			switch (record_format_data[i] & RECORD_TYPE_MASK)
 			{
 					case RECORD_TIME_STAMP:
@@ -99,7 +97,10 @@ STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_
 	if ( (tempDataStorageDiscriptor.register_count != DataStorageDiscriptor.register_count ) ||
 			( tempDataStorageDiscriptor.record_mask  != DataStorageDiscriptor.record_mask ))
 		{
-		    eWriteNewDescriptor( tempDataStorageDiscriptor);
+			eResetDataStorage();
+			tempDataStorageDiscriptor.token = DataStorageDiscriptor.token;
+			eWriteNewDescriptor( tempDataStorageDiscriptor);
+			eIntiDataStorage();
 			return (STORAGE_NEW);
 		}
 	else
@@ -110,15 +111,18 @@ STORAGE_ERROR eWriteNewDescriptor( EEPROM_DISCRIPTOR desc)
 {
 	( void )memset(datacash,0U,REGISTER_OFFSET );
 	datacash[VALIDE_CODE_ADDR] = VALID_CODE;
-	vWriteDescriptorReg(REGISTER_COUNT_ADDR , desc.register_count );
-	vWriteDescriptorReg(RECORD_COUNT_ADDR , desc.record_count );
+	SET_SHORT( ACCESS_TOKEN_ADDR,  desc.token );
+	vWriteDescriptorReg(REGISTER_COUNT_ADDR ,  desc.register_count );
+	vWriteDescriptorReg(RECORD_COUNT_ADDR ,    desc.record_count );
 	vWriteDescriptorReg(RECORD_POINTER_ADDR  , desc.record_pointer );
-	datacash[RECORD_SIZE_ADDR] =  desc.record_byte_size;
-	datacash[RECORD_FORMAT_ADDR] = DataStorageDiscriptor.record_mask & BYTE_MASK;
-	datacash[RECORD_FORMAT_ADDR + SECOND_BYTE_ADDR ] = ( DataStorageDiscriptor.record_mask >> SECOND_BYTE_OFS ) & BYTE_MASK;
-	datacash[RECORD_FORMAT_ADDR + THRID_BYTE_ADDR ] = ( DataStorageDiscriptor.record_mask >> THRID_BYTE_OFS) & BYTE_MASK;
-	datacash[RECORD_FORMAT_ADDR + FOURTH_BYTE_ADDR ] = ( DataStorageDiscriptor.record_mask >> FOURTH_BYTE_ADDR) & BYTE_MASK;
-	eEEPROMRd(VALIDE_CODE_ADDR, datacash,REGISTER_OFFSET);
+	datacash[RECORD_SIZE_ADDR] 				=  desc.record_byte_size;
+	datacash[RECORD_FORMAT_ADDR] = desc.record_mask & BYTE_MASK;
+	datacash[RECORD_FORMAT_ADDR + SECOND_BYTE_ADDR ] = ( desc.record_mask >> SECOND_BYTE_OFS ) & BYTE_MASK;
+	datacash[RECORD_FORMAT_ADDR + THRID_BYTE_ADDR ] = ( desc.record_mask >> THRID_BYTE_OFS) & BYTE_MASK;
+	datacash[RECORD_FORMAT_ADDR + FOURTH_BYTE_ADDR ] = ( desc.record_mask >> FOURTH_BYTE_OFS) & BYTE_MASK;
+	eEEPROMWr(VALIDE_CODE_ADDR, datacash,REGISTER_OFFSET);
+	( void )memset(datacash,0U,REGISTER_OFFSET );
+	 eEEPROMRd(VALIDE_CODE_ADDR, datacash, REGISTER_OFFSET  );
 	return  ( STORAGE_OK );
 }
 
@@ -189,6 +193,52 @@ REGISTE_DATA_TYPE_t eEEPROMReadRegister( EEPROM_ADRESS_TYPE addr, void * pData )
 	}
 	return ( register_type );
 }
+/* блок функций быстрой записи*/
+static FAST_WRITE_EEPROM_DISCRIPTOR fast_write_descriptor;
+
+
+void eEEPROMConfigFastWrite(REGISTE_DATA_TYPE_t start_address)
+{
+	fast_write_descriptor.start_adress = start_address;
+	fast_write_descriptor.cur_offset = 0;
+	fast_write_descriptor.cur_length = 0;
+	fast_write_descriptor.cur_addres = start_address;
+
+
+}
+void eEEPROMRegisterAddToFastWrite(void * data, REGISTE_DATA_TYPE_t datatype )
+{
+	uint8_t Data[REGISTER_SIZE];
+	if  (datatype ==TIME_STAMP )
+	{
+			vSetTimeToReg(Data,  data);
+	}
+	else
+	{
+			vSetRegData(Data,(uint8_t *) data, datatype);
+	}
+	uint8_t offset =  (fast_write_descriptor.cur_addres + REGISTER_SIZE)  % SECTOR_SIZE;
+	if ( offset  !=0 )
+	{
+		memcpy(&fast_write_descriptor.buffer[fast_write_descriptor.cur_offset],Data,REGISTER_SIZE - offset);
+		eEEPROMRegisterFastWrtie();
+		memcpy(fast_write_descriptor.buffer,&Data[REGISTER_SIZE - offset],offset);
+		fast_write_descriptor.cur_offset = offset;
+	}
+	else
+	{
+		memcpy(&fast_write_descriptor.buffer[fast_write_descriptor.cur_offset],Data,REGISTER_SIZE);
+		fast_write_descriptor.cur_offset +=REGISTER_SIZE;
+	}
+	fast_write_descriptor.cur_addres +=REGISTER_SIZE;
+
+}
+EERPOM_ERROR_CODE_t eEEPROMRegisterFastWrtie()
+{
+	return (  eEEPROMWr(fast_write_descriptor.cur_addres,fast_write_descriptor.buffer,fast_write_descriptor.cur_offset) );
+}
+
+
 /*
  *  Функции работы с записями
  */
@@ -322,15 +372,16 @@ uint16_t usGetEEPROMSize()
 
 int eAccessToken( uint16_t token)
 {
-	if (GET_SHORT(ACCESS_TOKEN_ADDR) == 0)
+	if (DataStorageDiscriptor.token == 0)
 	{
 		SET_SHORT( ACCESS_TOKEN_ADDR,  token);
+		DataStorageDiscriptor.token = token;
 		eEEPROMWr(ACCESS_TOKEN_ADDR, &datacash[ACCESS_TOKEN_ADDR],2);
 		DataStorageDiscriptor.access = ACCESS_ALLOWED;
 	}
 	else
 	{
-		DataStorageDiscriptor.access  = (GET_SHORT(ACCESS_TOKEN_ADDR) == token) ? ACCESS_ALLOWED : ACCESS_DENIED;
+		DataStorageDiscriptor.access  = (DataStorageDiscriptor.token == token) ? ACCESS_ALLOWED : ACCESS_DENIED;
 	}
 	return  (DataStorageDiscriptor.access );
 }
@@ -390,6 +441,8 @@ static void eResetDataStorage()
 	 {
 		 eEEPROMWriteExternData(i, data_buffer,SECTOR_SIZE);
 	 }
+	 datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
+	 eEEPROMWr( VALIDE_CODE_ADDR , datacash, 1 );
 	 return;
 }
 
@@ -398,8 +451,10 @@ static void vInitDescriptor()
 	uint8_t offset = 0U;
 	DataStorageDiscriptor.record_fields_count = 0U;
 	DataStorageDiscriptor.register_count     = GET_REG(REGISTER_COUNT_ADDR);
+	DataStorageDiscriptor.token              = GET_SHORT(ACCESS_TOKEN_ADDR);
 	if ( datacash[RECORD_SIZE_ADDR ] !=0U )
 	{
+
 		DataStorageDiscriptor.record_pointer     = GET_REG(RECORD_POINTER_ADDR);
 		DataStorageDiscriptor.record_count       = GET_REG(RECORD_COUNT_ADDR);
 		DataStorageDiscriptor.recod_start_offset = GET_REG(REGISTER_COUNT_ADDR)*REGISTER_SIZE + REGISTER_OFFSET;
@@ -428,7 +483,6 @@ static void vInitDescriptor()
 				break;
 		}
 		DataStorageDiscriptor.current_reccord_offset = DataStorageDiscriptor.recod_start_offset + DataStorageDiscriptor.record_byte_size * DataStorageDiscriptor.record_pointer;
-		DataStorageDiscriptor.access_code = GET_SHORT(ACCESS_TOKEN_ADDR);
 	}
 	else
 	{
@@ -439,7 +493,7 @@ static void vInitDescriptor()
 		DataStorageDiscriptor.record_count = 0;
 		DataStorageDiscriptor.record_pointer = 0;
 		DataStorageDiscriptor.record_mask = 0;
-		DataStorageDiscriptor.access_code= 0;
+		//eWriteNewDescriptor(DataStorageDiscriptor);
 	}
 }
 

@@ -8,7 +8,7 @@
 /*
  *  Настрйоки драйвера
  */
-#define VALID_CODE   0x88
+#define VALID_CODE   0x66
 #define WRITE_DATA_FRAME 0x05
 #define REGISTER_SIZE 0x05    		 //Размер вертуального регистра
 #define EXTERN_READ_BUFFER_SIZE        100 //Размер буфера для чтения данных во внешний источник
@@ -105,6 +105,7 @@ typedef enum {
 
 typedef struct {
 	uint8_t  record_fields_count;
+	uint16_t  		   token;
 	EEPROM_ADRESS_TYPE recod_start_offset;
 	EEPROM_ADRESS_TYPE max_record_count;
 	EEPROM_ADRESS_TYPE current_reccord_offset;
@@ -112,10 +113,19 @@ typedef struct {
 	EEPROM_ADRESS_TYPE register_count;
 	EEPROM_ADRESS_TYPE record_pointer;
 	uint32_t            record_mask;
-	uint16_t			access_code;
+	//uint16_t			access_code;
 	uint8_t 			record_byte_size;
 	STRORAGE_ACCESS_TYPE_t access;
 } EEPROM_DISCRIPTOR;
+
+typedef struct {
+	uint8_t  buffer[SECTOR_SIZE];
+	EEPROM_ADRESS_TYPE start_adress;
+	EEPROM_ADRESS_TYPE cur_addres;
+	EEPROM_ADRESS_TYPE cur_offset;
+	EEPROM_ADRESS_TYPE register_count;
+	uint16_t cur_length;
+} FAST_WRITE_EEPROM_DISCRIPTOR;
 
 
 typedef struct {
@@ -127,7 +137,7 @@ typedef struct {
 	uint8_t Year;
 } PDM_DATA_TIME;
 
-
+STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count);
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 EERPOM_ERROR_CODE_t eIntiDataStorage();
 EERPOM_ERROR_CODE_t eEEPROMRegTypeWrite( EEPROM_ADRESS_TYPE addr, void * data, uint8_t datatype );
@@ -143,7 +153,22 @@ EERPOM_ERROR_CODE_t eEEPROMWriteExternData ( uint32_t adr, const uint8_t* data, 
 int eAccessToken( uint16_t token);
 uint16_t usGetEEPROMSize();
 uint16_t usEEPROMReadToExternData(EEPROM_ADRESS_TYPE addr, uint8_t * data, uint8_t len );
-EERPOM_ERROR_CODE_t eEEPROMRd( uint16_t addr, uint8_t * data, uint16_t len );
+/* Функции быстрой записи непрерывной последовательности регистор
+ *
+ * Это API для случаев, когда нужно быстро скинуть массив данных в регистры.
+ * Если записывать регистры стандарным API, то после каждой записи дрйвер будет жать. В слуай с быстрой записью, драйвер буфиризирует данные и записывает
+ * их когда наберет данных на сектор.
+ * Регистровую модель, нужно проектировать таким образом, чтобы регстры для операции быстрой записи
+ * шли последовательно.
+ * eEEPROMConfigFastWrite - конфигурация стартовго адреса
+ * eEEPROMRegisterAddToFastWrite - запись в регистр. Если данные регистра попадают в сектро EEPROM, то данные сохрнаяются в буфере сктора,
+ * если перелзают в другой сеткор, то формируетмя буффер сектора, он записывается в eeprom, а не записанная часть регистра сохраняется в буфере
+ * eEEPROMRegisterFastWrtie(); - запись существущго буфера сектора в eeprom.
+
+ * */
+void eEEPROMConfigFastWrite(REGISTE_DATA_TYPE_t start_address);
+void eEEPROMRegisterAddToFastWrite(void * data, REGISTE_DATA_TYPE_t datatype );
+EERPOM_ERROR_CODE_t eEEPROMRegisterFastWrtie();
 
 
 #endif /* DATASTORAGE_H_ */
