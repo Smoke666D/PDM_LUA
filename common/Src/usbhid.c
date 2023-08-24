@@ -227,7 +227,7 @@ void vUSBEEPROMToReport  ( USB_REPORT* report )
 	if ( report->adr  < usGetEEPROMSize() )
 	  {
 	    report->stat   = USB_REPORT_STATE_OK;
-	    report->length = usEEPROMReadToUSB( report->adr, report->data ,  ( USB_DATA_SIZE - 1U ));
+	    report->length = usEEPROMReadToExternData( report->adr, report->data ,  ( USB_DATA_SIZE - 1U ));
 	  }
 	  else
 	  {
@@ -278,29 +278,10 @@ USB_STATUS  eUSBreportToToken( USB_REPORT* report )
 	return (res);
 }
 
-USB_STATUS   eUSBStartEEPROMread( const USB_REPORT* report )
-{
-	USB_STATUS res = USB_STATUS_DONE;
-	if (iReadEEPROM() == 0)
-	{
-		res = USB_STATUS_FORBIDDEN;
-	}
-
-	return (res);
-}
 
 
-USB_STATUS  eUSBEEPROMwrite( const USB_REPORT* report )
-{
-	USB_STATUS res = USB_STATUS_DONE;
 
-	if (iWriteEEPROM() == 0)
-	{
-		res = USB_STATUS_FORBIDDEN;
-	}
 
-	return (res);
-}
 USB_STATUS  eUSBreportToTime  ( const USB_REPORT* report )
 {
     USB_STATUS res = USB_STATUS_DONE;
@@ -349,7 +330,7 @@ USB_STATUS eUSBreportToScript ( const USB_REPORT* report )
 USB_STATUS eUSBReportToEEPROM( const USB_REPORT* report )
 {
 	USB_STATUS res = USB_STATUS_DONE;
-	  switch ( eEEPROMWriteData( report->adr, report->data, report->length ) )
+	  switch ( eEEPROMWriteExternData( report->adr, report->data, report->length ) )
 	  {
 	    case FLASH_OK:
 	      res = EEPROM_OK;
@@ -550,14 +531,8 @@ void vUSBtask ( void *argument )
           vUSBsend( &report, eUSBerrorStringToReport );
           break;
         /*----------------------------------------*/
-        case USB_REPORT_CMD_END_EEPROM_WRITE:
-        	vUSBget( &report, eUSBEEPROMwrite);
-        	break;
         case USB_REPORT_CMD_SET_EEPROM:
         	vUSBget( &report, eUSBReportToEEPROM);
-        	break;
-        case USB_REPORT_CMD_START_EEPROM_READ:
-        	vUSBget( &report, eUSBStartEEPROMread );
         	break;
         case USB_REPORT_CMD_SEND_ACCESS_TOKEN:
         	vUSBget( &report, eUSBreportToToken );

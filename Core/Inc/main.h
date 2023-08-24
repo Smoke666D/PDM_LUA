@@ -42,7 +42,11 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "platform_init.h"
+
+#include "EEPROM.H"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
