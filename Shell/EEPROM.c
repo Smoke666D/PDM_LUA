@@ -53,6 +53,8 @@ void eEEPROM(I2C_HandleTypeDef * hi2c2)
 			 // res =  EEPROM_WRITE_ERROR;
 			 // for (int i =0; i<5;i++)
 			//  {
+
+
 				  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( cur_addr) ,(uint8_t *) sector_buffer,  cur_len + ADDRESS_DATA , EEPROM_TIME_OUT ) != HAL_OK )
 				  {
 					//  vTaskDelay(1);
