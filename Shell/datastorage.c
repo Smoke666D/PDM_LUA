@@ -20,9 +20,8 @@ static uint8_t  USB_access  = 0;
 static EEPROM_DISCRIPTOR DataStorageDiscriptor  __SECTION(RAM_SECTION_CCMRAM);
 static uint8_t record_data[REGISTER_SIZE*MAX_RECORD_SIZE];
 
-static uint8_t buf[EEPROM_SIZE];
 
-static void eResetDataStorage();
+static void eResetDataStorage(uint32_t start_addr);
 static void vInitDescriptor();
 static void vWriteDescriptor();
 static void SET_SHORT( EEPROM_ADRESS_TYPE addr, uint16_t data);
@@ -54,15 +53,16 @@ EERPOM_ERROR_CODE_t eIntiDataStorage()
 	{
 		if (datacash[VALIDE_CODE_ADDR ] != VALID_CODE)
 		{
-			eResetDataStorage();
+			eResetDataStorage(0);
 		}
 		vInitDescriptor();
 	}
 	return ( res );
 }
 
-STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count)
+STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count, uint8_t reset_data)
 {
+
 	volatile EEPROM_DISCRIPTOR tempDataStorageDiscriptor;
 	if ( ((reg_count * REGISTER_SIZE + REGISTER_OFFSET) < EEPROM_SIZE) && ( record_count <= MAX_RECORD_SIZE ) )
 	{
@@ -97,7 +97,20 @@ STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_
 	if ( (tempDataStorageDiscriptor.register_count != DataStorageDiscriptor.register_count ) ||
 			( tempDataStorageDiscriptor.record_mask  != DataStorageDiscriptor.record_mask ))
 		{
-			eResetDataStorage();
+		 uint32_t statrt_address = 0;
+		  if (reset_data == 0)
+		  {
+			  uint32_t addr;
+			  if (tempDataStorageDiscriptor.register_count < DataStorageDiscriptor.register_count)
+			  {
+				  addr = tempDataStorageDiscriptor.register_count;
+			  }
+			  else
+				  addr  =  DataStorageDiscriptor.register_count;
+			  statrt_address =addr * REGISTER_SIZE + REGISTER_OFFSET;
+
+		  }
+			eResetDataStorage(statrt_address );
 			tempDataStorageDiscriptor.token = DataStorageDiscriptor.token;
 			eWriteNewDescriptor( tempDataStorageDiscriptor);
 			eIntiDataStorage();
@@ -430,12 +443,12 @@ EERPOM_ERROR_CODE_t eEEPROMWriteExternData ( uint32_t adr, const uint8_t* data, 
 /*
  *   функция сборса хранилища
  */
-static void eResetDataStorage()
+static void eResetDataStorage(uint32_t start_addr)
 {
 	 uint8_t data_buffer[SECTOR_SIZE];
 	 ( void )memset(data_buffer,0U,SECTOR_SIZE);
 	 DataStorageDiscriptor.access = ACCESS_ALLOWED;
-	 for ( uint16_t i=0; i < EEPROM_SIZE; i = i + SECTOR_SIZE )
+	 for ( uint16_t i= start_addr; i < EEPROM_SIZE; i = i + SECTOR_SIZE )
 	 {
 		 eEEPROMWriteExternData(i, data_buffer, SECTOR_SIZE );
 	 }

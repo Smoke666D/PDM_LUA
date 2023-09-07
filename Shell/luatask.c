@@ -687,7 +687,8 @@ static int iSetStorageFormat( lua_State *L )
 
 	 if (arg_number!=0)
 	 {
-		 uint8_t register_count = lua_tointeger( L , FIRST_ARGUMENT );
+		 uint8_t reset_data = lua_tointeger( L , FIRST_ARGUMENT );
+		 uint8_t register_count = lua_tointeger( L , SECOND_ARGUMENT );
 		 uint8_t record_format_count = 0;
 		 for (uint8_t i = 0; i < arg_number -1; i++)
 		 {
@@ -695,7 +696,7 @@ static int iSetStorageFormat( lua_State *L )
 			 record_format_count++;
 
 		 }
-		eCreateDataStorage(register_count , d, record_format_count);
+		eCreateDataStorage(register_count , d, record_format_count, reset_data );
 
 	 }
 
