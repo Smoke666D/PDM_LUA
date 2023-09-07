@@ -49,25 +49,11 @@ void eEEPROM(I2C_HandleTypeDef * hi2c2)
 			  {
 			 		  sector_buffer[i] = (( cur_addr >> BYTE_SHIFT*i ) & ADDRES_MASK ) ;
 			  }
-			  //
-			 // res =  EEPROM_WRITE_ERROR;
-			 // for (int i =0; i<5;i++)
-			//  {
-
-
-				  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( cur_addr) ,(uint8_t *) sector_buffer,  cur_len + ADDRESS_DATA , EEPROM_TIME_OUT ) != HAL_OK )
-				  {
-					//  vTaskDelay(1);
-					  res =  EEPROM_WRITE_ERROR;
-					//  break;
-				  }
-				//  else
-				//  {
-				//	  res =  EEPROM_OK;
-				//  }
-			//  }
+			  if  (HAL_I2C_Master_Transmit(I2C, Device_ADD | GET_ADDR_MSB( cur_addr) ,(uint8_t *) sector_buffer,  cur_len + ADDRESS_DATA , EEPROM_TIME_OUT ) != HAL_OK )
+			  {
+				  res =  EEPROM_WRITE_ERROR;
+			  }
 			  vTaskDelay(5);
-			 // HAL_I2C_IsDeviceReady(I2C, Device_ADD,20,1);
 			  offset = offset  + cur_len;
 			  byte_to_send = byte_to_send - cur_len;
 			  cur_addr = cur_addr  + cur_len;

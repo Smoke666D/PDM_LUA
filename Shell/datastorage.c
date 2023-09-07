@@ -121,8 +121,6 @@ STORAGE_ERROR eWriteNewDescriptor( EEPROM_DISCRIPTOR desc)
 	datacash[RECORD_FORMAT_ADDR + THRID_BYTE_ADDR ] = ( desc.record_mask >> THRID_BYTE_OFS) & BYTE_MASK;
 	datacash[RECORD_FORMAT_ADDR + FOURTH_BYTE_ADDR ] = ( desc.record_mask >> FOURTH_BYTE_OFS) & BYTE_MASK;
 	eEEPROMWr(VALIDE_CODE_ADDR, datacash,REGISTER_OFFSET);
-	( void )memset(datacash,0U,REGISTER_OFFSET );
-	 eEEPROMRd(VALIDE_CODE_ADDR, datacash, REGISTER_OFFSET  );
 	return  ( STORAGE_OK );
 }
 
@@ -437,12 +435,10 @@ static void eResetDataStorage()
 	 uint8_t data_buffer[SECTOR_SIZE];
 	 ( void )memset(data_buffer,0U,SECTOR_SIZE);
 	 DataStorageDiscriptor.access = ACCESS_ALLOWED;
-	 for (uint16_t i=0;i<EEPROM_SIZE;i=i+SECTOR_SIZE)
+	 for ( uint16_t i=0; i < EEPROM_SIZE; i = i + SECTOR_SIZE )
 	 {
-		 eEEPROMWriteExternData(i, data_buffer,SECTOR_SIZE);
+		 eEEPROMWriteExternData(i, data_buffer, SECTOR_SIZE );
 	 }
-	 datacash[VALIDE_CODE_ADDR ] = VALID_CODE;
-	 eEEPROMWr( VALIDE_CODE_ADDR , datacash, 1 );
 	 return;
 }
 
@@ -493,7 +489,6 @@ static void vInitDescriptor()
 		DataStorageDiscriptor.record_count = 0;
 		DataStorageDiscriptor.record_pointer = 0;
 		DataStorageDiscriptor.record_mask = 0;
-		//eWriteNewDescriptor(DataStorageDiscriptor);
 	}
 }
 

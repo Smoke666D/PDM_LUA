@@ -671,7 +671,36 @@ static int iSetRecord( lua_State *L )
 	  return ( NO_RESULT );
 }
 
+static int iSetStorageFormat( lua_State *L )
+{
 
+	//RECORD_TIME_STAMP = 0x00,
+	//	RECORD_BYTE		  = 0x01,
+	//	RECORD_SHORT      = 0x02,
+	//	RECORD_LUA		  = 0x03,
+	//	RECORD_ERROR	  = 0xFF,
+
+	uint8_t d[16]={RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP,
+			       RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP,
+			       RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP,RECORD_TIME_STAMP};
+	uint8_t arg_number = lua_gettop(L);
+
+	 if (arg_number!=0)
+	 {
+		 uint8_t register_count = lua_tointeger( L , FIRST_ARGUMENT );
+		 uint8_t record_format_count = 0;
+		 for (uint8_t i = 0; i < arg_number -1; i++)
+		 {
+			 d[i] = lua_tointeger( L, i + 2 );
+			 record_format_count++;
+
+		 }
+		eCreateDataStorage(register_count , d, record_format_count);
+
+	 }
+
+	return ( NO_RESULT );
+}
 
 
 /****************
@@ -760,9 +789,6 @@ void vLuaTask(void *argument)
     	   vOutInit();
            vAINInit();
            vDinInit();
-         //  eIntiDataStorage();
-           uint8_t d[4]={RECORD_TIME_STAMP,RECORD_BYTE,RECORD_LUA,RECORD_LUA};
-           eCreateDataStorage(15, d, 4);
     	   eMainLoopIsEnable  = IS_DISABLE;
 	   	   eSafeModeIsEnable  = IS_DISABLE;
 	   	   L  = luaL_newstate();
@@ -795,6 +821,7 @@ void vLuaTask(void *argument)
            lua_register(L1,"SetTimeDate",iSetTime);
            lua_register(L1,"GetTimeDate",iGetTime);
            lua_register(L1,"AddReccord",iSetRecord);
+           lua_register(L1,"ConfigStorage",iSetStorageFormat);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {
