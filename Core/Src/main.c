@@ -37,7 +37,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//#define WD
+#define WD
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
