@@ -143,7 +143,7 @@ typedef struct {
 	uint8_t Year;
 } PDM_DATA_TIME;
 
-STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count);
+STORAGE_ERROR eCreateDataStorage(EEPROM_ADRESS_TYPE reg_count, uint8_t * record_format_data, uint8_t record_count, uint8_t reset_data);
 void vEEPROMInit(I2C_HandleTypeDef * hi2c2);
 EERPOM_ERROR_CODE_t eIntiDataStorage();
 
