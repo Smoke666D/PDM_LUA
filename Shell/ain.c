@@ -76,9 +76,9 @@ CAL_ERROR_CODE  eAinCalDataConfig(AIN_NAME_t name, uint8_t cal_point_count )
             }
             else
             {
-                xAinData[ name ].coof_count = cal_point_count - 1;
+                xAinData[ name ].coof_count = cal_point_count;
                 xAinData[ name ].index = usCurMaxIndex;
-                usCurMaxIndex += cal_point_count - 1;
+                usCurMaxIndex += cal_point_count;
             }
         }
         else
@@ -103,7 +103,7 @@ CAL_ERROR_CODE  eSetAinCalPoint(AIN_NAME_t name, POINT_t * cal_point, uint16_t P
 		uint16_t index = PointNumber + xAinData[ name ].index;
 		vABLineKoofFinde ( &xKoofData[index].k, &xKoofData[index].b,
 									cal_point[0].X, cal_point[ 1 ].X, cal_point[0].Y,cal_point[1].Y);
-		xKoofData[usCurMaxIndex].data = cal_point[ 1 ].X;
+		xKoofData[index].data = cal_point[ 1 ].X;
 	}
 	else
 	{
