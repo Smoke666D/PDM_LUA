@@ -470,8 +470,11 @@ float fAinGetState ( AIN_NAME_TYPE channel )
 {
 
 
-  float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
-res =  fVAinRessistanceGet(channel);
+  float res = fVAinRessistanceGet(channel);
+
+
+		 // fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
+res =  fGetAinCalData( channel , res );
 #ifdef PDM
 #ifdef REV_2
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF2 );
@@ -691,7 +694,6 @@ static void vHWOutSet( OUT_NAME_TYPE out_name )
    return;
 }
 #define A 220
-
 
 static uint16_t vRCFilter( uint16_t input,uint16_t * old_output)
 {

@@ -108,6 +108,9 @@ void MX_MEMS_Init(void)
 float YAW = 0;
 float PITCH = 0;
 float ROLL = 0;
+float oldYAW = 0;
+float oldPITCH = 0;
+float oldROLL = 0;
 
 float fAngleGet1 ( ANGLE_TYPE type )
 {
@@ -126,6 +129,19 @@ float fAngleGet1 ( ANGLE_TYPE type )
   return (data);
 }
 
+#define A 220
+static float vRCFilterF( float input,float * old_output)
+{
+
+	volatile float new = input;
+	volatile float old = *old_output;
+
+
+	volatile float  output =  ( A * old + (256-A)*new )/256;
+	//*old_input = input;
+	*old_output = output;
+	return output;
+}
 /*
  * LM background task
  */
@@ -194,6 +210,9 @@ void MX_MEMS_Process(void)
 	ROLL = data_out.rotation[1];
 	PITCH = data_out.rotation[2];
 	YAW = data_out.rotation[0];
+	ROLL  = vRCFilterF(ROLL, &oldROLL);
+	PITCH = vRCFilterF(PITCH, &oldPITCH);
+	YAW   = vRCFilterF(ROLL, &oldYAW);
 	}
 	else
 	{

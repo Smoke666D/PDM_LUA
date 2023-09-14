@@ -65,8 +65,8 @@ void MotionDI_manager_init(float freq)
 
   BSP_SENSOR_ACC_GetOrientation(ipKnobs->AccOrientation);
   BSP_SENSOR_GYR_GetOrientation(ipKnobs->GyroOrientation);
- // ipKnobs->SFKnob.ATime =1.2; //Уменьшение увиличивает чуствительность к внешним ускорениям 0,899
-  ipKnobs->SFKnob.FrTime = 4.51;  //Уменьшение увеличивает доверие к гроскопу и умньшает коррекцию по акселеромтеру 0.666
+  ipKnobs->SFKnob.ATime =4.51; //Уменьшение увиличивает чуствительность к внешним ускорениям 0,899
+  ipKnobs->SFKnob.FrTime = 0.666;  //Уменьшение увеличивает доверие к гроскопу и умньшает коррекцию по акселеромтеру 0.666
 
   ipKnobs->SFKnob.output_type = MDI_ENGINE_OUTPUT_ENU;
   ipKnobs->SFKnob.modx = DECIMATION;
