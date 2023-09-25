@@ -32,7 +32,7 @@
 #define MAX_VAL 65000U
 #define DEF_H_FRONT 10U
 #define DEF_L_FRONT 10U
-#define CC_MAX  6
+#define CC_MAX  10
 
 typedef enum {
 	DIN_CONFIG_NEGATIVE = 0U,

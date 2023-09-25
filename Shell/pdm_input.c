@@ -76,27 +76,49 @@ void vSystemDinTimer(void)
 	}
 	return;
 }
+
+#define A 240
+
+
+ uint16_t vRCFilter1( uint16_t input,uint16_t * old_output)
+{
+
+	volatile uint32_t new = input;
+	volatile uint32_t old = *old_output;
+
+
+	volatile uint16_t  output =  ( A * old + (256-A)*new )>>8;
+	//*old_input = input;
+	*old_output = output;
+	return output;
+}
+uint16_t old1 = 0;
+uint16_t old2 = 0;
 /*
  *
  */
 uint16_t uGetRPM1()
 {
 	uint16_t usTemp = 0U;
-	if ((eRPM[0].uiData != 0) || (xDinConfig[INPUT_9].eInputType == RPM_CONFIG))
+	if ((eRPM[0].uiData != 0) && (xDinConfig[INPUT_9].eInputType == RPM_CONFIG))
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0002D) )* 60);
+
+		usTemp =/*(uint16_t)(( 1.0/( (float)*/eRPM[0].uiData /** 0.00005D) )* 60)*/;
+		usTemp = vRCFilter1(usTemp,&old1);
 	}
 	return (  usTemp  );
 }
 /*
  *
  */
+
 uint16_t uGetRPM2()
 {
 	uint16_t usTemp = 0U;
-	if ( (eRPM[ 1 ].uiData != 0) || ( xDinConfig[INPUT_6].eInputType == RPM_CONFIG ) )
+	if ( (eRPM[ 1 ].uiData != 0) && ( xDinConfig[INPUT_6].eInputType == RPM_CONFIG ) )
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002D) )* 60);
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.00005D) )* 60);
+		usTemp = vRCFilter1(usTemp,&old1);
 	}
 
 	return ( usTemp );
@@ -107,7 +129,7 @@ uint16_t uGetRPM2()
 static void vCheckRPM( uint8_t index)
 {
 	eRPM[index].usValidCounter++;
-	if (eRPM[index].usValidCounter ==1000)
+	if (eRPM[index].usValidCounter ==100)
 	{
 		eRPM[index].usValidCounter = 0;
 		if (eRPM[index].ucValid)
@@ -140,7 +162,7 @@ void vGetCCData(uint8_t TimInd)
 		   {
 			   ulTemp += eRPM[TimInd].uiRawData[i];
 		   }
-		   eRPM[TimInd].uiData = ( ulTemp / CC_MAX ) * 2U;
+		   eRPM[TimInd].uiData = ( ulTemp / CC_MAX )* 2U;
 	   	}
 	}
 	return;
