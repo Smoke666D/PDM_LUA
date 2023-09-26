@@ -89,12 +89,12 @@ PDM_INPUT_TYPE eInputType;
 typedef struct RPMConfigDef_t
 {
 	uint32_t uiData;
-	uint32_t uiRawData[CC_MAX ];
-	uint8_t  ucCounter;
 	uint8_t  ucValid;
 	uint16_t usValidCounter;
+	float config_coof;
 } RPMConfig_t;
 
+void vSetRPMConfig(uint8_t ch, float coof, uint8_t polarity, uint8_t hfilter);
 uint16_t uGetRPM1();
 uint16_t uGetRPM2();
 uint32_t uiGetDinMask();

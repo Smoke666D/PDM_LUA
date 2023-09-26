@@ -9,7 +9,7 @@
 #define PDM_INPUT_C_
 
 #include "pdm_input.h"
-
+#include "filters.h"
 
 static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM);
@@ -18,7 +18,8 @@ static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM);
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 static RPMConfig_t eRPM[2] 						__SECTION(RAM_SECTION_CCMRAM);
-
+static median_filter_data_t      RPM_MIDIAN_FILTER_STRUC[2] __SECTION(RAM_SECTION_CCMRAM);
+static ab_filter_data_t          RPM_AB_FILTER_STRUC  [2] __SECTION(RAM_SECTION_CCMRAM);
 
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
@@ -77,23 +78,7 @@ void vSystemDinTimer(void)
 	return;
 }
 
-#define A 240
 
-
- uint16_t vRCFilter1( uint16_t input,uint16_t * old_output)
-{
-
-	volatile uint32_t new = input;
-	volatile uint32_t old = *old_output;
-
-
-	volatile uint16_t  output =  ( A * old + (256-A)*new )>>8;
-	//*old_input = input;
-	*old_output = output;
-	return output;
-}
-uint16_t old1 = 0;
-uint16_t old2 = 0;
 /*
  *
  */
@@ -103,8 +88,8 @@ uint16_t uGetRPM1()
 	if ((eRPM[0].uiData != 0) && (xDinConfig[INPUT_9].eInputType == RPM_CONFIG))
 	{
 
-		usTemp =/*(uint16_t)(( 1.0/( (float)*/eRPM[0].uiData /** 0.00005D) )* 60)*/;
-		usTemp = vRCFilter1(usTemp,&old1);
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0001D) )* 60);
+		usTemp = usTemp* eRPM[0 ].config_coof;
 	}
 	return (  usTemp  );
 }
@@ -117,8 +102,8 @@ uint16_t uGetRPM2()
 	uint16_t usTemp = 0U;
 	if ( (eRPM[ 1 ].uiData != 0) && ( xDinConfig[INPUT_6].eInputType == RPM_CONFIG ) )
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.00005D) )* 60);
-		usTemp = vRCFilter1(usTemp,&old1);
+		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.00001D) )* 60);
+		usTemp = usTemp * eRPM[1 ].config_coof;
 	}
 
 	return ( usTemp );
@@ -143,29 +128,40 @@ static void vCheckRPM( uint8_t index)
 	}
 	return;
 }
-/*
- *
- */
+
+
+
+
 void vGetCCData(uint8_t TimInd)
 {
 	if (TimInd <= 2U)
 	{
-		eRPM[TimInd].uiRawData[eRPM[TimInd].ucCounter] = HAL_TIM_ReadCapturedValue( (TimInd == 0) ? &htim10 : &htim9 , TIM_CHANNEL_1 );
+		uint32_t temp_data = HAL_TIM_ReadCapturedValue( (TimInd == 0) ? &htim10 : &htim9 , TIM_CHANNEL_1 );
 	   __HAL_TIM_SET_COUNTER( (TimInd==0) ? &htim10 : &htim9, 0x0000);
-	   eRPM[TimInd].ucCounter ++;
 	   eRPM[TimInd].ucValid = 1;
-	   if (eRPM[TimInd].ucCounter == CC_MAX)
-	   {
-		   unsigned long ulTemp = 0;
-		   eRPM[TimInd].ucCounter = 0;
-		   for (uint8_t i=0; i < CC_MAX; i++)
-		   {
-			   ulTemp += eRPM[TimInd].uiRawData[i];
-		   }
-		   eRPM[TimInd].uiData = ( ulTemp / CC_MAX )* 2U;
-	   	}
+	   eRPM[TimInd].uiData =  MedianFilter(temp_data,&RPM_MIDIAN_FILTER_STRUC[TimInd]);
+	   eRPM[TimInd].uiData =  RunABFilter(eRPM[TimInd].uiData,&RPM_AB_FILTER_STRUC[TimInd] );
 	}
 	return;
+}
+
+void vSetRPMConfig(uint8_t ch, float coof, uint8_t polarity, uint8_t hfilter)
+{
+	TIM_IC_InitTypeDef sConfigIC = {0};
+	if (coof !=0 )
+	{
+		eRPM[(ch == INPUT_9) ? 0 : 1 ].config_coof = coof;
+	}
+	sConfigIC.ICPolarity =  (polarity!= 0) ? TIM_INPUTCHANNELPOLARITY_RISING : TIM_INPUTCHANNELPOLARITY_FALLING ;
+	sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	sConfigIC.ICFilter = (hfilter <= 0x08) ? hfilter : 0 ;
+	HAL_TIM_IC_Stop_IT((ch == INPUT_9) ? &htim10 : &htim9, TIM_CHANNEL_1 );
+	if (HAL_TIM_IC_ConfigChannel((ch == INPUT_9) ? &htim10 : &htim9, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+	{
+	    Error_Handler();
+	}
+	HAL_TIM_IC_Start_IT((ch == INPUT_9) ? &htim10 : &htim9, TIM_CHANNEL_1 );
 }
 /*
  *
@@ -182,10 +178,10 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
 		if ( ( ( ucCh == INPUT_9 ) || ( ucCh == INPUT_6 ) ) && ( inType == RPM_CONFIG ))
 		{
 			uint8_t ucRPMCh 				= (ucCh == INPUT_9) ? 0 : 1;
-			eRPM[ucRPMCh ].ucCounter 		= 0U;
 			eRPM[ucRPMCh ].uiData 			= 0U;
 			eRPM[ucRPMCh ].usValidCounter 	= 0U;
 			eRPM[ucRPMCh ].ucValid 			= 0U;
+			eRPM[ucRPMCh ].config_coof	    = 1U;
 			GPIO_InitStruct.Mode 			= GPIO_MODE_AF_PP;
 			GPIO_InitStruct.Pull 			= GPIO_NOPULL;
 			GPIO_InitStruct.Speed 			= GPIO_SPEED_FREQ_LOW;
@@ -225,6 +221,11 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
  */
 void vDinInit( void )
 {
+
+	vInitMedianFilter(&RPM_MIDIAN_FILTER_STRUC[0]);
+	vInitMedianFilter(&RPM_MIDIAN_FILTER_STRUC[1]);
+	vInitABFilter(&RPM_AB_FILTER_STRUC[0],0.95);
+	vInitABFilter(&RPM_AB_FILTER_STRUC[1],0.95);
 	eDinConfig( INPUT_1, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_2, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_3, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
