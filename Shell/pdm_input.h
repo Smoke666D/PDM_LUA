@@ -85,16 +85,19 @@ uint8_t 	  ucTempValue;
 PDM_INPUT_TYPE eInputType;
 } DinConfig_t;
 
+#define CC_MAX    20
 
 typedef struct RPMConfigDef_t
 {
+	uint32_t Data[CC_MAX];
+	uint8_t  cc_counter;
 	uint32_t uiData;
 	uint8_t  ucValid;
 	uint16_t usValidCounter;
 	float config_coof;
 } RPMConfig_t;
 
-void vSetRPMConfig(uint8_t ch, float coof, uint8_t polarity, uint8_t hfilter);
+void vSetRPMConfig(uint8_t ch, float coof, float filter_coof);
 uint16_t uGetRPM1();
 uint16_t uGetRPM2();
 uint32_t uiGetDinMask();

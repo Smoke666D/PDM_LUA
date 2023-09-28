@@ -241,9 +241,8 @@ static int iSetRPMConfig(lua_State *L )
 	int arg_number = lua_gettop(L);
 	if (arg_number >= TWO_ARGUMENTS )
 	{
-		uint8_t polarity = ( arg_number >= THIRD_ARGUMENT) ? lua_tointeger( L, THIRD_ARGUMENT ) : 0;
-		uint8_t filter   = ( arg_number >= FOURTH_ARGUMENT) ? lua_tointeger( L, FOURTH_ARGUMENT ) : 0;
-		vSetRPMConfig((uint8_t) lua_tointeger( L, FIRST_ARGUMENT ) -1U, lua_tonumber( L, SECOND_ARGUMENT ), polarity, filter);
+		float coof = ( arg_number >= THIRD_ARGUMENT) ? lua_tonumber( L, THIRD_ARGUMENT ) : 0;
+		vSetRPMConfig((uint8_t) lua_tointeger( L, FIRST_ARGUMENT ) -1U, lua_tonumber( L, SECOND_ARGUMENT ), coof);
 	}
 
 	return ( NO_RESULT );

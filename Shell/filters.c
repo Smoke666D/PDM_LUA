@@ -15,24 +15,24 @@ void vInitABFilter( ab_filter_data_t * filter, float k)
 
 }
 
-#define A 243
+#define A 240
 ab_data RunABFilter( ab_data data, ab_filter_data_t * filter)
 {
-	filter->old_data   =  ( A * filter->old_data + (256-A) *data )>>8;
+	filter->old_data   =  ( filter->k * filter->old_data + (256-filter->k) *data )>>8;
 	return (filter->old_data);
 }
 
-void vInitRunAverga( aver_filter_data_t * filter, uint8_t adaptive, float k, float k1)
+void vInitRunAverga( aver_filter_data_t * filter,  float k )
 {
   filter->old_data = 0;
- filter->adaprive = adaptive;
- filter->k_up = k;
-  filter->k_down = k1;
+ // filter->adaprive = adaptive;
+  filter->k_up = k;
+  //filter->k_down = k1;
 }
 
 aver_data RunAvrageFilter( aver_data data, aver_filter_data_t * filter )
 {
-	float koof = 0.1;//filter->k_up;
+	float koof =filter->k_up;//filter->k_up;
 	/*if ( ( filter->adaprive) && ( data!=0 ) )
 	{
 		if ( ( (data - filter->old_data) / data ) > 0.3 )
@@ -41,9 +41,9 @@ aver_data RunAvrageFilter( aver_data data, aver_filter_data_t * filter )
 		}
 	}*/
 
-	filter->old_data   =  ( A * filter->old_data+ (256-A)*data )>>8;
-//	float temp = (data - filter->old_data) * koof;
- //    filter->old_data = (aver_data)( filter->old_data + temp);
+
+	float temp = ((int32_t)data - (int32_t)filter->old_data) * koof;
+    filter->old_data = (aver_data)( (float)filter->old_data + temp);
 
 	return (filter->old_data);
 }

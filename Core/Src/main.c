@@ -37,7 +37,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//#define WD
+#define WD
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -1336,7 +1336,7 @@ static void MX_TIM9_Init(void)
   htim9.Init.Period = 60000;
   htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim9) != HAL_OK)
+  if (HAL_TIM_Base_Init( &htim9 ) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1345,14 +1345,14 @@ static void MX_TIM9_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_IC_Init(&htim9) != HAL_OK)
+  if (HAL_TIM_IC_Init( &htim9 ) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0x08;
+  sConfigIC.ICFilter = 0x00;
   if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
@@ -1384,7 +1384,7 @@ static void MX_TIM10_Init(void)
   htim10.Init.Prescaler = 16800;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim10.Init.Period = 60000;
-  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
   {
@@ -1394,10 +1394,10 @@ static void MX_TIM10_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE ;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0x08;
+  sConfigIC.ICFilter = 0x00;
   if (HAL_TIM_IC_ConfigChannel(&htim10, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
