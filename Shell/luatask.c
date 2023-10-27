@@ -235,6 +235,18 @@ static int iDinConfig(lua_State *L )
 	return ( NO_RESULT );
 }
 
+
+static int iSetRPMConfig(lua_State *L )
+{
+	int arg_number = lua_gettop(L);
+	if (arg_number >= TWO_ARGUMENTS )
+	{
+		float coof = ( arg_number >= THIRD_ARGUMENT) ? lua_tonumber( L, THIRD_ARGUMENT ) : 0;
+		vSetRPMConfig((uint8_t) lua_tointeger( L, FIRST_ARGUMENT ) -1U, lua_tonumber( L, SECOND_ARGUMENT ), coof);
+	}
+
+	return ( NO_RESULT );
+}
 /*
  * Устанавливаем новый фильтр, позволяющий принимать пакеты с нужным ID
  */
@@ -823,6 +835,7 @@ void vLuaTask(void *argument)
            lua_register(L1,"GetTimeDate",iGetTime);
            lua_register(L1,"AddReccord",iSetRecord);
            lua_register(L1,"ConfigStorage",iSetStorageFormat);
+           lua_register(L1,"RPMConfig",iSetRPMConfig);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

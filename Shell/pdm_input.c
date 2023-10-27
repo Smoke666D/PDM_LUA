@@ -9,7 +9,7 @@
 #define PDM_INPUT_C_
 
 #include "pdm_input.h"
-
+#include "filters.h"
 
 static uint16_t usSystemTimer					__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t usTimer 						__SECTION(RAM_SECTION_CCMRAM);
@@ -18,8 +18,9 @@ static uint8_t  ucTicTime 						__SECTION(RAM_SECTION_CCMRAM);
 static DinConfig_t xDinConfig[DIN_CHANNEL]  	__SECTION(RAM_SECTION_CCMRAM);
 static EventGroupHandle_t  * pxPDMstatusEvent	__SECTION(RAM_SECTION_CCMRAM);
 static RPMConfig_t eRPM[2] 						__SECTION(RAM_SECTION_CCMRAM);
-
-
+static median_filter_data_t      RPM_MIDIAN_FILTER_STRUC[2] __SECTION(RAM_SECTION_CCMRAM);
+static ab_filter_data_t          RPM_AB_FILTER_STRUC  [2] __SECTION(RAM_SECTION_CCMRAM);
+static aver_filter_data_t        RPM_AVER_FILTER_STRUC  [2] __SECTION(RAM_SECTION_CCMRAM);
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 const  PIN_CONFIG xDinPortConfig[DIN_CHANNEL]= {{Din1_Pin,Din1_GPIO_Port},
@@ -76,27 +77,33 @@ void vSystemDinTimer(void)
 	}
 	return;
 }
+
+
 /*
  *
  */
 uint16_t uGetRPM1()
 {
 	uint16_t usTemp = 0U;
-	if ((eRPM[0].uiData != 0) || (xDinConfig[INPUT_9].eInputType == RPM_CONFIG))
+	if ((eRPM[0].uiData != 0) && (xDinConfig[INPUT_9].eInputType == RPM_CONFIG))
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[0].uiData * 0.0002D) )* 60);
+
+		usTemp =(uint16_t)(1.0/ (eRPM[0].uiData * 0.0001D ))*60;
+		usTemp = usTemp* eRPM[0 ].config_coof;
 	}
 	return (  usTemp  );
 }
 /*
  *
  */
+
 uint16_t uGetRPM2()
 {
 	uint16_t usTemp = 0U;
-	if ( (eRPM[ 1 ].uiData != 0) || ( xDinConfig[INPUT_6].eInputType == RPM_CONFIG ) )
+	if ( (eRPM[ 1 ].uiData != 0) && ( xDinConfig[INPUT_6].eInputType == RPM_CONFIG ) )
 	{
-		usTemp =(uint16_t)(( 1.0/( (float)eRPM[1].uiData * 0.0002D) )* 60);
+		usTemp =(uint16_t)(( 1.0/( eRPM[1].uiData * 0.0001D) )*60);
+		usTemp = usTemp * eRPM[1 ].config_coof;
 	}
 
 	return ( usTemp );
@@ -107,7 +114,7 @@ uint16_t uGetRPM2()
 static void vCheckRPM( uint8_t index)
 {
 	eRPM[index].usValidCounter++;
-	if (eRPM[index].usValidCounter ==1000)
+	if (eRPM[index].usValidCounter ==100)
 	{
 		eRPM[index].usValidCounter = 0;
 		if (eRPM[index].ucValid)
@@ -121,29 +128,55 @@ static void vCheckRPM( uint8_t index)
 	}
 	return;
 }
-/*
- *
- */
-void vGetCCData(uint8_t TimInd)
+
+/*uint32_t getData(uint32_t * data)
 {
-	if (TimInd <= 2U)
+	for (uint8_t i = 0; i<CC_COUNTER;i++)
+}*/
+
+#define EDGE 3
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	uint8_t TimInd = ( htim->Instance  == TIM10)? 0 : 1;
+	uint32_t temp_data = HAL_TIM_ReadCapturedValue( htim , TIM_CHANNEL_1 );
+	if ((temp_data) > EDGE)
 	{
-		eRPM[TimInd].uiRawData[eRPM[TimInd].ucCounter] = HAL_TIM_ReadCapturedValue( (TimInd == 0) ? &htim10 : &htim9 , TIM_CHANNEL_1 );
-	   __HAL_TIM_SET_COUNTER( (TimInd==0) ? &htim10 : &htim9, 0x0000);
-	   eRPM[TimInd].ucCounter ++;
-	   eRPM[TimInd].ucValid = 1;
-	   if (eRPM[TimInd].ucCounter == CC_MAX)
-	   {
-		   unsigned long ulTemp = 0;
-		   eRPM[TimInd].ucCounter = 0;
-		   for (uint8_t i=0; i < CC_MAX; i++)
-		   {
-			   ulTemp += eRPM[TimInd].uiRawData[i];
-		   }
-		   eRPM[TimInd].uiData = ( ulTemp / CC_MAX ) * 2U;
-	   	}
+		eRPM[TimInd].Data[eRPM[TimInd].cc_counter++] = temp_data;
+		__HAL_TIM_SET_COUNTER( htim, 0x0000);
 	}
-	return;
+
+	if (eRPM[TimInd].cc_counter >=CC_MAX)
+	{
+		uint64_t buf = 0;
+		eRPM[TimInd].cc_counter=0;
+		for (uint8_t i = 0; i<CC_MAX;i++)
+		{
+			buf = buf + eRPM[TimInd].Data[i];
+		}
+		eRPM[TimInd].uiData = (buf/CC_MAX)<<1;
+		eRPM[TimInd].uiData =  MedianFilter(eRPM[TimInd].uiData,&RPM_MIDIAN_FILTER_STRUC[TimInd]);
+		eRPM[TimInd].uiData =  RunAvrageFilter(eRPM[TimInd].uiData,&RPM_AVER_FILTER_STRUC[TimInd] );
+	}
+
+	eRPM[TimInd].ucValid = 1;
+
+
+}
+
+
+
+void vSetRPMConfig(uint8_t ch, float coof, float filter_coof)
+{
+	TIM_IC_InitTypeDef sConfigIC = {0};
+	if (coof !=0 )
+	{
+		eRPM[(ch == INPUT_9) ? 0 : 1 ].config_coof = coof;
+	}
+	if ((filter_coof!=0) && (filter_coof<=1.0))
+	{
+		vInitRunAverga(&RPM_AVER_FILTER_STRUC[(ch == INPUT_9) ? 0 : 1], filter_coof);
+	}
+
 }
 /*
  *
@@ -160,10 +193,12 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
 		if ( ( ( ucCh == INPUT_9 ) || ( ucCh == INPUT_6 ) ) && ( inType == RPM_CONFIG ))
 		{
 			uint8_t ucRPMCh 				= (ucCh == INPUT_9) ? 0 : 1;
-			eRPM[ucRPMCh ].ucCounter 		= 0U;
+			memset(eRPM[ucRPMCh ].Data,0,CC_MAX);
 			eRPM[ucRPMCh ].uiData 			= 0U;
+			eRPM[ucRPMCh ].cc_counter = 0;
 			eRPM[ucRPMCh ].usValidCounter 	= 0U;
 			eRPM[ucRPMCh ].ucValid 			= 0U;
+			eRPM[ucRPMCh ].config_coof	    = 1U;
 			GPIO_InitStruct.Mode 			= GPIO_MODE_AF_PP;
 			GPIO_InitStruct.Pull 			= GPIO_NOPULL;
 			GPIO_InitStruct.Speed 			= GPIO_SPEED_FREQ_LOW;
@@ -203,6 +238,13 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
  */
 void vDinInit( void )
 {
+
+	vInitMedianFilter(&RPM_MIDIAN_FILTER_STRUC[0]);
+	vInitMedianFilter(&RPM_MIDIAN_FILTER_STRUC[1]);
+	vInitABFilter(&RPM_AB_FILTER_STRUC[0],0.90);
+	vInitABFilter(&RPM_AB_FILTER_STRUC[1],0.90);
+	vInitRunAverga(&RPM_AVER_FILTER_STRUC[0],0.5);
+	vInitRunAverga(&RPM_AVER_FILTER_STRUC[1],0.5);
 	eDinConfig( INPUT_1, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_2, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );
 	eDinConfig( INPUT_3, DIN_CONFIG_POSITIVE , DEF_H_FRONT, DEF_L_FRONT );

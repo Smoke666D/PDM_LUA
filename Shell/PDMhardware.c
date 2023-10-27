@@ -695,7 +695,10 @@ static void vHWOutSet( OUT_NAME_TYPE out_name )
 }
 #define A 220
 
-static uint16_t vRCFilter( uint16_t input,uint16_t * old_output)
+
+
+ uint16_t vRCFilter( uint16_t input,uint16_t * old_output)
+
 {
 
 	volatile uint32_t new = input;

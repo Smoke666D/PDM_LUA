@@ -299,6 +299,7 @@ USB_STATUS  eUSBreportToTime  ( const USB_REPORT* report )
 		date_buffer.Date	 = report->data[3];
 		date_buffer.Month    = report->data[4];
 		date_buffer.Year     = report->data[5];
+		date_buffer.WeekDay = 1;
 		HAL_RTC_SetTime(&hrtc,&time_buffer,  RTC_FORMAT_BIN);
 		HAL_RTC_SetDate(&hrtc, &date_buffer, RTC_FORMAT_BIN);
 

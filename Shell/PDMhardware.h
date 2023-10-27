@@ -339,9 +339,13 @@ typedef enum {
   ANGLE_TYPE_YAW
 } ANGLE_TYPE;
 
+
 #ifdef PCM
 float fVRefGet( void);
 #endif
+
+uint16_t vRCFilter( uint16_t input,uint16_t * old_output);
+
 void vHWOutOFF( uint8_t ucChannel );
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);
 void vGetDoutStatus(uint32_t * Dout1_10Status, uint32_t * Dout11_20Status);
