@@ -797,7 +797,7 @@ static void vDataConvertToFloat( void)
     {
        	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
        	{
-       		if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
+       		if ( IS_FLAG_SET( i, CONTROL_OFF_STATE )  )
        		{
        				SET_STATE_FLAG(i, FSM_OFF_STATE );
        				out[i].error_counter =  out[i].max_error_counter;
@@ -808,6 +808,7 @@ static void vDataConvertToFloat( void)
        		 		SET_STATE_FLAG(i, FSM_ON_PROCESS );
        		 	 	vHWOutSet( i );
        		 }
+
        		 RESET_FLAG(i,CONTROL_FLAGS );
        		 out[i].state = HAL_GPIO_ReadPin(out[i].OutGPIOx, out[i].OutGPIO_Pin);
        	}
