@@ -146,10 +146,22 @@ static int isetAINCal (lua_State *L)
    }
    lua_pushboolean( L, res );
    return (ONE_RESULT);
-
-
 }
+static int  isetAINPullUp(lua_State *L)
+{
+	uint16_t argument = lua_gettop(L);
+	int res = 0;
 
+	if ( argument >= TWO_ARGUMENTS )
+	{
+		uint8_t ucNumber = (uint8_t) (lua_tointeger( L, FIRST_ARGUMENT)-1);
+		uint16_t nom     = (uint16_t)lua_tointeger( L,SECOND_ARGUMENT);
+		vAinSetPullUP(ucNumber,nom );
+	    res = 1;
+	}
+	lua_pushboolean( L, res );
+return (ONE_RESULT);
+}
 
 static int iSetPID(lua_State *L)
 {
@@ -829,6 +841,7 @@ void vLuaTask(void *argument)
 	   	   lua_register(L1,"processPID",iProcessPID);
 	   	   lua_register(L1,"setOutSoftStart",iSoftStart);
 	   	   lua_register(L1,"setPWMGroupeFreq",isetPWMFreq);
+	   	   lua_register(L1,"setAINPullUp",isetAINPullUp);
            lua_register(L1,"setAINCalTable",isetAINCal);
            lua_register(L1,"SYSTEM_RESTASRT",iSysrestart);
            lua_register(L1,"SetTimeDate",iSetTime);

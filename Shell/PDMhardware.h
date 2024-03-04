@@ -64,7 +64,7 @@
 #define RA2  3000.0
 #define RA3  10000.0
 #define AINCOOF1  ( ( RA1 + RA3 ) /RA3) * K
-#define AINCOOF2  ( ( RA3 + RA3 ) /RA3) * K
+#define AINCOOF2  ( ( RA3 + AINPullUps[ channel] + RA3 ) /RA3) * K
 
 #endif
 
@@ -289,6 +289,7 @@ float fOutGetCurrent(OUT_NAME_TYPE eChNum);
 float fAinGetState ( AIN_NAME_TYPE channel );
 float fBatteryGet ( void );
 float fTemperatureGet (  );
+void vAinSetPullUP ( AIN_NAME_TYPE channel , uint16_t nominal);
 ERROR_CODE vOutSetSoftStart(OUT_NAME_TYPE out_name, uint16_t timer, uint8_t power);
 ERROR_FLAGS_TYPE eOutGetError(OUT_NAME_TYPE eChNum );
 float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum);

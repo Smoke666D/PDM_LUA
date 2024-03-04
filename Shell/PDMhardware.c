@@ -26,7 +26,7 @@ volatile int16_t            ADC3_IN_Buffer[ADC_FRAME_SIZE*ADC3_CHANNELS] = { 0U 
 
 #define TEMP_DATA    5
 
-
+static uint16_t    AINPullUps[ AIN_NUMBER]                = {120,120,120};
 static PDM_OUTPUT_TYPE out[OUT_COUNT]  			    __SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawCurData[OUT_COUNT]				__SECTION(RAM_SECTION_CCMRAM);
 static uint16_t muRawOldOutCurData[OUT_COUNT]	    __SECTION(RAM_SECTION_CCMRAM);
@@ -343,6 +343,17 @@ float fOutGetMaxCurrent(OUT_NAME_TYPE eChNum)
 {
 	return ( (eChNum < OUT_COUNT) ? out[eChNum ].power : 0U );
 }
+
+/*
+ *
+ */
+void vAinSetPullUP ( AIN_NAME_TYPE channel , uint16_t nominal)
+{
+	if (channel < AIN_NUMBER)
+	{
+		AINPullUps[ channel] =  nominal;
+	}
+}
 /*
  * Напряжение на аналогвом входе
  */
@@ -354,14 +365,14 @@ float fAinGetState ( AIN_NAME_TYPE channel )
 #ifdef REV_1
   float res = fGetAinCalData( channel , (float) muRawVData[channel] *  AINCOOF1 );
 #endif
- return res;// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
+ return (res);// ( (channel < AIN_COUNT) ? (float) muRawVData[channel] *  AINCOOF1 : 0U ) ;
 }
 /*
  *
  */
 float fBatteryGet ( void )
 {
-	 return (float)muRawVData[3] * AINCOOF1 + INDIOD;
+	 return ((float)muRawVData[3] * AINCOOF1 + INDIOD);
 }
 /*
  *
