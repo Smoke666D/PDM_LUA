@@ -784,6 +784,12 @@ static void vDataConvertToFloat( void)
  					}
  					break;
  				case FSM_ERROR_STATE:
+ 					if  (IS_FLAG_SET( i, RESETTEBLE_FLAG ) &&  IS_FLAG_SET( i, CONTROL_OFF_STATE ))
+					{
+ 						RESET_FLAG( i, OVERLOAD_ERROR);
+ 						SET_STATE_FLAG(i, FSM_OFF_STATE );
+					}
+ 					break;
  				default:
  					break;
  			}
@@ -797,8 +803,8 @@ static void vDataConvertToFloat( void)
     {
        	if (IS_FLAG_SET(i,ENABLE_FLAG) )		/*Если канал не выключен или не в режиме конфигурации*/
        	{
-       		if ( IS_FLAG_SET( i, CONTROL_OFF_STATE )  )
-       		{
+       		 if ( IS_FLAG_SET( i, CONTROL_OFF_STATE ) && IS_FLAG_RESET(i, FSM_OFF_STATE)   )
+       		 {
        				SET_STATE_FLAG(i, FSM_OFF_STATE );
        				out[i].error_counter =  out[i].max_error_counter;
        		 	 	vHWOutOFF(i);
