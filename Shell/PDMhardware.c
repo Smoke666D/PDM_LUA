@@ -467,6 +467,7 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].state 		   = 0;
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
+		out[out_name].RanfomOverload   = 0;
 
 		out[out_name].filter_enable     = 1;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
@@ -600,6 +601,15 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 		}
 	 }
 	return ( fRes );
+}
+
+
+void vSetRendomResetState( uint8_t out_name,  uint8_t state)
+{
+	if ( out_name < OUT_COUNT )
+	{
+		out[out_name].RanfomOverload = state ? 1: 0;
+	}
 }
 /*
  *  Функция усредняет данные из буфеера АЦП, и пробразует их значения
@@ -738,7 +748,6 @@ static void vDataConvertToFloat( void)
  					}
  					else
  					{
-
  						 if ( out[i].restart_timer  < 2 )
  						 {
  							 break;
@@ -751,6 +760,7 @@ static void vDataConvertToFloat( void)
  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
  							SET_STATE_FLAG(i, FSM_ON_STATE );
+ 							 out[ i ].restart_timer = 0;
  						 }
  					}
  					out[i].current = fCurrent;
@@ -758,9 +768,24 @@ static void vDataConvertToFloat( void)
  				case FSM_ON_STATE:  // Состояние входа - включен
  					if  (fCurrent  > out[ i ].power  )
  					{
- 						vGotoRestartState( i, fCurrent );
- 						break;
+ 						if (out[i].RanfomOverload)
+ 						{
+ 							out[i].restart_timer++;
+ 							if ( out[i].restart_timer  < 2 )  break;
+ 							if  (( fCurrent  > out[ i ].overload_power ) ||   ( out[ i ].restart_timer >= out[ i ].overload_config_timer ))
+ 							{
+ 							    vGotoRestartState(i,fCurrent);
+ 							 	break;
+ 							}
+ 						}
+ 						else
+ 						{
+ 							vGotoRestartState( i, fCurrent );
+ 							break;
+ 						}
  					}
+ 					else
+ 						out[ i ].restart_timer = 0;
  					RESET_FLAG(i,ERROR_MASK);
  					if (fCurrent  < CIRCUT_BREAK_CURRENT)
  					{

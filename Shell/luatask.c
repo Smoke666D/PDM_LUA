@@ -165,6 +165,21 @@ static int iSetPID(lua_State *L)
 
 }
 
+/*
+ * Функция управленя признаком RandomReset
+ */
+static int iSetRandomRestart(lua_State *L)
+{
+	if (lua_gettop(L) ==  TWO_ARGUMENTS)
+	{
+		uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
+		uint8_t ucState =(uint8_t) lua_tointeger( L, SECOND_ARGUMENT);
+		vSetRendomResetState( ucNumber, ucState );
+	}
+	return ( NO_RESULT );
+
+}
+
 static int iResetPID(lua_State *L)
 {
 	if (lua_gettop(L) == ONE_ARGUMENT)
@@ -836,6 +851,7 @@ void vLuaTask(void *argument)
            lua_register(L1,"AddReccord",iSetRecord);
            lua_register(L1,"ConfigStorage",iSetStorageFormat);
            lua_register(L1,"RPMConfig",iSetRPMConfig);
+           lua_register(L1,"RandomRestart",iSetRandomRestart);
 	   	   vLUArunPDM();
 	   	   if ( eIsLuaSkriptValid(uFLASHgetScript(), uFLASHgetLength()+1) == RESULT_TRUE )
 	   	   {

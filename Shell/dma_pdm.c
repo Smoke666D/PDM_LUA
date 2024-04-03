@@ -241,18 +241,6 @@ extern ADC_HandleTypeDef hadc3;
        hdma->ErrorCode |= HAL_DMA_ERROR_TE;
      }
    }
-   /* FIFO Error Interrupt management ******************************************/
-   if ((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
-   {
-     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_FE) != RESET)
-     {
-       /* Clear the FIFO error flag */
-       regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex;
-
-       /* Update error code */
-       hdma->ErrorCode |= HAL_DMA_ERROR_FE;
-     }
-   }
    /* Direct Mode Error Interrupt management ***********************************/
    if ((tmpisr & (DMA_FLAG_DMEIF0_4 << hdma->StreamIndex)) != RESET)
    {
