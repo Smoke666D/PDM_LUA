@@ -178,6 +178,9 @@ typedef struct __packed
    uint32_t  channel;
    float power;
    uint8_t state;
+   uint8_t cooldown_coof;
+   uint32_t cooldown_timer;
+   uint8_t cool_down_flag;
    float overload_power;
    float current;
    uint8_t RanfomOverload;
@@ -274,7 +277,7 @@ typedef enum {
 } ANGLE_TYPE;
 
 
-void vSetRendomResetState( uint8_t out_name,  uint8_t state);
+void vSetRendomResetState( uint8_t out_name,  uint8_t state, uint8_t cool_down);
 uint16_t vRCFilter( uint16_t input,uint16_t * old_output);
 void vHWOutOFF( uint8_t ucChannel );
 void vPWMFreqSet( OUT_CH_GROUPE_TYPE groupe, uint32_t Freq);

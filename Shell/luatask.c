@@ -170,11 +170,12 @@ static int iSetPID(lua_State *L)
  */
 static int iSetRandomRestart(lua_State *L)
 {
-	if (lua_gettop(L) ==  TWO_ARGUMENTS)
+	if (lua_gettop(L) ==  THREE_ARGUMENTS)
 	{
 		uint8_t ucNumber =(uint8_t) lua_tointeger( L, FIRST_ARGUMENT); //First argument it's channel number
 		uint8_t ucState =(uint8_t) lua_tointeger( L, SECOND_ARGUMENT);
-		vSetRendomResetState( ucNumber, ucState );
+		uint8_t ucCoolDownTime =(uint8_t) lua_tointeger( L,  THIRD_ARGUMENT);
+		vSetRendomResetState( ucNumber -1u, ucState, ucCoolDownTime );
 	}
 	return ( NO_RESULT );
 

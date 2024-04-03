@@ -468,8 +468,10 @@ static void vHWOutInit(OUT_NAME_TYPE out_name, TIM_HandleTypeDef * ptim, uint32_
 		out[out_name].PWM_Freg         = 0;
 		out[out_name].PWM              = 100;
 		out[out_name].RanfomOverload   = 0;
-
-		out[out_name].filter_enable     = 1;
+		out[out_name].cooldown_coof    = 1;
+		out[out_name].cooldown_timer   = 0;
+		out[out_name].filter_enable    = 1;
+		out[out_name].cool_down_flag   = 0;
 		RESET_FLAG(out_name,CONTROL_FLAGS );
 		SET_STATE_FLAG(out_name, FSM_OFF_STATE );
 		if (out_name < OUT_HPOWER_COUNT)
@@ -604,11 +606,13 @@ static float fGetDataFromRaw( float fraw,PDM_OUTPUT_TYPE xOut)
 }
 
 
-void vSetRendomResetState( uint8_t out_name,  uint8_t state)
+void vSetRendomResetState( uint8_t out_name,  uint8_t state, uint8_t cool_down)
 {
 	if ( out_name < OUT_COUNT )
 	{
-		out[out_name].RanfomOverload = state ? 1: 0;
+		out[out_name].RanfomOverload = (state!=0) ? 1: 0;
+		out[out_name].cooldown_coof = (cool_down!=0)? cool_down : 1;
+		out[out_name].cooldown_timer   = 0;
 	}
 }
 /*
@@ -719,6 +723,8 @@ static void vDataConvertToFloat( void)
  					out[i].current 	   		 = 0U;
  					out[i].restart_timer   	 = 0U;
  					RESET_FLAG(i,ERROR_MASK);
+ 					out[i].cool_down_flag   = 0;
+ 					out[ i ].cooldown_timer = 0;
  					break;
  				case FSM_ON_PROCESS: //Состояния влючения
 
@@ -757,6 +763,11 @@ static void vDataConvertToFloat( void)
  						 	vGotoRestartState(i,fCurrent);
  						 	break;
  						 }
+ 						if  (fCurrent  > out[ i ].power  )
+ 						{
+ 							out[ i ].cooldown_timer = 0;
+ 							out[ i ].cool_down_flag = 0;
+ 						}
  						 if ( out[ i ].restart_timer >= out[ i ].overload_config_timer )
  						 {
  							SET_STATE_FLAG(i, FSM_ON_STATE );
@@ -768,15 +779,16 @@ static void vDataConvertToFloat( void)
  				case FSM_ON_STATE:  // Состояние входа - включен
  					if  (fCurrent  > out[ i ].power  )
  					{
- 						if (out[i].RanfomOverload)
+ 						if ((out[i].RanfomOverload) &&  (out[i].cool_down_flag   == 1))
  						{
- 							out[i].restart_timer++;
- 							if ( out[i].restart_timer  < 2 )  break;
- 							if  (( fCurrent  > out[ i ].overload_power ) ||   ( out[ i ].restart_timer >= out[ i ].overload_config_timer ))
- 							{
- 							    vGotoRestartState(i,fCurrent);
- 							 	break;
- 							}
+ 								out[ i ].cooldown_timer = 0;
+ 								out[i].restart_timer++;
+ 								if ( out[i].restart_timer  < 2 )  break;
+ 								if  (( fCurrent  > out[ i ].overload_power ) ||   ( out[ i ].restart_timer >= out[ i ].overload_config_timer ))
+ 								{
+ 									vGotoRestartState(i,fCurrent);
+ 									break;
+ 								}
  						}
  						else
  						{
@@ -785,7 +797,17 @@ static void vDataConvertToFloat( void)
  						}
  					}
  					else
+ 					{
  						out[ i ].restart_timer = 0;
+
+ 						if ( out[ i ].cooldown_timer <= ( out[ i ].overload_config_timer * out[ i ].cooldown_coof) )
+ 						{
+ 							 out[i].cool_down_flag   = 0;
+ 							 out[ i ].cooldown_timer++;
+ 						}
+ 						else
+ 							out[i].cool_down_flag   = 1;
+ 					}
  					RESET_FLAG(i,ERROR_MASK);
  					if (fCurrent  < CIRCUT_BREAK_CURRENT)
  					{
@@ -799,6 +821,8 @@ static void vDataConvertToFloat( void)
  					if  ( out[ i ].restart_timer >= out[ i ].restart_config_timer )
  					{
  						SET_STATE_FLAG(i, FSM_ON_PROCESS );
+ 						out[i].cool_down_flag   = 0;
+ 						out[ i ].cooldown_timer  = 0;
  						vHWOutSet( i );
  						out[ i ].restart_timer =0;
  						RESET_FLAG(i,ERROR_MASK);
@@ -809,6 +833,12 @@ static void vDataConvertToFloat( void)
  					}
  					break;
  				case FSM_ERROR_STATE:
+ 					if (IS_FLAG_SET(i,RESETTEBLE_FLAG) && IS_FLAG_SET(i, CONTROL_OFF_STATE))
+ 					{
+ 						RESET_FLAG(i, OVERLOAD_ERROR);
+ 						SET_STATE_FLAG(i, FSM_OFF_STATE);
+ 					}
+ 					break;
  				default:
  					break;
  			}
