@@ -383,17 +383,17 @@ uint16_t usGetEEPROMSize()
 
 int eAccessToken( uint16_t token)
 {
-	if (DataStorageDiscriptor.token == 0)
-	{
-		SET_SHORT( ACCESS_TOKEN_ADDR,  token);
-		DataStorageDiscriptor.token = token;
-		eEEPROMWr(ACCESS_TOKEN_ADDR, &datacash[ACCESS_TOKEN_ADDR],2);
+	//if (DataStorageDiscriptor.token == 0)
+	//{
+	//	SET_SHORT( ACCESS_TOKEN_ADDR,  token);
+	//	DataStorageDiscriptor.token = token;
+	//	eEEPROMWr(ACCESS_TOKEN_ADDR, &datacash[ACCESS_TOKEN_ADDR],2);
 		DataStorageDiscriptor.access = ACCESS_ALLOWED;
-	}
-	else
-	{
-		DataStorageDiscriptor.access  = (DataStorageDiscriptor.token == token) ? ACCESS_ALLOWED : ACCESS_DENIED;
-	}
+	//}
+	//else
+	//{
+	//	DataStorageDiscriptor.access  = (DataStorageDiscriptor.token == token) ? ACCESS_ALLOWED : ACCESS_DENIED;
+	//}
 	return  (DataStorageDiscriptor.access );
 }
 

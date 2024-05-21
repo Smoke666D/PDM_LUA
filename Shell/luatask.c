@@ -718,9 +718,9 @@ static int iSetStorageFormat( lua_State *L )
 		 uint8_t reset_data = lua_tointeger( L , FIRST_ARGUMENT );
 		 uint8_t register_count = lua_tointeger( L , SECOND_ARGUMENT );
 		 uint8_t record_format_count = 0;
-		 for (uint8_t i = 0; i < arg_number -1; i++)
+		 for (uint8_t i = 0; i < arg_number -2; i++)
 		 {
-			 d[i] = lua_tointeger( L, i + 2 );
+			 d[i] = lua_tointeger( L, i + 3 );
 			 record_format_count++;
 
 		 }

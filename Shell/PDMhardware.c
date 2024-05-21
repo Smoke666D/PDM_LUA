@@ -70,12 +70,12 @@ void vHWOutOFF( uint8_t ucChannel );
 
 
 
-static uint32_t ulRestartTimer()
+/*static uint32_t ulRestartTimer()
 {
 	uint32_t data = htim6.Instance->CNT;
 	htim6.Instance->CNT = 0U;
 	return ( data );
-}
+}*/
 /*
  *
  */
@@ -882,7 +882,7 @@ static void vDataConvertToFloat( void)
    const TickType_t xPeriod = pdMS_TO_TICKS( 1 );
    xLastWakeTime = xTaskGetTickCount();
 
-   HAL_TIM_Base_Start(&htim6);
+  // HAL_TIM_Base_Start(&htim6);
    for (int i = 0; i< OUT_COUNT;i++)
    {
 
@@ -897,11 +897,11 @@ static void vDataConvertToFloat( void)
 	   WDT_Reset();
 	   vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	   xEventGroupWaitBits(* pxPDMstatusEvent, RUN_STATE, pdFALSE, pdTRUE, portMAX_DELAY );
-	   ulRestartTimer();
+	  // ulRestartTimer();
 	   ADC_Start_DMA( &hadc1,( uint32_t* )&ADC1_IN_Buffer, ( ADC_FRAME_SIZE * ADC1_CHANNELS ));
 	   ADC_Start_DMA( &hadc2,( uint32_t* )&ADC2_IN_Buffer, ( ADC_FRAME_SIZE * ADC2_CHANNELS ));
 	   ADC_Start_DMA( &hadc3,( uint32_t* )&ADC3_IN_Buffer, ( ADC_FRAME_SIZE * ADC3_CHANNELS ));
-	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 100 );
+	   xEventGroupWaitBits( pADCEvent, ( ADC3_READY  | ADC2_READY | ADC1_READY   ), pdTRUE, pdTRUE, 500 );
 	   ADC_STOP();
 	   vDataConvertToFloat();
 	   vOutControlFSM();

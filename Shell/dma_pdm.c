@@ -40,7 +40,7 @@ extern ADC_HandleTypeDef hadc3;
         	hadc->DMA_Handle->Instance->PAR = &hadc->Instance->DR;
         	hadc->DMA_Handle->Instance->M0AR = pData;
         	regs->IFCR = 0x3FU << hadc->DMA_Handle->StreamIndex;
-        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
+        	hadc->DMA_Handle->Instance->CR  |= DMA_IT_TC;// | DMA_IT_TE | DMA_IT_DME;
         	__HAL_DMA_ENABLE(hadc->DMA_Handle);
         }
      hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
@@ -239,6 +239,18 @@ extern ADC_HandleTypeDef hadc3;
 
        /* Update error code */
        hdma->ErrorCode |= HAL_DMA_ERROR_TE;
+     }
+   }
+   /* FIFO Error Interrupt management ******************************************/
+   if ((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
+   {
+     if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_FE) != RESET)
+     {
+       /* Clear the FIFO error flag */
+       regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex;
+
+       /* Update error code */
+       hdma->ErrorCode |= HAL_DMA_ERROR_FE;
      }
    }
    /* Direct Mode Error Interrupt management ***********************************/

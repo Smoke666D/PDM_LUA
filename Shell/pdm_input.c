@@ -189,6 +189,7 @@ PDM_INPUT_CONFIG_ERROR eDinConfig( uint8_t ucCh, PDM_INPUT_TYPE inType, uint32_t
 	{
 		xDinConfig[ucCh].eInputType = inType;
 		xDinConfig[ucCh].ucValue 	= (xDinConfig[ucCh].eInputType == DIN_CONFIG_POSITIVE ) ? 0U : 1U;
+		xDinConfig[ucCh].ucTempValue = xDinConfig[ucCh].ucValue;
 		GPIO_InitStruct.Pin 		= xDinPortConfig[ucCh].Pin;
 		if ( ( ( ucCh == INPUT_9 ) || ( ucCh == INPUT_6 ) ) && ( inType == RPM_CONFIG ))
 		{
