@@ -208,59 +208,6 @@ uint8_t uPDMCanSend(CAN_TX_FRAME_TYPE *buffer)
 
 
 
-/******************************************************************************/
-/* Get error counters from the module. If necessary, function may use
-    * different way to determine errors. */
-static uint16_t rxErrors=0, txErrors=0, overflow=0;
-
-void CO_CANmodule_process(CO_CANmodule_t *CANmodule) {
-    uint32_t err;
-
-    err = ((uint32_t)txErrors << 16) | ((uint32_t)rxErrors << 8) | overflow;
-
-    if (CANmodule->errOld != err) {
-        uint16_t status = CANmodule->CANerrorStatus;
-
-        CANmodule->errOld = err;
-
-        if (txErrors >= 256U) {
-            /* bus off */
-            status |= CO_CAN_ERRTX_BUS_OFF;
-        }
-        else {
-            /* recalculate CANerrorStatus, first clear some flags */
-            status &= 0xFFFF ^ (CO_CAN_ERRTX_BUS_OFF |
-                                CO_CAN_ERRRX_WARNING | CO_CAN_ERRRX_PASSIVE |
-                                CO_CAN_ERRTX_WARNING | CO_CAN_ERRTX_PASSIVE);
-
-            /* rx bus warning or passive */
-            if (rxErrors >= 128) {
-                status |= CO_CAN_ERRRX_WARNING | CO_CAN_ERRRX_PASSIVE;
-            } else if (rxErrors >= 96) {
-                status |= CO_CAN_ERRRX_WARNING;
-            }
-
-            /* tx bus warning or passive */
-            if (txErrors >= 128) {
-                status |= CO_CAN_ERRTX_WARNING | CO_CAN_ERRTX_PASSIVE;
-            } else if (rxErrors >= 96) {
-                status |= CO_CAN_ERRTX_WARNING;
-            }
-
-            /* if not tx passive clear also overflow */
-            if ((status & CO_CAN_ERRTX_PASSIVE) == 0) {
-                status &= 0xFFFF ^ CO_CAN_ERRTX_OVERFLOW;
-            }
-        }
-
-        if (overflow != 0) {
-            /* CAN RX bus overflow */
-            status |= CO_CAN_ERRRX_OVERFLOW;
-        }
-
-        CANmodule->CANerrorStatus = status;
-    }
-}
 
 
 /******************************************************************************/
